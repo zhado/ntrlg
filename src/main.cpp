@@ -67,7 +67,7 @@ void print_logs(log* log_p){
 			printf("now");
 		else 
 			print_normal_time(entry->end_time);
-		printf(" %s-%s\n",entry->name,entry->sub_name);
+		printf(" %s, %s\n",entry->name,entry->sub_name);
 	}
 }
 
@@ -86,8 +86,8 @@ log* load_log(char* file_name){
 			}
 		}
 
-		a_log->entries[line_index].name=(char*)malloc(max_name_size);
-		a_log->entries[line_index].sub_name=(char*)malloc(max_name_size);
+		a_log->entries[line_index].name=(char*)calloc(sizeof(char)*max_name_size,1);
+		a_log->entries[line_index].sub_name=(char*)calloc(sizeof(char)*max_name_size,1);
 
 		// TODO: sahinelebaa es
 		if(quotes[1]!=0){
@@ -99,7 +99,6 @@ log* load_log(char* file_name){
 		}
 
 		sscanf(line,"%lu %lu",&a_log->entries[line_index].start_time,&a_log->entries[line_index].end_time);
-		printf("%lu aaa\n",a_log->entries[line_index].start_time);
 
 		line_index++;
 	}
@@ -120,9 +119,19 @@ void save_log(log* log_p, char* file_name){
 	fclose(fp);
 }
 
+void free_log(log* log_p){
+	for (int i=0;i<log_p->index;i++){
+		log_entry* entry=&log_p->entries[i];
+		free(entry->name);
+		free(entry->sub_name);
+	}
+	free(log_p);
+}
+
 int main(){
 	time_t epoch_time=(unsigned long)time(NULL);
 	log* a_log=(log*)malloc(sizeof(log));
+
 	a_log->index=0;
 	a_log->entries=(log_entry*)malloc(sizeof(log_entry)*100);
 	a_log->allocated=100;
@@ -139,6 +148,7 @@ int main(){
 			memset(name,0,strlen(name));
 			char subname[100];
 			memset(subname,0,strlen(subname));
+
 			sscanf(input,"%*s %s %s",name,subname);
 			printf("logged %s da %s\n",name,subname);
 			start_entry(a_log, name, subname);
@@ -147,11 +157,16 @@ int main(){
 		}else if (strcmp(command, "save") == 0){
 			save_log(a_log, "cod");
 		}else if (strcmp(command, "load") == 0){
+			free_log(a_log);
 			a_log=load_log("cod");
+		}else if (strcmp(command, "end") == 0){
+			end_last_entry(a_log);
 		}else if (strcmp(command, "exit") == 0){
-			printf("saving...");
+			//printf("saving...\n");
 			//save_log(a_log, "cod");
 			break;
+		}else{
+			printf("unknown command: %s\n",command);
 		}
 	}
 	return 0;
