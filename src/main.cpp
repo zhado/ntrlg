@@ -25,7 +25,7 @@ struct log {
 
 void print_normal_time(time_t tim){
 	tm* broken_down_time=localtime(&tim);
-	fprintf(stdout, "%d/%d/%d %02d:%02d:%02d",
+	printw("%d/%d/%d %02d:%02d:%02d",
 			broken_down_time->tm_mday,
 			broken_down_time->tm_mon+1,
 			broken_down_time->tm_year+1900,
@@ -46,7 +46,7 @@ void end_last_entry(log* log_p){
 void start_entry(log* log_p, char* name, char* sub_name){
 	if(log_p->index!=0)
 		end_last_entry(log_p);
-	printf("%d < %d == %d\n",log_p->allocated , (log_p->index+1),log_p->allocated < (log_p->index+1));
+	//printf("%d < %d == %d\n",log_p->allocated , (log_p->index+1),log_p->allocated < (log_p->index+1));
 	// aq raxdeba?????????
 	if(log_p->allocated < (log_p->index+1) ){
 		printf("realocing...\n");
@@ -67,15 +67,16 @@ void start_entry(log* log_p, char* name, char* sub_name){
 
 
 void print_logs(log* log_p){
+	move(0,0);
 	for(int i=0;i<log_p->index;i++){
 		log_entry* entry=&log_p->entries[i];
 		print_normal_time(entry->start_time);
-		printf(" - ");
+		printw(" - ");
 		if(entry->end_time == 0) 
-			printf("now");
+			printw("now");
 		else 
 			print_normal_time(entry->end_time);
-		printf(" %s, %s\n",entry->name,entry->sub_name);
+		printw(" %s, %s\n",entry->name,entry->sub_name);
 	}
 }
 
@@ -143,19 +144,35 @@ void free_log(log* log_p){
 }
 
 int main(){
+
 	time_t epoch_time=(unsigned long)time(NULL);
 	log* a_log=(log*)malloc(sizeof(log));
 
 	a_log->index=0;
 	a_log->entries=(log_entry*)malloc(sizeof(log_entry)*100);
 	a_log->allocated=100;
-
 	char* input=(char*)malloc(100);
+
+	int max_row=0,max_col=0;
+
+	initscr();
+	getmaxyx(stdscr,max_row,max_col);
+
+
+	initscr();
 	while(true){
-		printf("> ");
-		memset(input,0,strlen(input));
-		fgets(input,100,stdin);
 		char command[100];
+		memset(input,0,strlen(input));
+		memset(command,0,strlen(command));
+
+		getmaxyx(stdscr,max_row,max_col);
+		raw();
+		clear();
+		print_logs(a_log);
+		mvprintw(max_row-2,0,"> ");
+		getstr(input);
+		refresh();
+
 		sscanf(input,"%s",command);
 		if(strcmp(command, "start") == 0){
 			char name[100];
@@ -164,10 +181,8 @@ int main(){
 			memset(subname,0,strlen(subname));
 
 			sscanf(input,"%*s %s %s",name,subname);
-			printf("logged %s da %s\n",name,subname);
+			//printf("logged %s da %s\n",name,subname);
 			start_entry(a_log, name, subname);
-		}else if (strcmp(command, "print") == 0){
-			print_logs(a_log);
 		}else if (strcmp(command, "save") == 0){
 			save_log(a_log, "cod");
 		}else if (strcmp(command, "load") == 0){
@@ -183,5 +198,7 @@ int main(){
 			printf("unknown command: %s\n",command);
 		}
 	}
+
+	endwin();
 	return 0;
 }
