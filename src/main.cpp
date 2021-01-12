@@ -8,6 +8,7 @@
 typedef unsigned long ul64;
 
 const int max_name_size=100;
+const int realloc_increment=100;
 
 struct log_entry {
 	char* name;
@@ -17,8 +18,8 @@ struct log_entry {
 };
 
 struct log {
-	u_int32_t index;
-	u_int32_t allocated;
+	int index;
+	int allocated;
 	log_entry* entries;
 };
 
@@ -45,6 +46,13 @@ void end_last_entry(log* log_p){
 void start_entry(log* log_p, char* name, char* sub_name){
 	if(log_p->index!=0)
 		end_last_entry(log_p);
+	printf("%d < %d == %d\n",log_p->allocated , (log_p->index+1),log_p->allocated < (log_p->index+1));
+	// aq raxdeba?????????
+	if(log_p->allocated < (log_p->index+1) ){
+		printf("realocing...\n");
+		log_p->entries=(log_entry*)realloc(log_p->entries, sizeof(log_entry)*(log_p->allocated+realloc_increment));
+		log_p->allocated=log_p->allocated+realloc_increment;
+	}
 	log_entry* entry=&log_p->entries[log_p->index];
 
 	entry->name=(char*)malloc(sizeof(char)*max_name_size);
@@ -74,8 +82,8 @@ void print_logs(log* log_p){
 log* load_log(char* file_name){
 	FILE* fp=fopen(file_name,"r");
 	log* a_log=(log*)malloc(sizeof(log));
-	a_log->entries=(log_entry*)malloc(sizeof(log_entry)*200);
-	a_log->allocated=200;
+	a_log->entries=(log_entry*)malloc(sizeof(log_entry)*100);
+	a_log->allocated=100;
 	char line[200];
 	int line_index=0;
 	while (fgets(line,200,fp)!=0){
@@ -101,6 +109,12 @@ log* load_log(char* file_name){
 		sscanf(line,"%lu %lu",&a_log->entries[line_index].start_time,&a_log->entries[line_index].end_time);
 
 		line_index++;
+		//TODO: es shesamowmebelia
+		if(line_index>a_log->allocated){
+			printf("reallocing during import\n");
+			a_log->entries=(log_entry*)realloc(a_log->entries,sizeof(log_entry)*( a_log->allocated+realloc_increment));
+			a_log->allocated=a_log->allocated+realloc_increment;
+		}
 	}
 	a_log->index=line_index;
 
