@@ -41,7 +41,7 @@ void end_last_entry(log* log_p){
 	log_entry* entry=&log_p->entries[log_p->index-1];
 	if(entry->start_time==0){
 		fprintf(stderr, "entry not started.");
-	}else{
+	}else if(entry->end_time==0){
 		entry->end_time=(unsigned long)time(NULL);
 	}
 }
@@ -145,23 +145,6 @@ void free_log(log* log_p){
 	}
 	free(log_p);
 }
-void draw_state(window_state state,int max_row,int max_col){
-	switch (state) {
-		case view:{
-			int y=0,x=0;
-			mvprintw(max_row-1, 0, "view");
-			getyx(stdscr, y, x);
-			while(x<max_col-1){
-				addch('-');
-				getyx(stdscr, y, x);
-			}
-		}
-		break;
-		case logging:
-			mvprintw(max_row-1, 0, "logging");
-		break;
-	}
-}
 
 int main(){
 	time_t epoch_time=(unsigned long)time(NULL);
@@ -177,53 +160,104 @@ int main(){
 	initscr();
 	cbreak();
 	//raw();
-	keypad(stdscr, TRUE);
+	//keypad(stdscr, TRUE);
 	noecho();
+	curs_set(0);
 	char c=0;
 	free_log(a_log);
 	a_log=load_log("cod");
-	while(true){
-		char command[100];
-		memset(input,0,strlen(input));
-		memset(command,0,strlen(command));
+	char command[100];
 
+	char name[100];
+	char subname[100];
+	// 1=name
+	// 2=subname
+	int logging_state=1;
+
+	memset(input,0,100);
+	memset(command,0,100);
+	while(true){
+
+		erase();
 		getmaxyx(stdscr,max_row,max_col);
-		draw_state(state, max_row, max_col);
+		if(state==logging){
+			if(c > 31 && c <=126){
+				if(logging_state==1){
+					name[strlen(name)]=c;
+				}else{
+					subname[strlen(subname)]=c;
+				}
+			}else if (c == 127){
+				if(logging_state==1){
+					name[strlen(name)-1]=0;
+				}else{
+					subname[strlen(subname)-1]=0;
+				}
+			}else if (c == 10){
+				//handle_command(a_log, input, command);
+				if(logging_state==1){
+					logging_state++;
+				}else{
+					start_entry(a_log, name, subname);
+					memset(name,0,100);
+					memset(subname,0,100);
+					logging_state=1;
+					state=view;
+				}
+			}
+		}
+		if (c == 27){
+			mvprintw(max_row-2,max_col-11,"esc pressed");
+			memset(name,0,100);
+			memset(subname,0,100);
+			state=view;
+			logging_state=1;
+		}
+		if(state==view){
+			if(c =='l'){
+				state=logging;
+			}else if(c =='s'){
+				mvprintw(max_row-2,max_col-sizeof("saved log"),"saved log");
+				save_log(a_log, "cod");
+			}else if(c =='e'){
+				mvprintw(max_row-2,max_col-sizeof("ending last entry"),"ending last entry");
+				end_last_entry(a_log);
+			}else if(c =='q'){
+				break;
+			}
+		}
+		int y=0,x=0;
 		print_logs(a_log);
 
-		if(c >32 && c<126){
-		}
+		switch (state) {
+			case view:{
+				curs_set(0);
+				mvprintw(max_row-1, 0, "view");
+				getyx(stdscr, y, x);
+				while(x<max_col-1){
+					addch('-');
+					getyx(stdscr, y, x);
+				}
+			}
+			break;
+			case logging:{
+				curs_set(1);
+				mvprintw(max_row-1, 0, "logging");
+				getyx(stdscr, y, x);
+				while(x<max_col-1){
+					addch('-');
+					getyx(stdscr, y, x);
+				}
 
-		mvprintw(max_row-1,max_col-12,"%d=%c",c,c);
+				mvprintw(max_row-3, 0, "name: %s",name);
+				mvprintw(max_row-2, 0, "subname: %s",subname);
+
+			}
+			break;
+		}
+		mvprintw(max_row-1,max_col-6,"%d=%c",c,c);
 		refresh();
 		c=getch();
-		erase();
-
-		// in ascii letter range
-		//sscanf(input,"%s",command);
-		//if(strcmp(command, "start") == 0){
-			//char name[100];
-			//memset(name,0,strlen(name));
-			//char subname[100];
-			//memset(subname,0,strlen(subname));
-
-			//sscanf(input,"%*s %s %s",name,subname);
-			////printf("logged %s da %s\n",name,subname);
-			//start_entry(a_log, name, subname);
-		//}else if (strcmp(command, "save") == 0){
-			//save_log(a_log, "cod");
-		//}else if (strcmp(command, "load") == 0){
-			//free_log(a_log);
-			//a_log=load_log("cod");
-		//}else if (strcmp(command, "end") == 0){
-			//end_last_entry(a_log);
-		//}else if (strcmp(command, "exit") == 0){
-			////printf("saving...\n");
-			////save_log(a_log, "cod");
-			//break;
-		//}else{
-			//printf("unknown command: %s\n",command);
-		//}
 	}
 
 	endwin();
