@@ -10,6 +10,9 @@ typedef unsigned long ul64;
 const int max_name_size=100;
 const int realloc_increment=100;
 
+enum window_state {
+	view,logging
+};
 struct log_entry {
 	char* name;
 	char* sub_name;
@@ -142,9 +145,25 @@ void free_log(log* log_p){
 	}
 	free(log_p);
 }
+void draw_state(window_state state,int max_row,int max_col){
+	switch (state) {
+		case view:{
+			int y=0,x=0;
+			mvprintw(max_row-1, 0, "view");
+			getyx(stdscr, y, x);
+			while(x<max_col-1){
+				addch('-');
+				getyx(stdscr, y, x);
+			}
+		}
+		break;
+		case logging:
+			mvprintw(max_row-1, 0, "logging");
+		break;
+	}
+}
 
 int main(){
-
 	time_t epoch_time=(unsigned long)time(NULL);
 	log* a_log=(log*)malloc(sizeof(log));
 
@@ -152,51 +171,59 @@ int main(){
 	a_log->entries=(log_entry*)malloc(sizeof(log_entry)*100);
 	a_log->allocated=100;
 	char* input=(char*)malloc(100);
-
 	int max_row=0,max_col=0;
+	window_state state=view;
 
 	initscr();
-	getmaxyx(stdscr,max_row,max_col);
-
-
-	initscr();
+	cbreak();
+	//raw();
+	keypad(stdscr, TRUE);
+	noecho();
+	char c=0;
+	free_log(a_log);
+	a_log=load_log("cod");
 	while(true){
 		char command[100];
 		memset(input,0,strlen(input));
 		memset(command,0,strlen(command));
 
 		getmaxyx(stdscr,max_row,max_col);
-		raw();
-		clear();
+		draw_state(state, max_row, max_col);
 		print_logs(a_log);
-		mvprintw(max_row-2,0,"> ");
-		getstr(input);
-		refresh();
 
-		sscanf(input,"%s",command);
-		if(strcmp(command, "start") == 0){
-			char name[100];
-			memset(name,0,strlen(name));
-			char subname[100];
-			memset(subname,0,strlen(subname));
-
-			sscanf(input,"%*s %s %s",name,subname);
-			//printf("logged %s da %s\n",name,subname);
-			start_entry(a_log, name, subname);
-		}else if (strcmp(command, "save") == 0){
-			save_log(a_log, "cod");
-		}else if (strcmp(command, "load") == 0){
-			free_log(a_log);
-			a_log=load_log("cod");
-		}else if (strcmp(command, "end") == 0){
-			end_last_entry(a_log);
-		}else if (strcmp(command, "exit") == 0){
-			//printf("saving...\n");
-			//save_log(a_log, "cod");
-			break;
-		}else{
-			printf("unknown command: %s\n",command);
+		if(c >32 && c<126){
 		}
+
+		mvprintw(max_row-1,max_col-12,"%d=%c",c,c);
+		refresh();
+		c=getch();
+		erase();
+
+		// in ascii letter range
+		//sscanf(input,"%s",command);
+		//if(strcmp(command, "start") == 0){
+			//char name[100];
+			//memset(name,0,strlen(name));
+			//char subname[100];
+			//memset(subname,0,strlen(subname));
+
+			//sscanf(input,"%*s %s %s",name,subname);
+			////printf("logged %s da %s\n",name,subname);
+			//start_entry(a_log, name, subname);
+		//}else if (strcmp(command, "save") == 0){
+			//save_log(a_log, "cod");
+		//}else if (strcmp(command, "load") == 0){
+			//free_log(a_log);
+			//a_log=load_log("cod");
+		//}else if (strcmp(command, "end") == 0){
+			//end_last_entry(a_log);
+		//}else if (strcmp(command, "exit") == 0){
+			////printf("saving...\n");
+			////save_log(a_log, "cod");
+			//break;
+		//}else{
+			//printf("unknown command: %s\n",command);
+		//}
 	}
 
 	endwin();
