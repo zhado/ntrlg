@@ -4,6 +4,7 @@
 #include <sys/types.h>
 #include <ncurses.h>
 #include <cstdlib>
+#include <math.h>
 #include <string.h>
 typedef unsigned long ul64;
 
@@ -20,7 +21,7 @@ struct log_entry {
 	time_t end_time;
 };
 
-struct log {
+struct t_log {
 	int index;
 	int allocated;
 	log_entry* entries;
@@ -28,16 +29,12 @@ struct log {
 
 void print_normal_time(time_t tim){
 	tm* broken_down_time=localtime(&tim);
-	printw("%d/%d/%d %02d:%02d:%02d",
-			broken_down_time->tm_mday,
-			broken_down_time->tm_mon+1,
-			broken_down_time->tm_year+1900,
+	printw("%02d:%02d",
 			broken_down_time->tm_hour,
-			broken_down_time->tm_min,
-			broken_down_time->tm_sec); 
+			broken_down_time->tm_min); 
 }
 
-void end_last_entry(log* log_p){
+void end_last_entry(t_log* log_p){
 	log_entry* entry=&log_p->entries[log_p->index-1];
 	if(entry->start_time==0){
 		fprintf(stderr, "entry not started.");
@@ -46,7 +43,7 @@ void end_last_entry(log* log_p){
 	}
 }
 
-void start_entry(log* log_p, char* name, char* sub_name){
+void start_entry(t_log* log_p, char* name, char* sub_name){
 	if(log_p->index!=0)
 		end_last_entry(log_p);
 	//printf("%d < %d == %d\n",log_p->allocated , (log_p->index+1),log_p->allocated < (log_p->index+1));
@@ -69,21 +66,29 @@ void start_entry(log* log_p, char* name, char* sub_name){
 }
 
 
-void print_logs(log* log_p,int max_row,int max_col){
+void print_logs(t_log* log_p,int max_row,int max_col,int cell_offset=0){
 	int count=0;
-	int cell_minutes=30,last_remender=0;
+	int cell_minutes=20,last_remender=0;
+
+	time_t epoch_tm=(unsigned long)time(NULL);
+	tm* broken_down_time=localtime(&epoch_tm);
+	time_t nexthour_timestamp=(unsigned long)time(NULL)+(cell_minutes*60-(broken_down_time->tm_min%cell_minutes)*60-broken_down_time->tm_sec)-cell_minutes*60*cell_offset;
+
 	for(int i=max_row-5;i>=0;i--){
+		time_t cell_tm=nexthour_timestamp-cell_minutes*60*count;
+		tm* broken_down_cell_tm=localtime(&cell_tm);
 
 		move(i,0);
-		printw("%d",i);
+		printw("----------- ");
 
-		time_t epoch_time=(unsigned long)time(NULL)-cell_minutes*60*count;
-		tm* broken_down_time=localtime(&epoch_time);
-		time_t quant_cell_time=epoch_time+(60*60-broken_down_time->tm_min*60);
-		tm* quant_cell_brk_down=localtime(&quant_cell_time);
-		printw(" %02d:%02d",
-				quant_cell_brk_down->tm_hour,
-				quant_cell_brk_down->tm_min); 
+		print_normal_time(cell_tm);
+		if(broken_down_cell_tm->tm_min==0){
+			printw(" %02d",broken_down_cell_tm->tm_hour);
+			if(broken_down_cell_tm->tm_hour==0)
+				printw(" %02d/%02d/%02d",broken_down_cell_tm->tm_mday,broken_down_cell_tm->tm_mon+1,broken_down_cell_tm->tm_year+1900);
+		}
+		//printw("from %d to %d ",cell_tm,cell_tm+cell_minutes*60);
+
 		count++;
 	}
 	//for(int i=0;i<log_p->index;i++){
@@ -98,9 +103,9 @@ void print_logs(log* log_p,int max_row,int max_col){
 	//}
 }
 
-log* load_log(char* file_name){
+t_log* load_log(char* file_name){
 	FILE* fp=fopen(file_name,"r");
-	log* a_log=(log*)malloc(sizeof(log));
+	t_log* a_log=(t_log*)malloc(sizeof(t_log));
 	a_log->entries=(log_entry*)malloc(sizeof(log_entry)*100);
 	a_log->allocated=100;
 	char line[200];
@@ -141,7 +146,7 @@ log* load_log(char* file_name){
 	return a_log;
 }
 
-void save_log(log* log_p, char* file_name){
+void save_log(t_log* log_p, char* file_name){
 	FILE* fp=fopen(file_name,"w");
 
 	for(int i=0;i<log_p->index;i++){
@@ -152,7 +157,7 @@ void save_log(log* log_p, char* file_name){
 	fclose(fp);
 }
 
-void free_log(log* log_p){
+void free_log(t_log* log_p){
 	for (int i=0;i<log_p->index;i++){
 		log_entry* entry=&log_p->entries[i];
 		free(entry->name);
@@ -162,8 +167,9 @@ void free_log(log* log_p){
 }
 
 int main(){
+	int cell_offset=0;
 	time_t epoch_time=(unsigned long)time(NULL);
-	log* a_log=(log*)malloc(sizeof(log));
+	t_log* a_log=(t_log*)malloc(sizeof(t_log));
 
 	a_log->index=0;
 	a_log->entries=(log_entry*)malloc(sizeof(log_entry)*100);
@@ -175,7 +181,7 @@ int main(){
 	initscr();
 	cbreak();
 	//raw();
-	//keypad(stdscr, TRUE);
+	keypad(stdscr, TRUE);
 	//halfdelay(1);
 	noecho();
 	curs_set(0);
@@ -222,13 +228,14 @@ int main(){
 				}
 			}
 		}
-		if (c == 27){
+		if (c == 'q'){
 			mvprintw(max_row-2,max_col-11,"esc pressed");
 			memset(name,0,100);
 			memset(subname,0,100);
 			state=view;
 			logging_state=1;
 		}
+
 		if(state==view){
 			if(c =='l'){
 				state=logging;
@@ -240,10 +247,15 @@ int main(){
 				end_last_entry(a_log);
 			}else if(c =='q'){
 				break;
+			}else if(c ==3){
+				cell_offset++;
+			}else if(c ==2){
+				if(cell_offset>0)
+					cell_offset--;
 			}
 		}
 		int y=0,x=0;
-		print_logs(a_log,max_row,max_col);
+		print_logs(a_log,max_row,max_col,cell_offset);
 
 		switch (state) {
 			case view:{
