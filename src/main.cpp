@@ -69,18 +69,33 @@ void start_entry(log* log_p, char* name, char* sub_name){
 }
 
 
-void print_logs(log* log_p){
-	move(0,0);
-	for(int i=0;i<log_p->index;i++){
-		log_entry* entry=&log_p->entries[i];
-		print_normal_time(entry->start_time);
-		printw(" - ");
-		if(entry->end_time == 0) 
-			printw("now");
-		else 
-			print_normal_time(entry->end_time);
-		printw(" %s, %s\n",entry->name,entry->sub_name);
+void print_logs(log* log_p,int max_row,int max_col){
+	int count=0;
+	int cell_minutes=30,last_remender=0;
+	for(int i=max_row-5;i>=0;i--){
+
+		move(i,0);
+		printw("%d",i);
+
+		time_t epoch_time=(unsigned long)time(NULL)-cell_minutes*60*count;
+		tm* broken_down_time=localtime(&epoch_time);
+		time_t quant_cell_time=epoch_time+(60*60-broken_down_time->tm_min*60);
+		tm* quant_cell_brk_down=localtime(&quant_cell_time);
+		printw(" %02d:%02d",
+				quant_cell_brk_down->tm_hour,
+				quant_cell_brk_down->tm_min); 
+		count++;
 	}
+	//for(int i=0;i<log_p->index;i++){
+		//log_entry* entry=&log_p->entries[i];
+		//print_normal_time(entry->start_time);
+		//printw(" - ");
+		//if(entry->end_time == 0) 
+			//printw("now");
+		//else 
+			//print_normal_time(entry->end_time);
+		//printw(" %s, %s\n",entry->name,entry->sub_name);
+	//}
 }
 
 log* load_log(char* file_name){
@@ -161,6 +176,7 @@ int main(){
 	cbreak();
 	//raw();
 	//keypad(stdscr, TRUE);
+	//halfdelay(1);
 	noecho();
 	curs_set(0);
 	char c=0;
@@ -227,7 +243,7 @@ int main(){
 			}
 		}
 		int y=0,x=0;
-		print_logs(a_log);
+		print_logs(a_log,max_row,max_col);
 
 		switch (state) {
 			case view:{
@@ -255,6 +271,7 @@ int main(){
 			}
 			break;
 		}
+		mvprintw(max_row-2,max_col-6,"%d=%d",max_row,max_col);
 		mvprintw(max_row-1,max_col-6,"%d=%c",c,c);
 		refresh();
 		c=getch();
