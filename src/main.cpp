@@ -66,9 +66,28 @@ void start_entry(t_log* log_p, char* name, char* sub_name){
 }
 
 
-void print_logs(t_log* log_p,int max_row,int max_col,int cell_offset=0){
+void draw_time_boxes(t_log* logp,time_t cell_tm, int cell_minutes,int cur_row){
+	for(int i=logp->index-1;i>=0;i--){
+		time_t start_tm=logp->entries[i].start_time;
+		time_t end_time=logp->entries[i].end_time;
+		time_t delta=end_time-start_tm;
+		if((end_time<cell_tm+(cell_minutes*60)) && end_time> cell_tm){
+			mvprintw(cur_row, 20, "+----+");
+			int j=0;
+			for(;j<delta/(cell_minutes*60);j++){
+				if(cur_row-j>0)
+					mvprintw(cur_row-j, 20, "|----|");
+				else  
+					break;
+			}
+			mvprintw(cur_row-j, 20, "*----*");
+		}
+	}
+}
+
+void print_logs(t_log* log_p,int max_row,int max_col,int cell_offset,int cell_minutes){
 	int count=0;
-	int cell_minutes=20,last_remender=0;
+	int last_remender=0;
 
 	time_t epoch_tm=(unsigned long)time(NULL);
 	tm* broken_down_time=localtime(&epoch_tm);
@@ -79,15 +98,18 @@ void print_logs(t_log* log_p,int max_row,int max_col,int cell_offset=0){
 		tm* broken_down_cell_tm=localtime(&cell_tm);
 
 		move(i,0);
-		printw("----------- ");
+		//printw("----------- ");
 
-		print_normal_time(cell_tm);
+		//print_normal_time(cell_tm);
+
+		mvprintw(i,0,"%02d:%02d",broken_down_cell_tm->tm_hour,broken_down_cell_tm->tm_min); 
 		if(broken_down_cell_tm->tm_min==0){
-			printw(" %02d",broken_down_cell_tm->tm_hour);
+			mvprintw(i,6," %02d",broken_down_cell_tm->tm_hour);
 			if(broken_down_cell_tm->tm_hour==0)
-				printw(" %02d/%02d/%02d",broken_down_cell_tm->tm_mday,broken_down_cell_tm->tm_mon+1,broken_down_cell_tm->tm_year+1900);
+				mvprintw(i,10," %02d/%02d/%02d",broken_down_cell_tm->tm_mday,broken_down_cell_tm->tm_mon+1,broken_down_cell_tm->tm_year+1900);
 		}
 		//printw("from %d to %d ",cell_tm,cell_tm+cell_minutes*60);
+		draw_time_boxes(log_p,cell_tm,cell_minutes,i);
 
 		count++;
 	}
@@ -167,7 +189,7 @@ void free_log(t_log* log_p){
 }
 
 int main(){
-	int cell_offset=0;
+	int cell_offset=0,cell_minutes=20;
 	time_t epoch_time=(unsigned long)time(NULL);
 	t_log* a_log=(t_log*)malloc(sizeof(t_log));
 
@@ -213,7 +235,7 @@ int main(){
 				}else{
 					subname[strlen(subname)]=c;
 				}
-			}else if (c == 127){
+			}else if (c == 263){
 				if(logging_state==1){
 					name[strlen(name)-1]=0;
 				}else{
@@ -233,7 +255,7 @@ int main(){
 			}
 		}
 		if (c == 27){
-			mvprintw(max_row-2,max_col-11,"esc pressed");
+			mvprintw(max_row-3,max_col-11,"esc pressed");
 			memset(name,0,100);
 			memset(subname,0,100);
 			state=view;
@@ -259,7 +281,7 @@ int main(){
 			}
 		}
 		int y=0,x=0;
-		print_logs(a_log,max_row,max_col,cell_offset);
+		print_logs(a_log,max_row,max_col,cell_offset,cell_minutes);
 
 		switch (state) {
 			case view:{
