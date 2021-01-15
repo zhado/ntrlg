@@ -34,6 +34,13 @@ void print_normal_time(int row,int col,time_t tim){
 			broken_down_time->tm_min); 
 }
 
+void print_duration(int duration){
+	if(duration/60/60>0)
+		printw("%dh ",duration/60/60);
+	if(duration/60>0)
+		printw("%dm",duration/60%60);
+}
+
 void end_last_entry(t_log* log_p){
 	log_entry* entry=&log_p->entries[log_p->index-1];
 	if(entry->start_time==0){
@@ -46,8 +53,6 @@ void end_last_entry(t_log* log_p){
 void append_entry(t_log* log_p, char* name, char* sub_name,time_t start_time,time_t end_time){
 	if(log_p->index!=0)
 		end_last_entry(log_p);
-	//printf("%d < %d == %d\n",log_p->allocated , (log_p->index+1),log_p->allocated < (log_p->index+1));
-	// aq raxdeba?????????
 	if(log_p->allocated < (log_p->index+1) ){
 		printf("realocing...\n");
 		log_p->entries=(log_entry*)realloc(log_p->entries, sizeof(log_entry)*(log_p->allocated+realloc_increment));
@@ -66,19 +71,26 @@ void append_entry(t_log* log_p, char* name, char* sub_name,time_t start_time,tim
 }
 
 void draw_time_boxes(t_log* logp,time_t cell_tm, int cell_minutes,int cur_row){
+	time_t next_cell_tm=cell_tm+(cell_minutes*60);
+	time_t local_time=(unsigned long)time(0);
+	if(cell_tm<local_time && next_cell_tm > local_time){
+			mvprintw(cur_row, 24, "<-- now");
+	}
 	for(int i=logp->index-1;i>=0;i--){
 		time_t start_tm=logp->entries[i].start_time;
 		time_t end_time=logp->entries[i].end_time;
 		time_t delta=end_time-start_tm;
-		time_t next_cell_tm=cell_tm+(cell_minutes*60);
 		if(end_time < next_cell_tm && end_time > cell_tm){
+			log_entry* entry=&logp->entries[i];
 			mvprintw(cur_row, 20, "=---->");
-			//mvprintw(cur_row, 20, "*----*");
-			printw("%s ",logp->entries[i].name);
+			printw("%s ",entry->name);
+			print_duration(entry->end_time-entry->start_time);
 			break;
 		}else if(end_time==0 && cell_tm>start_tm && next_cell_tm > (unsigned long) time(0) ){
+			log_entry* entry=&logp->entries[logp->index-1];
 			mvprintw(cur_row, 20, "++++++");
-			printw("%s ",logp->entries[logp->index-1].name);
+			printw("%s ",entry->name);
+			print_duration(local_time-entry->start_time);
 			break;
 		}else if((next_cell_tm<end_time || end_time==0) && cell_tm>start_tm){
 			mvprintw(cur_row, 20, "|    |");
@@ -87,13 +99,12 @@ void draw_time_boxes(t_log* logp,time_t cell_tm, int cell_minutes,int cur_row){
 	}
 }
 
-void print_logs(t_log* log_p,int max_row,int max_col,int cell_offset,int cell_minutes){
+void print_logs(t_log* log_p,int max_row,int max_col,int cell_minutes,time_t cursor_pos_tm){
 	int count=0;
-	int last_remender=0;
 
-	time_t epoch_tm=(unsigned long)time(0);
+	time_t epoch_tm=cursor_pos_tm;
 	tm* broken_down_time=localtime(&epoch_tm);
-	time_t nexthour_timestamp=(unsigned long)time(0)+(cell_minutes*60-(broken_down_time->tm_min%cell_minutes)*60-broken_down_time->tm_sec)-cell_minutes*60*cell_offset;
+	time_t nexthour_timestamp=cursor_pos_tm+(cell_minutes*60-(broken_down_time->tm_min%cell_minutes)*60-broken_down_time->tm_sec);
 	nexthour_timestamp=nexthour_timestamp-cell_minutes*60;
 
 	for(int i=max_row-5;i>=0;i--){
@@ -119,12 +130,12 @@ void print_logs(t_log* log_p,int max_row,int max_col,int cell_offset,int cell_mi
 
 	for(int i=0;i<log_p->index;i++){
 		log_entry* entry=&log_p->entries[i];
-		print_normal_time(40+i,50,entry->start_time);
+		print_normal_time(40+i,60,entry->start_time);
 		//mvprintw(" - ");
 		if(entry->end_time == 0) 
-			mvprintw(40+i,57,"now");
+			mvprintw(40+i,67,"now");
 		else 
-			print_normal_time(40+i,57,entry->end_time);
+			print_normal_time(40+i,67,entry->end_time);
 		printw(" %s, %s\n",entry->name,entry->sub_name);
 	}
 }
@@ -195,6 +206,7 @@ void free_log(t_log* log_p){
 int main(){
 	int cell_offset=0,cell_minutes=20;
 	time_t epoch_time=(unsigned long)time(0);
+	time_t cursor_pos_tm=epoch_time;
 	t_log* a_log=(t_log*)malloc(sizeof(t_log));
 
 	a_log->index=0;
@@ -297,14 +309,26 @@ int main(){
 				cell_minutes=cell_minutes+5;
 				cell_offset=total_cell_mins/cell_minutes;
 			}else if(c ==259){
-				cell_offset++;
+				//uparrow
+				cursor_pos_tm-=cell_minutes*60;
 			}else if(c ==258){
-				if(cell_offset>0)
-					cell_offset--;
+				//downarrow
+				cursor_pos_tm+=cell_minutes*60;
+			}else if(c ==339){
+				//pgup
+				cursor_pos_tm-=cell_minutes*60*4;
+			}else if(c ==338){
+				//pgdown
+				cursor_pos_tm+=cell_minutes*60*4;
+			}else if(c ==262){
+				//home
+				cursor_pos_tm=(unsigned long)time(0);
+				cell_minutes=20;
 			}
 		}
 		int y=0,x=0;
-		print_logs(a_log,max_row,max_col,cell_offset,cell_minutes);
+		mvprintw(max_row/2-5,0,"_________________________________________");
+		print_logs(a_log,max_row,max_col,cell_minutes,cursor_pos_tm+cell_minutes*max_row/2*60);
 
 		switch (state) {
 			case view:{
