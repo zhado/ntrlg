@@ -27,9 +27,9 @@ struct t_log {
 	log_entry* entries;
 };
 
-void print_normal_time(time_t tim){
+void print_normal_time(int row,int col,time_t tim){
 	tm* broken_down_time=localtime(&tim);
-	printw("%02d:%02d",
+	mvprintw(row,col,"%02d:%02d",
 			broken_down_time->tm_hour,
 			broken_down_time->tm_min); 
 }
@@ -39,11 +39,11 @@ void end_last_entry(t_log* log_p){
 	if(entry->start_time==0){
 		fprintf(stderr, "entry not started.");
 	}else if(entry->end_time==0){
-		entry->end_time=(unsigned long)time(NULL);
+		entry->end_time=(unsigned long)time(0);
 	}
 }
 
-void start_entry(t_log* log_p, char* name, char* sub_name){
+void append_entry(t_log* log_p, char* name, char* sub_name,time_t start_time,time_t end_time){
 	if(log_p->index!=0)
 		end_last_entry(log_p);
 	//printf("%d < %d == %d\n",log_p->allocated , (log_p->index+1),log_p->allocated < (log_p->index+1));
@@ -57,30 +57,32 @@ void start_entry(t_log* log_p, char* name, char* sub_name){
 
 	entry->name=(char*)malloc(sizeof(char)*max_name_size);
 	entry->sub_name=(char*)malloc(sizeof(char)*max_name_size);
-	entry->end_time=0;
+	entry->end_time=end_time;
 
-	entry->start_time=(unsigned long)time(NULL);
+	entry->start_time=start_time;
 	strcpy(entry->name, name);
 	strcpy(entry->sub_name, sub_name);
 	log_p->index++;
 }
-
 
 void draw_time_boxes(t_log* logp,time_t cell_tm, int cell_minutes,int cur_row){
 	for(int i=logp->index-1;i>=0;i--){
 		time_t start_tm=logp->entries[i].start_time;
 		time_t end_time=logp->entries[i].end_time;
 		time_t delta=end_time-start_tm;
-		if((end_time<cell_tm+(cell_minutes*60)) && end_time> cell_tm){
-			mvprintw(cur_row, 20, "+----+");
-			int j=0;
-			for(;j<delta/(cell_minutes*60);j++){
-				if(cur_row-j>0)
-					mvprintw(cur_row-j, 20, "|----|");
-				else  
-					break;
-			}
-			mvprintw(cur_row-j, 20, "*----*");
+		time_t next_cell_tm=cell_tm+(cell_minutes*60);
+		if(end_time < next_cell_tm && end_time > cell_tm){
+			mvprintw(cur_row, 20, "=---->");
+			//mvprintw(cur_row, 20, "*----*");
+			printw("%s ",logp->entries[i].name);
+			break;
+		}else if(end_time==0 && cell_tm>start_tm && next_cell_tm > (unsigned long) time(0) ){
+			mvprintw(cur_row, 20, "++++++");
+			printw("%s ",logp->entries[logp->index-1].name);
+			break;
+		}else if((next_cell_tm<end_time || end_time==0) && cell_tm>start_tm){
+			mvprintw(cur_row, 20, "|    |");
+			break;
 		}
 	}
 }
@@ -89,9 +91,10 @@ void print_logs(t_log* log_p,int max_row,int max_col,int cell_offset,int cell_mi
 	int count=0;
 	int last_remender=0;
 
-	time_t epoch_tm=(unsigned long)time(NULL);
+	time_t epoch_tm=(unsigned long)time(0);
 	tm* broken_down_time=localtime(&epoch_tm);
-	time_t nexthour_timestamp=(unsigned long)time(NULL)+(cell_minutes*60-(broken_down_time->tm_min%cell_minutes)*60-broken_down_time->tm_sec)-cell_minutes*60*cell_offset;
+	time_t nexthour_timestamp=(unsigned long)time(0)+(cell_minutes*60-(broken_down_time->tm_min%cell_minutes)*60-broken_down_time->tm_sec)-cell_minutes*60*cell_offset;
+	nexthour_timestamp=nexthour_timestamp-cell_minutes*60;
 
 	for(int i=max_row-5;i>=0;i--){
 		time_t cell_tm=nexthour_timestamp-cell_minutes*60*count;
@@ -113,16 +116,17 @@ void print_logs(t_log* log_p,int max_row,int max_col,int cell_offset,int cell_mi
 
 		count++;
 	}
-	//for(int i=0;i<log_p->index;i++){
-		//log_entry* entry=&log_p->entries[i];
-		//print_normal_time(entry->start_time);
-		//printw(" - ");
-		//if(entry->end_time == 0) 
-			//printw("now");
-		//else 
-			//print_normal_time(entry->end_time);
-		//printw(" %s, %s\n",entry->name,entry->sub_name);
-	//}
+
+	for(int i=0;i<log_p->index;i++){
+		log_entry* entry=&log_p->entries[i];
+		print_normal_time(40+i,50,entry->start_time);
+		//mvprintw(" - ");
+		if(entry->end_time == 0) 
+			mvprintw(40+i,57,"now");
+		else 
+			print_normal_time(40+i,57,entry->end_time);
+		printw(" %s, %s\n",entry->name,entry->sub_name);
+	}
 }
 
 t_log* load_log(char* file_name){
@@ -190,7 +194,7 @@ void free_log(t_log* log_p){
 
 int main(){
 	int cell_offset=0,cell_minutes=20;
-	time_t epoch_time=(unsigned long)time(NULL);
+	time_t epoch_time=(unsigned long)time(0);
 	t_log* a_log=(t_log*)malloc(sizeof(t_log));
 
 	a_log->index=0;
@@ -221,6 +225,7 @@ int main(){
 	// 1=name
 	// 2=subname
 	int logging_state=1;
+	bool append_log=false;
 
 	memset(input,0,100);
 	memset(command,0,100);
@@ -246,7 +251,12 @@ int main(){
 				if(logging_state==1){
 					logging_state++;
 				}else{
-					start_entry(a_log, name, subname);
+					if(append_log){
+						append_entry(a_log, name, subname,a_log->entries[a_log->index-1].end_time,0);
+						append_log=false;
+					}else{
+						append_entry(a_log, name, subname,(unsigned long)time(0),0);
+					}
 					memset(name,0,100);
 					memset(subname,0,100);
 					logging_state=1;
@@ -268,11 +278,24 @@ int main(){
 			}else if(c =='s'){
 				mvprintw(max_row-2,max_col-sizeof("saved log"),"saved log");
 				save_log(a_log, "cod");
+			}else if(c =='a'){
+				state=logging;
+				append_log=true;
 			}else if(c =='e'){
 				mvprintw(max_row-2,max_col-sizeof("ending last entry"),"ending last entry");
 				end_last_entry(a_log);
 			}else if(c =='q'){
 				break;
+			}else if(c =='z'){
+				if(cell_minutes!=5){
+					int total_cell_mins=cell_minutes*cell_offset;
+					cell_minutes=cell_minutes-5;
+					cell_offset=total_cell_mins/cell_minutes;
+				}
+			}else if(c =='x'){
+				int total_cell_mins=cell_minutes*cell_offset;
+				cell_minutes=cell_minutes+5;
+				cell_offset=total_cell_mins/cell_minutes;
 			}else if(c ==259){
 				cell_offset++;
 			}else if(c ==258){
@@ -286,7 +309,7 @@ int main(){
 		switch (state) {
 			case view:{
 				curs_set(0);
-				mvprintw(max_row-1, 0, "view");
+				mvprintw(max_row-1, 0, "view scale=%d minutes",cell_minutes);
 				getyx(stdscr, y, x);
 				while(x<max_col-1){
 					addch('-');
