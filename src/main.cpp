@@ -180,12 +180,16 @@ int main(){
 
 	initscr();
 	cbreak();
-	//raw();
+	raw();
+	set_escdelay(4);
 	keypad(stdscr, TRUE);
+	//ctrl('k');
 	//halfdelay(1);
 	noecho();
+	//timeout(0);
 	curs_set(0);
-	char c=0;
+
+	int c=0;
 	free_log(a_log);
 	a_log=load_log("cod");
 	char command[100];
@@ -228,7 +232,7 @@ int main(){
 				}
 			}
 		}
-		if (c == 'q'){
+		if (c == 27){
 			mvprintw(max_row-2,max_col-11,"esc pressed");
 			memset(name,0,100);
 			memset(subname,0,100);
@@ -247,9 +251,9 @@ int main(){
 				end_last_entry(a_log);
 			}else if(c =='q'){
 				break;
-			}else if(c ==3){
+			}else if(c ==259){
 				cell_offset++;
-			}else if(c ==2){
+			}else if(c ==258){
 				if(cell_offset>0)
 					cell_offset--;
 			}
