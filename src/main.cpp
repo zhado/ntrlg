@@ -60,8 +60,8 @@ void append_entry(t_log* log_p, char* name, char* sub_name,time_t start_time,tim
 	}
 	log_entry* entry=&log_p->entries[log_p->index];
 
-	entry->name=(char*)malloc(sizeof(char)*max_name_size);
-	entry->sub_name=(char*)malloc(sizeof(char)*max_name_size);
+	entry->name=(char*)calloc(sizeof(char)*max_name_size,1);
+	entry->sub_name=(char*)calloc(sizeof(char)*max_name_size,1);
 	entry->end_time=end_time;
 
 	entry->start_time=start_time;
@@ -144,39 +144,37 @@ void print_logs(t_log* log_p,int max_row,int max_col,int cell_minutes,time_t cur
 t_log* load_log(char* file_name){
 	FILE* fp=fopen(file_name,"r");
 	t_log* a_log=(t_log*)malloc(sizeof(t_log));
-	a_log->entries=(log_entry*)malloc(sizeof(log_entry)*100);
-	a_log->allocated=100;
-	char line[200];
+	a_log->allocated=0;
+	a_log->index=0;
+	char line[400];
 	int line_index=0;
-	while (fgets(line,200,fp)!=0){
+	while (fgets(line,400,fp)!=0){
 		int quotes[4]={0,0,0,0},index=0;
+		char temp_name[max_name_size];
+		char temp_subname[max_name_size];
+		time_t temp_start_time=0;
+		time_t temp_end_time=0;
 		for(int i=0;i<strlen(line);i++){
 			if(line[i]=='"'){
 				quotes[index++]=i;
 			}
 		}
 
-		a_log->entries[line_index].name=(char*)calloc(sizeof(char)*max_name_size,1);
-		a_log->entries[line_index].sub_name=(char*)calloc(sizeof(char)*max_name_size,1);
-
 		// TODO: sahinelebaa es
 		if(quotes[1]!=0){
-			memcpy(a_log->entries[line_index].name, line+quotes[0]+1,quotes[1]-quotes[0]-1);
+			memcpy(temp_name, line+quotes[0]+1,quotes[1]-quotes[0]-1);
 		}
 
 		if(quotes[3]!=0){
-			memcpy(a_log->entries[line_index].sub_name, line+quotes[2]+1,quotes[3]-quotes[2]-1);
+			memcpy(temp_subname, line+quotes[2]+1,quotes[3]-quotes[2]-1);
 		}
 
-		sscanf(line,"%lu %lu",&a_log->entries[line_index].start_time,&a_log->entries[line_index].end_time);
+		sscanf(line,"%lu %lu",&temp_start_time,&temp_end_time);
 
+		append_entry(a_log, temp_name, temp_subname, temp_start_time, temp_end_time);
 		line_index++;
-		//TODO: es shesamowmebelia
-		if(line_index>a_log->allocated){
-			printf("reallocing during import\n");
-			a_log->entries=(log_entry*)realloc(a_log->entries,sizeof(log_entry)*( a_log->allocated+realloc_increment));
-			a_log->allocated=a_log->allocated+realloc_increment;
-		}
+		memset(temp_name,0,max_name_size);
+		memset(temp_subname,0,max_name_size);
 	}
 	a_log->index=line_index;
 
