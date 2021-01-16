@@ -247,10 +247,10 @@ int main(){
 		erase();
 		getmaxyx(stdscr,max_row,max_col);
 		if(state==logging){
-			if(c > 31 && c <=126 && strlen(name) < max_name_size){
-				if(logging_state==1){
+			if(c > 31 && c <=126){
+				if(logging_state==1 && strlen(name) < max_name_size){
 					name[strlen(name)]=c;
-				}else{
+				}else if ( logging_state ==2 && strlen(subname) < max_name_size){
 					subname[strlen(subname)]=c;
 				}
 			}else if (c == 263){
