@@ -74,7 +74,7 @@ void draw_time_boxes(t_log* logp,time_t cell_tm, int cell_minutes,int cur_row){
 	time_t next_cell_tm=cell_tm+(cell_minutes*60);
 	time_t local_time=(unsigned long)time(0);
 	if(cell_tm<local_time && next_cell_tm > local_time){
-			mvprintw(cur_row, 24, "<-- now");
+			mvprintw(cur_row, 26, "<-- now");
 	}
 	for(int i=logp->index-1;i>=0;i--){
 		time_t start_tm=logp->entries[i].start_time;
@@ -86,13 +86,13 @@ void draw_time_boxes(t_log* logp,time_t cell_tm, int cell_minutes,int cur_row){
 			printw("%s ",entry->name);
 			print_duration(entry->end_time-entry->start_time);
 			break;
-		}else if(end_time==0 && cell_tm>start_tm && next_cell_tm > (unsigned long) time(0) ){
+		}else if(end_time==0 && cell_tm>start_tm && next_cell_tm > local_time && cell_tm < local_time ){
 			log_entry* entry=&logp->entries[logp->index-1];
 			mvprintw(cur_row, 20, "++++++");
 			printw("%s ",entry->name);
 			print_duration(local_time-entry->start_time);
 			break;
-		}else if((next_cell_tm<end_time || end_time==0) && cell_tm>start_tm){
+		}else if(((next_cell_tm<end_time || end_time==0 )&& cell_tm < local_time) && cell_tm>start_tm){
 			mvprintw(cur_row, 20, "|    |");
 			break;
 		}
@@ -128,14 +128,15 @@ void print_logs(t_log* log_p,int max_row,int max_col,int cell_minutes,time_t cur
 		count++;
 	}
 
+	if(max_col>90)
 	for(int i=0;i<log_p->index;i++){
 		log_entry* entry=&log_p->entries[i];
-		print_normal_time(40+i,60,entry->start_time);
+		print_normal_time(0+i,60,entry->start_time);
 		//mvprintw(" - ");
 		if(entry->end_time == 0) 
-			mvprintw(40+i,67,"now");
+			mvprintw(0+i,69,"now");
 		else 
-			print_normal_time(40+i,67,entry->end_time);
+			print_normal_time(0+i,67,entry->end_time);
 		printw(" %s, %s\n",entry->name,entry->sub_name);
 	}
 }
@@ -232,21 +233,21 @@ int main(){
 	a_log=load_log("cod");
 	char command[100];
 
-	char name[100];
-	char subname[100];
+	char name[max_name_size];
+	char subname[max_name_size];
 	// 1=name
 	// 2=subname
 	int logging_state=1;
 	bool append_log=false;
 
-	memset(input,0,100);
-	memset(command,0,100);
+	memset(input,0,max_name_size);
+	memset(command,0,max_name_size);
 	while(true){
 
 		erase();
 		getmaxyx(stdscr,max_row,max_col);
 		if(state==logging){
-			if(c > 31 && c <=126){
+			if(c > 31 && c <=126 && strlen(name) < max_name_size){
 				if(logging_state==1){
 					name[strlen(name)]=c;
 				}else{
@@ -269,8 +270,8 @@ int main(){
 					}else{
 						append_entry(a_log, name, subname,(unsigned long)time(0),0);
 					}
-					memset(name,0,100);
-					memset(subname,0,100);
+					memset(name,0,max_name_size);
+					memset(subname,0,max_name_size);
 					logging_state=1;
 					state=view;
 				}
@@ -360,6 +361,9 @@ int main(){
 		mvprintw(max_row-1,max_col-6,"%d=%c",c,c);
 		refresh();
 		c=getch();
+		if(c==ERR){
+			c=0;
+		}
 	}
 
 	endwin();
