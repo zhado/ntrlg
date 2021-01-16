@@ -79,7 +79,6 @@ void draw_time_boxes(t_log* logp,time_t cell_tm, int cell_minutes,int cur_row){
 	for(int i=logp->index-1;i>=0;i--){
 		time_t start_tm=logp->entries[i].start_time;
 		time_t end_time=logp->entries[i].end_time;
-		time_t delta=end_time-start_tm;
 		if(end_time < next_cell_tm && end_time > cell_tm){
 			log_entry* entry=&logp->entries[i];
 			mvprintw(cur_row, 20, "=---->");
@@ -99,11 +98,15 @@ void draw_time_boxes(t_log* logp,time_t cell_tm, int cell_minutes,int cur_row){
 	}
 }
 
+time_t round_tm(time_t timestamp, int cell_minutes){
+	tm* broken_down_time=localtime(&timestamp);
+	time_t nexthour_timestamp=timestamp+(cell_minutes*60-(broken_down_time->tm_min%cell_minutes)*60-broken_down_time->tm_sec);
+	return nexthour_timestamp;
+}
 void print_logs(t_log* log_p,int max_row,int max_col,int cell_minutes,time_t cursor_pos_tm){
 	int count=0;
 
-	time_t epoch_tm=cursor_pos_tm;
-	tm* broken_down_time=localtime(&epoch_tm);
+	tm* broken_down_time=localtime(&cursor_pos_tm);
 	time_t nexthour_timestamp=cursor_pos_tm+(cell_minutes*60-(broken_down_time->tm_min%cell_minutes)*60-broken_down_time->tm_sec);
 	nexthour_timestamp=nexthour_timestamp-cell_minutes*60;
 
@@ -112,17 +115,12 @@ void print_logs(t_log* log_p,int max_row,int max_col,int cell_minutes,time_t cur
 		tm* broken_down_cell_tm=localtime(&cell_tm);
 
 		move(i,0);
-		//printw("----------- ");
-
-		//print_normal_time(cell_tm);
-
 		mvprintw(i,0,"%02d:%02d",broken_down_cell_tm->tm_hour,broken_down_cell_tm->tm_min); 
 		if(broken_down_cell_tm->tm_min==0){
 			mvprintw(i,6," %02d",broken_down_cell_tm->tm_hour);
 			if(broken_down_cell_tm->tm_hour==0)
 				mvprintw(i,10," %02d/%02d/%02d",broken_down_cell_tm->tm_mday,broken_down_cell_tm->tm_mon+1,broken_down_cell_tm->tm_year+1900);
 		}
-		//printw("from %d to %d ",cell_tm,cell_tm+cell_minutes*60);
 		draw_time_boxes(log_p,cell_tm,cell_minutes,i);
 
 		count++;
@@ -132,7 +130,6 @@ void print_logs(t_log* log_p,int max_row,int max_col,int cell_minutes,time_t cur
 	for(int i=0;i<log_p->index;i++){
 		log_entry* entry=&log_p->entries[i];
 		print_normal_time(0+i,60,entry->start_time);
-		//mvprintw(" - ");
 		if(entry->end_time == 0) 
 			mvprintw(0+i,69,"now");
 		else 
@@ -146,6 +143,7 @@ t_log* load_log(char* file_name){
 	t_log* a_log=(t_log*)malloc(sizeof(t_log));
 	a_log->allocated=0;
 	a_log->index=0;
+
 	char line[400];
 	int line_index=0;
 	while (fgets(line,400,fp)!=0){
@@ -164,7 +162,6 @@ t_log* load_log(char* file_name){
 		if(quotes[1]!=0){
 			memcpy(temp_name, line+quotes[0]+1,quotes[1]-quotes[0]-1);
 		}
-
 		if(quotes[3]!=0){
 			memcpy(temp_subname, line+quotes[2]+1,quotes[3]-quotes[2]-1);
 		}
@@ -203,22 +200,20 @@ void free_log(t_log* log_p){
 }
 
 int main(){
-	int cell_offset=0,cell_minutes=20;
-	time_t epoch_time=(unsigned long)time(0);
-	time_t cursor_pos_tm=epoch_time;
+	int cell_minutes=20;
+	time_t cursor_pos_tm=(unsigned long)time(0);
 	t_log* a_log=(t_log*)malloc(sizeof(t_log));
 
 	a_log->index=0;
 	a_log->entries=(log_entry*)malloc(sizeof(log_entry)*100);
 	a_log->allocated=100;
-	char* input=(char*)malloc(100);
 	int max_row=0,max_col=0;
 	window_state state=view;
 
 	initscr();
 	cbreak();
 	raw();
-	set_escdelay(4);
+	set_escdelay(20);
 	keypad(stdscr, TRUE);
 	//ctrl('k');
 	//halfdelay(1);
@@ -229,7 +224,6 @@ int main(){
 	int c=0;
 	free_log(a_log);
 	a_log=load_log("cod");
-	char command[100];
 
 	char name[max_name_size];
 	char subname[max_name_size];
@@ -238,8 +232,6 @@ int main(){
 	int logging_state=1;
 	bool append_log=false;
 
-	memset(input,0,max_name_size);
-	memset(command,0,max_name_size);
 	while(true){
 
 		erase();
@@ -258,7 +250,6 @@ int main(){
 					subname[strlen(subname)-1]=0;
 				}
 			}else if (c == 10){
-				//handle_command(a_log, input, command);
 				if(logging_state==1){
 					logging_state++;
 				}else{
@@ -299,14 +290,10 @@ int main(){
 				break;
 			}else if(c =='z'){
 				if(cell_minutes!=5){
-					int total_cell_mins=cell_minutes*cell_offset;
 					cell_minutes=cell_minutes-5;
-					cell_offset=total_cell_mins/cell_minutes;
 				}
 			}else if(c =='x'){
-				int total_cell_mins=cell_minutes*cell_offset;
 				cell_minutes=cell_minutes+5;
-				cell_offset=total_cell_mins/cell_minutes;
 			}else if(c ==259){
 				//uparrow
 				cursor_pos_tm-=cell_minutes*60;
@@ -331,7 +318,6 @@ int main(){
 
 		switch (state) {
 			case view:{
-				curs_set(0);
 				mvprintw(max_row-1, 0, "view scale=%d minutes",cell_minutes);
 				getyx(stdscr, y, x);
 				while(x<max_col-1){
@@ -341,7 +327,6 @@ int main(){
 			}
 			break;
 			case logging:{
-				curs_set(1);
 				mvprintw(max_row-1, 0, "logging");
 				getyx(stdscr, y, x);
 				while(x<max_col-1){
@@ -361,6 +346,7 @@ int main(){
 		c=getch();
 		if(c==ERR){
 			c=0;
+			//ungetch(c);
 		}
 	}
 
