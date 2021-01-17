@@ -226,6 +226,7 @@ int main(){
 	start_color();
 	use_default_colors();
 	init_pair(1, COLOR_GREEN, -1);
+	init_pair(2, -1, COLOR_BLACK);
 	cbreak();
 	raw();
 	set_escdelay(20);
@@ -247,6 +248,7 @@ int main(){
 	// 1=name
 	// 2=subname
 	int logging_state=1;
+	int log_selection=-1;
 	bool append_log=false;
 
 	while(true){
@@ -260,15 +262,28 @@ int main(){
 				}else if ( logging_state ==2 && strlen(subname) < max_name_size){
 					subname[strlen(subname)]=c;
 				}
-			}else if (c == 263){
+			}else if (c == 263 || c==127){
 				if(logging_state==1){
 					name[strlen(name)-1]=0;
 				}else{
 					subname[strlen(subname)-1]=0;
 				}
+			}else if (c == KEY_UP){
+				log_selection++;
+			}else if (c == KEY_DOWN){
+				if(log_selection>-1)
+					log_selection--;
 			}else if (c == 10){
+
 				if(logging_state==1){
-					logging_state++;
+					if(log_selection!=-1){
+						char* aq=match_names(60, 80, a_log, name, log_selection);
+						memcpy(name, aq, strlen(aq));
+						log_selection=-1;
+					}else{
+						logging_state++;
+					}
+
 				}else{
 					if(append_log){
 						end_last_entry(a_log);
@@ -277,6 +292,7 @@ int main(){
 					}else{
 						append_entry(a_log, name, subname,(unsigned long)time(0),0);
 					}
+					
 					memset(name,0,max_name_size);
 					memset(subname,0,max_name_size);
 					logging_state=1;
@@ -333,8 +349,8 @@ int main(){
 		int y=0,x=0;
 		mvprintw(max_row/2-5,0,"______________________________________________________________________");
 		print_logs(a_log,max_row,max_col,cell_minutes,cursor_pos_tm+cell_minutes*max_row/2*60);
-		if(state==logging ){
-			match_names(60, 80, a_log, name);
+		if(state==logging){
+			match_names(60, 80, a_log, name, log_selection);
 		}
 
 		switch (state) {

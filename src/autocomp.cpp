@@ -59,20 +59,28 @@ void sort_sni_s(size_n_index* sni,int count){
 	}
 
 }
-void match_names(int row, int col,t_log* log_p, char* search_string){
+char* match_names(int row, int col,t_log* log_p, char* search_string, int choice){
 	int count=log_p->index;
-	size_n_index* evaled_names_ar=(size_n_index*)malloc(sizeof(size_n_index)*count);
+	int rev=0;
+	size_n_index evaled_names_ar[count];
 	for(int i=0;i<count;i++){
-		evaled_names_ar[i].size=match_score(log_p->entries[i].name,search_string);
-		evaled_names_ar[i].index=i;
+		rev=count-i-1;
+		evaled_names_ar[i].size=match_score(log_p->entries[rev].name,search_string);
+		evaled_names_ar[i].index=rev;
 	}
 	sort_sni_s(evaled_names_ar, count);
 
 	for(int i=0;i<log_p->index;i++){
 		if(evaled_names_ar[i].size!=0)
 			break;
+		if(choice == i)
+			attron(COLOR_PAIR(2));
 		mvprintw(row-i,col,"%s %d",log_p->entries[evaled_names_ar[i].index].name,evaled_names_ar[i].size);
+		attroff(COLOR_PAIR(2));
 	}
-	free(evaled_names_ar);
+	if(choice!=-1){
+		return log_p->entries[evaled_names_ar[choice].index].name;
+	}
+	return 0;
 }
 
