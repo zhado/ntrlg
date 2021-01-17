@@ -6,6 +6,10 @@
 #include <cstdlib>
 #include <math.h>
 #include <string.h>
+
+#include "autocomp.cpp"
+#include "logs.h"
+
 typedef unsigned long ul64;
 
 const int max_name_size=100;
@@ -13,18 +17,6 @@ const int realloc_increment=100;
 
 enum window_state {
 	view,logging
-};
-struct log_entry {
-	char* name;
-	char* sub_name;
-	time_t start_time;
-	time_t end_time;
-};
-
-struct t_log {
-	int index;
-	int allocated;
-	log_entry* entries;
 };
 
 void print_normal_time(int row,int col,time_t tim){
@@ -93,10 +85,6 @@ void draw_time_boxes(t_log* logp,time_t cell_tm, int cell_minutes,int cur_row){
 			attron(COLOR_PAIR(1));
 			print_duration(entry->end_time-entry->start_time);
 			attroff(COLOR_PAIR(1));
-			if(char_at(cur_row+1, col+5)=='|'){
-				mvprintw(cur_row+1, col+5, "\\%s",entry->sub_name);
-			}else{
-			}
 			break;
 		}else if(end_time==0 && cell_tm>start_tm && next_cell_tm > local_time && cell_tm < local_time ){
 			log_entry* entry=&logp->entries[logp->index-1];
@@ -145,16 +133,16 @@ void print_logs(t_log* log_p,int max_row,int max_col,int cell_minutes,time_t cur
 		count++;
 	}
 
-	if(max_col>125)
-	for(int i=0;i<log_p->index;i++){
-		log_entry* entry=&log_p->entries[i];
-		print_normal_time(0+i,70,entry->start_time);
-		if(entry->end_time == 0) 
-			mvprintw(0+i,79,"now");
-		else 
-			print_normal_time(0+i,77,entry->end_time);
-		printw(" %s, %s\n",entry->name,entry->sub_name);
-	}
+	//if(max_col>125)
+	//for(int i=0;i<log_p->index;i++){
+		//log_entry* entry=&log_p->entries[i];
+		//print_normal_time(0+i,70,entry->start_time);
+		//if(entry->end_time == 0) 
+			//mvprintw(0+i,79,"now");
+		//else 
+			//print_normal_time(0+i,77,entry->end_time);
+		//printw(" %s, %s\n",entry->name,entry->sub_name);
+	//}
 }
 
 t_log* load_log(char* file_name){
@@ -231,6 +219,8 @@ int main(){
 	a_log->allocated=100;
 	int max_row=0,max_col=0;
 	window_state state=view;
+	//printf("%d\n",match_score("youtube", "you"));
+	//return 0;
 
 	initscr();
 	start_color();
@@ -343,6 +333,9 @@ int main(){
 		int y=0,x=0;
 		mvprintw(max_row/2-5,0,"______________________________________________________________________");
 		print_logs(a_log,max_row,max_col,cell_minutes,cursor_pos_tm+cell_minutes*max_row/2*60);
+		if(state==logging ){
+			match_names(60, 80, a_log, name);
+		}
 
 		switch (state) {
 			case view:{
