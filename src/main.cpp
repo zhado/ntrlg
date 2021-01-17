@@ -41,6 +41,12 @@ void print_duration(int duration){
 		printw("%dm",duration/60%60);
 }
 
+char char_at(int row,int col){
+	chtype a=mvinch(row,col);
+	char ret= A_CHARTEXT & a;
+	return ret;
+}
+
 void end_last_entry(t_log* log_p){
 	log_entry* entry=&log_p->entries[log_p->index-1];
 	if(entry->start_time==0){
@@ -54,7 +60,6 @@ void append_entry(t_log* log_p, char* name, char* sub_name,time_t start_time,tim
 	if(log_p->index!=0)
 		end_last_entry(log_p);
 	if(log_p->allocated < (log_p->index+1) ){
-		printf("realocing...\n");
 		log_p->entries=(log_entry*)realloc(log_p->entries, sizeof(log_entry)*(log_p->allocated+realloc_increment));
 		log_p->allocated=log_p->allocated+realloc_increment;
 	}
@@ -84,13 +89,23 @@ void draw_time_boxes(t_log* logp,time_t cell_tm, int cell_minutes,int cur_row){
 			log_entry* entry=&logp->entries[i];
 			mvprintw(cur_row, col, "=---->");
 			printw("%s ",entry->name);
+
+			attron(COLOR_PAIR(1));
 			print_duration(entry->end_time-entry->start_time);
+			attroff(COLOR_PAIR(1));
+			if(char_at(cur_row+1, col+5)=='|'){
+				mvprintw(cur_row+1, col+5, "\\%s",entry->sub_name);
+			}else{
+			}
 			break;
 		}else if(end_time==0 && cell_tm>start_tm && next_cell_tm > local_time && cell_tm < local_time ){
 			log_entry* entry=&logp->entries[logp->index-1];
 			mvprintw(cur_row, col, "++++++");
 			printw("%s ",entry->name);
+
+			attron(COLOR_PAIR(1));
 			print_duration(local_time-entry->start_time);
+			attroff(COLOR_PAIR(1));
 			break;
 		}else if(((next_cell_tm<end_time || end_time==0 )&& cell_tm < local_time) && cell_tm>start_tm){
 			mvprintw(cur_row, col, "|    |");
@@ -147,6 +162,7 @@ t_log* load_log(char* file_name){
 	t_log* a_log=(t_log*)malloc(sizeof(t_log));
 	a_log->allocated=0;
 	a_log->index=0;
+	a_log->entries=0;
 
 	char line[400];
 	int line_index=0;
@@ -154,6 +170,8 @@ t_log* load_log(char* file_name){
 		int quotes[4]={0,0,0,0},index=0;
 		char temp_name[max_name_size];
 		char temp_subname[max_name_size];
+		memset(temp_name, 0, max_name_size);
+		memset(temp_subname, 0, max_name_size);
 		time_t temp_start_time=0;
 		time_t temp_end_time=0;
 		for(int i=0;i<strlen(line);i++){
@@ -215,6 +233,9 @@ int main(){
 	window_state state=view;
 
 	initscr();
+	start_color();
+	use_default_colors();
+	init_pair(1, COLOR_GREEN, -1);
 	cbreak();
 	raw();
 	set_escdelay(20);
@@ -260,6 +281,7 @@ int main(){
 					logging_state++;
 				}else{
 					if(append_log){
+						end_last_entry(a_log);
 						append_entry(a_log, name, subname,a_log->entries[a_log->index-1].end_time,0);
 						append_log=false;
 					}else{
@@ -284,13 +306,13 @@ int main(){
 			if(c =='l'){
 				state=logging;
 			}else if(c =='s'){
-				mvprintw(max_row-2,max_col-sizeof("saved log"),"saved log");
+				mvprintw(max_row-3,max_col-sizeof("saved log")+1,"saved log");
 				save_log(a_log, "cod");
 			}else if(c =='a'){
 				state=logging;
 				append_log=true;
 			}else if(c =='e'){
-				mvprintw(max_row-2,max_col-sizeof("ending last entry"),"ending last entry");
+				mvprintw(max_row-3,max_col-sizeof("ending last entry"),"ending last entry");
 				end_last_entry(a_log);
 			}else if(c =='q'){
 				break;
@@ -305,7 +327,7 @@ int main(){
 				cursor_pos_tm-=cell_minutes*60;
 			}else if(c ==258){
 				//downarrow
-				cursor_pos_tm+=cell_minutes*60;
+				cursor_pos_tm+=cell_minutes*59;
 			}else if(c ==339){
 				//pgup
 				cursor_pos_tm-=cell_minutes*60*4;
