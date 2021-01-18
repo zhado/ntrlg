@@ -219,9 +219,7 @@ int main(){
 	a_log->allocated=100;
 	int max_row=0,max_col=0;
 	window_state state=view;
-	//printf("%d\n",match_score("youtube", "you"));
-	//return 0;
-
+	
 	initscr();
 	start_color();
 	use_default_colors();
@@ -231,10 +229,8 @@ int main(){
 	raw();
 	set_escdelay(20);
 	keypad(stdscr, TRUE);
-	//ctrl('k');
 	halfdelay(20);
 	noecho();
-	//timeout(0);
 	curs_set(0);
 
 	int c=0;
@@ -242,14 +238,14 @@ int main(){
 	a_log=load_log("cod");
 
 	char name[max_name_size];
-	char subname[max_name_size];
+	char sub_name[max_name_size];
 	memset(name,0,max_name_size);
-	memset(subname,0,max_name_size);
-	// 1=name
-	// 2=subname
+	memset(sub_name,0,max_name_size);
+	// 2=subname 1=name
 	int logging_state=1;
 	int log_selection=-1;
 	bool append_log=false;
+	match_result result;
 
 	while(true){
 
@@ -259,51 +255,50 @@ int main(){
 			if(c > 31 && c <=126){
 				if(logging_state==1 && strlen(name) < max_name_size){
 					name[strlen(name)]=c;
-				}else if ( logging_state ==2 && strlen(subname) < max_name_size){
-					subname[strlen(subname)]=c;
+				}else if ( logging_state ==2 && strlen(sub_name) < max_name_size){
+					sub_name[strlen(sub_name)]=c;
 				}
+			log_selection=-1;
 			}else if (c == 263 || c==127){
 				if(logging_state==1){
 					name[strlen(name)-1]=0;
 				}else{
-					subname[strlen(subname)-1]=0;
+					sub_name[strlen(sub_name)-1]=0;
 				}
 			}else if (c == KEY_UP){
-				log_selection++;
+				if(log_selection<result.match_count)
+					log_selection++;
 			}else if (c == KEY_DOWN){
 				if(log_selection>-1)
 					log_selection--;
 			}else if (c == 10){
-
 				if(logging_state==1){
-					if(log_selection!=-1){
-						char* aq=match_names(60, 80, a_log, name, log_selection);
-						memcpy(name, aq, strlen(aq));
-						log_selection=-1;
-					}else{
-						logging_state++;
-					}
-
+					logging_state++;
 				}else{
-					if(append_log){
-						end_last_entry(a_log);
-						append_entry(a_log, name, subname,a_log->entries[a_log->index-1].end_time,0);
-						append_log=false;
+					if(log_selection==-1){
+						if(append_log){
+							end_last_entry(a_log);
+							append_entry(a_log, name, sub_name,a_log->entries[a_log->index-1].end_time,0);
+							append_log=false;
+						}else{
+							append_entry(a_log, name, sub_name,(unsigned long)time(0),0);
+						}
+						
+						memset(name,0,max_name_size);
+						memset(sub_name,0,max_name_size);
+						logging_state=1;
+						state=view;
 					}else{
-						append_entry(a_log, name, subname,(unsigned long)time(0),0);
+						memcpy(sub_name, result.requested_str, strlen(result.requested_str));
+						log_selection=-1;
 					}
-					
-					memset(name,0,max_name_size);
-					memset(subname,0,max_name_size);
-					logging_state=1;
-					state=view;
 				}
 			}
 		}
 		if (c == 27){
 			mvprintw(max_row-3,max_col-11,"esc pressed");
 			memset(name,0,100);
-			memset(subname,0,100);
+			memset(sub_name,0,100);
 			state=view;
 			logging_state=1;
 		}
@@ -349,8 +344,8 @@ int main(){
 		int y=0,x=0;
 		mvprintw(max_row/2-5,0,"______________________________________________________________________");
 		print_logs(a_log,max_row,max_col,cell_minutes,cursor_pos_tm+cell_minutes*max_row/2*60);
-		if(state==logging){
-			match_names(60, 80, a_log, name, log_selection);
+		if(state==logging && logging_state==2){
+			result= match_names(60, 80, a_log, sub_name, log_selection);
 		}
 
 		switch (state) {
@@ -372,7 +367,7 @@ int main(){
 				}
 
 				mvprintw(max_row-3, 0, "name: %s",name);
-				mvprintw(max_row-2, 0, "subname: %s",subname);
+				mvprintw(max_row-2, 0, "subname: %s",sub_name);
 
 			}
 			break;
