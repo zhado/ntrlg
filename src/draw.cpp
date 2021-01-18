@@ -54,11 +54,7 @@ void print_logs(t_log* log_p,int max_row,int max_col,int cell_minutes,time_t cur
 	int count=0;
 
 	tm* broken_down_time=localtime(&cursor_pos_tm);
-	time_t nexthour_timestamp=cursor_pos_tm+(cell_minutes*60-(broken_down_time->tm_min % cell_minutes)*60-broken_down_time->tm_sec);
-	//print_normal_time(max_row/2-5, 120, cursor_pos_tm);
-	//print_normal_time(max_row/2-5, 130, nexthour_timestamp);
-	//time_t nexthour_timestamp=cursor_pos_tm;
-	nexthour_timestamp=nexthour_timestamp-cell_minutes*60;
+	time_t nexthour_timestamp=cursor_pos_tm-(cursor_pos_tm%(cell_minutes*60));
 
 	for(int i=max_row-5;i>=0;i--){
 		time_t cell_tm=nexthour_timestamp-cell_minutes*60*count;

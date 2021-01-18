@@ -21,7 +21,6 @@ enum window_state {
 	view,logging
 };
 
-
 char char_at(int row,int col){
 	chtype a=mvinch(row,col);
 	char ret= A_CHARTEXT & a;
@@ -246,7 +245,7 @@ int main(){
 				cursor_pos_tm-=cell_minutes*60;
 			}else if(c ==258){
 				//downarrow
-				cursor_pos_tm+=cell_minutes*59;
+				cursor_pos_tm+=cell_minutes*60;
 			}else if(c ==339){
 				//pgup
 				cursor_pos_tm-=cell_minutes*60*4;
