@@ -16,6 +16,7 @@ typedef unsigned long ul64;
 const int max_name_size=100;
 const int realloc_increment=100;
 const char* database_file="/home/zado/code/trlg/cod";
+bool UNSAVED_CHANGES=false;
 
 enum window_state {
 	view,logging
@@ -28,6 +29,7 @@ char char_at(int row,int col){
 }
 
 void end_last_entry(t_log* log_p){
+	UNSAVED_CHANGES=true;
 	log_entry* entry=&log_p->entries[log_p->index-1];
 	if(entry->start_time==0){
 		fprintf(stderr, "entry not started.");
@@ -37,6 +39,7 @@ void end_last_entry(t_log* log_p){
 }
 
 void append_entry(t_log* log_p, char* name, char* sub_name,time_t start_time,time_t end_time){
+	UNSAVED_CHANGES=true;
 	if(log_p->index!=0)
 		end_last_entry(log_p);
 	if(log_p->allocated < (log_p->index+1) ){
@@ -103,10 +106,12 @@ t_log* load_log(const char* file_name){
 	a_log->index=line_index;
 
 	fclose(fp);
+	UNSAVED_CHANGES=false;
 	return a_log;
 }
 
 void save_log(t_log* log_p, const char* file_name){
+	UNSAVED_CHANGES=false;
 	FILE* fp=fopen(file_name,"w");
 
 	for(int i=0;i<log_p->index;i++){
@@ -142,6 +147,7 @@ int main(){
 	use_default_colors();
 	init_pair(1, COLOR_GREEN, -1);
 	init_pair(2, -1, COLOR_BLACK);
+	init_pair(3, -1, COLOR_MAGENTA);
 	cbreak();
 	raw();
 	set_escdelay(20);
@@ -291,6 +297,12 @@ int main(){
 		}
 		mvprintw(max_row-2,max_col-6,"%d=%d",max_row,max_col);
 		mvprintw(max_row-1,max_col-6,"%d=%c",c,c);
+		if(UNSAVED_CHANGES){
+			const char* msg="unsaved changes";
+			attron(COLOR_PAIR(3));
+			mvprintw(max_row-1,max_col/2-strlen(msg),"%s",msg);
+			attroff(COLOR_PAIR(3));
+		}
 		refresh();
 		c=getch();
 		if(c==ERR){

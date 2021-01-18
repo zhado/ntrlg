@@ -34,7 +34,7 @@ void draw_time_boxes(t_log* logp,time_t cell_tm, int cell_minutes,int cur_row){
 			print_duration(entry->end_time-entry->start_time);
 			attroff(COLOR_PAIR(1));
 			break;
-		}else if(end_time==0 && cell_tm>start_tm && next_cell_tm > local_time && cell_tm < local_time ){
+		}else if(end_time==0 &&  next_cell_tm > local_time && cell_tm < local_time ){
 			log_entry* entry=&logp->entries[logp->index-1];
 			mvprintw(cur_row, col, "++++++");
 			printw("%s ",entry->name);
@@ -54,7 +54,7 @@ void print_logs(t_log* log_p,int max_row,int max_col,int cell_minutes,time_t cur
 	int count=0;
 
 	tm* broken_down_time=localtime(&cursor_pos_tm);
-	time_t nexthour_timestamp=cursor_pos_tm-(cursor_pos_tm%(cell_minutes*60));
+	time_t nexthour_timestamp=cursor_pos_tm-(cursor_pos_tm%(cell_minutes*60))+cell_minutes*60;
 
 	for(int i=max_row-5;i>=0;i--){
 		time_t cell_tm=nexthour_timestamp-cell_minutes*60*count;
@@ -72,14 +72,14 @@ void print_logs(t_log* log_p,int max_row,int max_col,int cell_minutes,time_t cur
 		count++;
 	}
 
-	//if(max_col>125)
-	//for(int i=0;i<log_p->index;i++){
-		//log_entry* entry=&log_p->entries[i];
-		//print_normal_time(0+i,70,entry->start_time);
-		//if(entry->end_time == 0) 
-			//mvprintw(0+i,79,"now");
-		//else 
-			//print_normal_time(0+i,77,entry->end_time);
-		//printw(" %s, %s\n",entry->name,entry->sub_name);
-	//}
+	if(max_col>125)
+	for(int i=0;i<log_p->index;i++){
+		log_entry* entry=&log_p->entries[i];
+		print_normal_time(0+i,70,entry->start_time);
+		if(entry->end_time == 0) 
+			mvprintw(0+i,79,"now");
+		else 
+			print_normal_time(0+i,77,entry->end_time);
+		printw(" %s, %s\n",entry->name,entry->sub_name);
+	}
 }
