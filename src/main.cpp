@@ -227,14 +227,19 @@ int main(){
 						logging_state=1;
 						state=view;
 					}else{
-						memcpy(sub_name+strlen(sub_name)-strlen(get_after_last_comma(sub_name)+1),
-								result.requested_str, result.size);
+						if(get_after_last_comma(sub_name)!=sub_name)
+							memcpy(sub_name+strlen(sub_name)-strlen(get_after_last_comma(sub_name)+1),
+									result.requested_str, result.size);
+						else
+							memcpy(sub_name+strlen(sub_name)-strlen(get_after_last_comma(sub_name)),
+									result.requested_str, result.size);
 						sub_name[strlen(sub_name)]=',';
 						sub_name[strlen(sub_name)]=' ';
 						log_selection=-1;
 					}
 				}
 			}
+
 		} else if(state==view){
 			if(c =='l'){
 				state=logging;
@@ -284,7 +289,7 @@ int main(){
 		//print_logs(a_log,-5,70,max_row,max_col,cell_minutes,cursor_pos_tm-24*60*60);
 		//print_logs(a_log,-5,140,max_row,max_col,cell_minutes,cursor_pos_tm-24*60*60*2);
 		if(state==logging && logging_state==2){
-			result= match_names(60, 80, a_log, sub_name, log_selection);
+			result= match_names(max_row-4, 8, a_log, sub_name, log_selection);
 		}
 
 		switch (state) {

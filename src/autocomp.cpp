@@ -77,6 +77,9 @@ void sort_sni_s(size_n_index* sni,int count){
 
 }
 
+void remove_duplicate_sni_s(size_n_index* sni){
+}
+
 char* get_after_last_comma (char* str){
 	int last_comma_pos=0;
 	for(int i=0;i<strlen(str);i++){
@@ -156,10 +159,11 @@ match_result match_names(int row, int col,t_log* log_p, char* search_string_p, i
 		if(evaled_names_ar[i].score!=0 || i > AUTOCOM_WIN_MAX_SIZE)
 			break;
 		if(choice == i)
-		attron(COLOR_PAIR(2));
+			attron(COLOR_PAIR(2));
 		memcpy(tempchar, evaled_names_ar[i].offset,evaled_names_ar[i].size);
 		tempchar[evaled_names_ar[i].size]=0;
-		mvprintw(row-i,col,"%s %d",tempchar,evaled_names_ar[i].score);
+		mvprintw(row-i,0,"                                                       ");
+		mvprintw(row-i,col,"| %s",tempchar);
 		attroff(COLOR_PAIR(2));
 		res.match_count=i;
 	}
