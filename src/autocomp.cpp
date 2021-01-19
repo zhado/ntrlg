@@ -4,6 +4,8 @@
 #include <string.h>
 
 #include "logs.h"
+#include "main.h"
+
 struct size_n_index{
 	int score;
 	int index;
@@ -85,9 +87,23 @@ char* get_after_last_comma (char* str){
 	return str+last_comma_pos;
 }
 
-match_result match_names(int row, int col,t_log* log_p, char* search_string, int choice){
+char* remove_spaces(char* str){
+	int len=strlen(str);
+	for(int i=0;i<len;i++){
+		if(str[i]==' '){
+			memcpy(str+i, str+i+1,len-i);
+			i--;
+		}
+	}
+	return str;
+}
+
+match_result match_names(int row, int col,t_log* log_p, char* search_string_p, int choice){
 	//extract last mdzime
-	search_string=get_after_last_comma(search_string);
+	search_string_p=get_after_last_comma(search_string_p);
+	char search_string[MAX_NAME_SIZE];
+	strcpy(search_string, search_string_p);
+	remove_spaces(search_string);
 	//extract all mdzimeebi into array
 	int count=log_p->index;
 	int comma_count=count;
@@ -137,7 +153,7 @@ match_result match_names(int row, int col,t_log* log_p, char* search_string, int
 	for(int i=0;i<comma_count;i++){
 		char tempchar[evaled_names_ar[i].size];
 		memset(tempchar, 0, evaled_names_ar[i].size);
-		if(evaled_names_ar[i].score!=0)
+		if(evaled_names_ar[i].score!=0 || i > AUTOCOM_WIN_MAX_SIZE)
 			break;
 		if(choice == i)
 		attron(COLOR_PAIR(2));

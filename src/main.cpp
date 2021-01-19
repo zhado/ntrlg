@@ -7,15 +7,11 @@
 #include <math.h>
 #include <string.h>
 
+#include "main.h"
 #include "autocomp.cpp"
 #include "draw.cpp"
 #include "logs.h"
 
-typedef unsigned long ul64;
-
-const int max_name_size=100;
-const int realloc_increment=100;
-const char* database_file="/home/zado/code/trlg/cod";
 bool UNSAVED_CHANGES=false;
 
 enum window_state {
@@ -35,6 +31,14 @@ void end_last_entry(t_log* log_p){
 		fprintf(stderr, "entry not started.");
 	}else if(entry->end_time==0){
 		entry->end_time=(unsigned long)time(0);
+	}else{
+		UNSAVED_CHANGES=false;
+	}
+}
+
+void remove_commas_from_end(char* str){
+	while(str[strlen(str)-1]==','){
+		str[strlen(str)-1]=0;
 	}
 }
 
@@ -43,26 +47,21 @@ void append_entry(t_log* log_p, char* name, char* sub_name,time_t start_time,tim
 	if(log_p->index!=0)
 		end_last_entry(log_p);
 	if(log_p->allocated < (log_p->index+1) ){
-		log_p->entries=(log_entry*)realloc(log_p->entries, sizeof(log_entry)*(log_p->allocated+realloc_increment));
-		log_p->allocated=log_p->allocated+realloc_increment;
+		log_p->entries=(log_entry*)realloc(log_p->entries, sizeof(log_entry)*(log_p->allocated+REALLOC_INCREMENT));
+		log_p->allocated=log_p->allocated+REALLOC_INCREMENT;
 	}
 	log_entry* entry=&log_p->entries[log_p->index];
 
-	entry->name=(char*)calloc(sizeof(char)*max_name_size,1);
-	entry->sub_name=(char*)calloc(sizeof(char)*max_name_size,1);
+	entry->name=(char*)calloc(sizeof(char)*MAX_NAME_SIZE,1);
+	entry->sub_name=(char*)calloc(sizeof(char)*MAX_NAME_SIZE,1);
 	entry->end_time=end_time;
 
 	entry->start_time=start_time;
 	strcpy(entry->name, name);
+	remove_spaces(sub_name);
+	remove_commas_from_end(sub_name);
 	strcpy(entry->sub_name, sub_name);
 	log_p->index++;
-}
-
-
-time_t round_tm(time_t timestamp, int cell_minutes){
-	tm* broken_down_time=localtime(&timestamp);
-	time_t nexthour_timestamp=timestamp+(cell_minutes*60-(broken_down_time->tm_min%cell_minutes)*60-broken_down_time->tm_sec);
-	return nexthour_timestamp;
 }
 
 t_log* load_log(const char* file_name){
@@ -76,10 +75,10 @@ t_log* load_log(const char* file_name){
 	int line_index=0;
 	while (fgets(line,400,fp)!=0){
 		int quotes[4]={0,0,0,0},index=0;
-		char temp_name[max_name_size];
-		char temp_subname[max_name_size];
-		memset(temp_name, 0, max_name_size);
-		memset(temp_subname, 0, max_name_size);
+		char temp_name[MAX_NAME_SIZE];
+		char temp_subname[MAX_NAME_SIZE];
+		memset(temp_name, 0, MAX_NAME_SIZE);
+		memset(temp_subname, 0, MAX_NAME_SIZE);
 		time_t temp_start_time=0;
 		time_t temp_end_time=0;
 		for(int i=0;i<strlen(line);i++){
@@ -97,11 +96,12 @@ t_log* load_log(const char* file_name){
 		}
 
 		sscanf(line,"%lu %lu",&temp_start_time,&temp_end_time);
+		remove_spaces(temp_subname);
 
 		append_entry(a_log, temp_name, temp_subname, temp_start_time, temp_end_time);
 		line_index++;
-		memset(temp_name,0,max_name_size);
-		memset(temp_subname,0,max_name_size);
+		memset(temp_name,0,MAX_NAME_SIZE);
+		memset(temp_subname,0,MAX_NAME_SIZE);
 	}
 	a_log->index=line_index;
 
@@ -144,9 +144,6 @@ int main(){
 	
 	free_log(a_log);
 	a_log=load_log(database_file);
-	
-	//break_commad_str(a_log);
-	//return 0;
 
 	initscr();
 	start_color();
@@ -164,25 +161,34 @@ int main(){
 
 	int c=0;
 
-	char name[max_name_size];
-	char sub_name[max_name_size];
-	memset(name,0,max_name_size);
-	memset(sub_name,0,max_name_size);
+	char name[MAX_NAME_SIZE];
+	char sub_name[MAX_NAME_SIZE];
+	memset(name,0,MAX_NAME_SIZE);
+	memset(sub_name,0,MAX_NAME_SIZE);
 	 //2=subname 1=name
 	int logging_state=1;
 	int log_selection=-1;
 	bool append_log=false;
+	bool change_log=false;
 	match_result result;
+	log_entry* entry_under_cursor=0;
 
 	while(true){
 
 		erase();
 		getmaxyx(stdscr,max_row,max_col);
+		if (c == 27){
+			mvprintw(max_row-3,max_col-11,"esc pressed");
+			memset(name,0,100);
+			memset(sub_name,0,100);
+			state=view;
+			logging_state=1;
+		}
 		if(state==logging){
 			if(c > 31 && c <=126){
-				if(logging_state==1 && strlen(name) < max_name_size){
+				if(logging_state==1 && strlen(name) < MAX_NAME_SIZE){
 					name[strlen(name)]=c;
-				}else if ( logging_state ==2 && strlen(sub_name) < max_name_size){
+				}else if ( logging_state ==2 && strlen(sub_name) < MAX_NAME_SIZE){
 					sub_name[strlen(sub_name)]=c;
 				}
 			log_selection=-1;
@@ -207,32 +213,29 @@ int main(){
 							end_last_entry(a_log);
 							append_entry(a_log, name, sub_name,a_log->entries[a_log->index-1].end_time,0);
 							append_log=false;
+						}else if(change_log){
+							strcpy(entry_under_cursor->name, name);
+							strcpy(entry_under_cursor->sub_name, sub_name);
+							change_log=false;
+							UNSAVED_CHANGES=true;
 						}else{
 							append_entry(a_log, name, sub_name,(unsigned long)time(0),0);
 						}
 						
-						memset(name,0,max_name_size);
-						memset(sub_name,0,max_name_size);
+						memset(name,0,MAX_NAME_SIZE);
+						memset(sub_name,0,MAX_NAME_SIZE);
 						logging_state=1;
 						state=view;
 					}else{
-						memcpy(sub_name+strlen(sub_name)-strlen(get_after_last_comma(sub_name)),
+						memcpy(sub_name+strlen(sub_name)-strlen(get_after_last_comma(sub_name)+1),
 								result.requested_str, result.size);
 						sub_name[strlen(sub_name)]=',';
+						sub_name[strlen(sub_name)]=' ';
 						log_selection=-1;
 					}
 				}
 			}
-		}
-		if (c == 27){
-			mvprintw(max_row-3,max_col-11,"esc pressed");
-			memset(name,0,100);
-			memset(sub_name,0,100);
-			state=view;
-			logging_state=1;
-		}
-
-		if(state==view){
+		} else if(state==view){
 			if(c =='l'){
 				state=logging;
 			}else if(c =='s'){
@@ -252,6 +255,11 @@ int main(){
 				}
 			}else if(c =='x'){
 				cell_minutes=cell_minutes+5;
+			}else if(c =='c' && entry_under_cursor!=0){
+				memcpy(name, entry_under_cursor->name, strlen(entry_under_cursor->name));
+				memcpy(sub_name, entry_under_cursor->sub_name, strlen(entry_under_cursor->sub_name));
+				change_log=true;
+				state=logging;
 			}else if(c ==259){
 				//uparrow
 				cursor_pos_tm-=cell_minutes*60;
@@ -270,9 +278,11 @@ int main(){
 				cell_minutes=20;
 			}
 		}
+
 		int y=0,x=0;
-		print_logs(a_log,-5,0,max_row,max_col,cell_minutes,cursor_pos_tm);
-		//print_logs(a_log,-5,70,max_row,max_col,cell_minutes,cursor_pos_tm+cell_minutes*max_row/2*60-24*60*60);
+		entry_under_cursor=print_logs(a_log,-5,0,max_row,max_col,cell_minutes,cursor_pos_tm);
+		//print_logs(a_log,-5,70,max_row,max_col,cell_minutes,cursor_pos_tm-24*60*60);
+		//print_logs(a_log,-5,140,max_row,max_col,cell_minutes,cursor_pos_tm-24*60*60*2);
 		if(state==logging && logging_state==2){
 			result= match_names(60, 80, a_log, sub_name, log_selection);
 		}

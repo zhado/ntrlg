@@ -15,12 +15,12 @@ void print_duration(int duration){
 		printw("%dm",duration/60%60);
 }
 
-void draw_time_boxes(t_log* logp,int col_p,time_t cell_tm, int cell_minutes,int cur_row){
+log_entry* draw_time_boxes(t_log* logp,int col_p,time_t cell_tm, int cell_minutes,int cur_row, time_t quantized_cursor_pos_tm){
 	time_t next_cell_tm=cell_tm+(cell_minutes*60);
 	time_t local_time=(unsigned long)time(0);
 	int col=20;
 	if(cell_tm<local_time && next_cell_tm > local_time){
-			mvprintw(cur_row, col+6+col, "<-- now");
+			mvprintw(cur_row, col+22+col_p, "<-- now");
 	}
 	for(int i=logp->index-1;i>=0;i--){
 		time_t start_tm=logp->entries[i].start_time;
@@ -33,6 +33,9 @@ void draw_time_boxes(t_log* logp,int col_p,time_t cell_tm, int cell_minutes,int 
 			attron(COLOR_PAIR(1));
 			print_duration(entry->end_time-entry->start_time);
 			attroff(COLOR_PAIR(1));
+			if(end_time>=quantized_cursor_pos_tm && end_time <=(quantized_cursor_pos_tm+cell_minutes*60)){
+				return entry;
+			}
 			break;
 		}else if(end_time==0 &&  next_cell_tm > local_time && cell_tm < local_time ){
 			log_entry* entry=&logp->entries[logp->index-1];
@@ -52,19 +55,22 @@ void draw_time_boxes(t_log* logp,int col_p,time_t cell_tm, int cell_minutes,int 
 			//printw("%s ",entry->name);
 		}
 	}
+	return 0;
 }
 
-void print_logs(t_log* log_p,int row,int col,int max_row,int max_col,int cell_minutes,time_t cursor_pos_tm){
-	cursor_pos_tm+=cell_minutes*max_row/2*60;
+log_entry* print_logs(t_log* log_p,int row,int col,int max_row,int max_col,int cell_minutes,time_t cursor_pos_tm){
+	log_entry* result=0;
+	log_entry* current_entry=0;
+	time_t cursor_offset=cell_minutes*max_row/2*60;
+	cursor_pos_tm+=cursor_offset;
 
 	mvprintw(max_row/2+row,0+col,"______________________________________________________________________");
 	int count=0;
 
-	tm* broken_down_time=localtime(&cursor_pos_tm);
-	time_t nexthour_timestamp=cursor_pos_tm-(cursor_pos_tm%(cell_minutes*60));
+	time_t quantized_cursor_pos_tm=cursor_pos_tm-(cursor_pos_tm%(cell_minutes*60));
 
 	for(int i=max_row+row;i>=0;i--){
-		time_t cell_tm=nexthour_timestamp-cell_minutes*60*count;
+		time_t cell_tm=quantized_cursor_pos_tm-cell_minutes*60*count;
 		tm* broken_down_cell_tm=localtime(&cell_tm);
 
 		move(i,col);
@@ -72,13 +78,18 @@ void print_logs(t_log* log_p,int row,int col,int max_row,int max_col,int cell_mi
 		if(broken_down_cell_tm->tm_min==0){
 			mvprintw(i,6+col,"%02d",broken_down_cell_tm->tm_hour);
 			if(broken_down_cell_tm->tm_hour==0)
-				mvprintw(i,9+col,"%02d/%02d/%02d",broken_down_cell_tm->tm_mday,broken_down_cell_tm->tm_mon+1,broken_down_cell_tm->tm_year+1900);
+				mvprintw(i,9+col,"%02d/%02d/%02d",
+						broken_down_cell_tm->tm_mday,
+						broken_down_cell_tm->tm_mon+1,
+						broken_down_cell_tm->tm_year+1900);
 		}
-		draw_time_boxes(log_p,col,cell_tm,cell_minutes,i);
+		current_entry=draw_time_boxes(log_p,col,cell_tm,cell_minutes,i,
+				quantized_cursor_pos_tm-cursor_offset);
+		if(current_entry!=0)result=current_entry;
 
 		count++;
 	}
-
+	return result;
 	//if(max_col>125)
 	//for(int i=0;i<log_p->index;i++){
 		//log_entry* entry=&log_p->entries[i];
