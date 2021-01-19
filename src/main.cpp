@@ -216,8 +216,9 @@ int main(){
 						logging_state=1;
 						state=view;
 					}else{
-						memcpy(sub_name, result.requested_str, result.size);
-						sub_name[result.size]=0;
+						memcpy(sub_name+strlen(sub_name)-strlen(get_after_last_comma(sub_name)),
+								result.requested_str, result.size);
+						sub_name[strlen(sub_name)]=',';
 						log_selection=-1;
 					}
 				}

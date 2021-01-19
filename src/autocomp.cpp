@@ -79,7 +79,7 @@ char* get_after_last_comma (char* str){
 	int last_comma_pos=0;
 	for(int i=0;i<strlen(str);i++){
 		if(str[i]==','){
-			last_comma_pos=i;
+			last_comma_pos=i+1;
 		}
 	}
 	return str+last_comma_pos;
@@ -87,6 +87,7 @@ char* get_after_last_comma (char* str){
 
 match_result match_names(int row, int col,t_log* log_p, char* search_string, int choice){
 	//extract last mdzime
+	search_string=get_after_last_comma(search_string);
 	//extract all mdzimeebi into array
 	int count=log_p->index;
 	int comma_count=count;
