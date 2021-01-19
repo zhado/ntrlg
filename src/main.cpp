@@ -142,6 +142,12 @@ int main(){
 	int max_row=0,max_col=0;
 	window_state state=view;
 	
+	free_log(a_log);
+	a_log=load_log(database_file);
+	
+	//break_commad_str(a_log);
+	//return 0;
+
 	initscr();
 	start_color();
 	use_default_colors();
@@ -157,14 +163,12 @@ int main(){
 	curs_set(0);
 
 	int c=0;
-	free_log(a_log);
-	a_log=load_log(database_file);
 
 	char name[max_name_size];
 	char sub_name[max_name_size];
 	memset(name,0,max_name_size);
 	memset(sub_name,0,max_name_size);
-	// 2=subname 1=name
+	 //2=subname 1=name
 	int logging_state=1;
 	int log_selection=-1;
 	bool append_log=false;
@@ -212,7 +216,8 @@ int main(){
 						logging_state=1;
 						state=view;
 					}else{
-						memcpy(sub_name, result.requested_str, strlen(result.requested_str));
+						memcpy(sub_name, result.requested_str, result.size);
+						sub_name[result.size]=0;
 						log_selection=-1;
 					}
 				}
@@ -306,7 +311,6 @@ int main(){
 		refresh();
 		c=getch();
 		if(c==ERR){
-			mvprintw(max_row-5,max_col-17,"he had no choice");
 			c=0;
 			//ungetch(c);
 		}
