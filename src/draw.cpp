@@ -43,9 +43,11 @@ void draw_time_boxes(t_log* logp,int col_p,time_t cell_tm, int cell_minutes,int 
 			print_duration(local_time-entry->start_time);
 			attroff(COLOR_PAIR(1));
 			break;
-		}else if(((next_cell_tm<end_time || end_time==0 )&& cell_tm < local_time) && cell_tm>start_tm){
+		}else if(((next_cell_tm>end_time || end_time==0 )&& cell_tm < local_time) && cell_tm>start_tm){
 			mvprintw(cur_row, col+col_p, "|    |");
 			break;
+		}else{
+			//printw("%d,%d,%d;",(next_cell_tm<end_time || end_time==0 ),cell_tm < local_time,cell_tm>start_tm);
 		}
 	}
 }
