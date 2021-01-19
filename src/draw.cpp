@@ -1,9 +1,9 @@
 #include <ncurses.h>
 #include "logs.h"
 
-void print_normal_time(int row,int col,time_t tim){
+void print_normal_time(time_t tim){
 	tm* broken_down_time=localtime(&tim);
-	mvprintw(row,col,"%02d:%02d",
+	printw(" %02d:%02d",
 			broken_down_time->tm_hour,
 			broken_down_time->tm_min); 
 }
@@ -43,16 +43,19 @@ void draw_time_boxes(t_log* logp,int col_p,time_t cell_tm, int cell_minutes,int 
 			print_duration(local_time-entry->start_time);
 			attroff(COLOR_PAIR(1));
 			break;
-		}else if(((next_cell_tm>end_time || end_time==0 )&& cell_tm < local_time) && cell_tm>start_tm){
+		}else if(((next_cell_tm<end_time || end_time==0 )&& cell_tm < local_time) && cell_tm>start_tm){
 			mvprintw(cur_row, col+col_p, "|    |");
 			break;
-		}else{
-			//printw("%d,%d,%d;",(next_cell_tm<end_time || end_time==0 ),cell_tm < local_time,cell_tm>start_tm);
+		}else if(start_tm>cell_tm && start_tm<next_cell_tm){
+			log_entry* entry=&logp->entries[i];
+			mvprintw(cur_row, col+col_p, "------");
+			//printw("%s ",entry->name);
 		}
 	}
 }
 
 void print_logs(t_log* log_p,int row,int col,int max_row,int max_col,int cell_minutes,time_t cursor_pos_tm){
+	cursor_pos_tm+=cell_minutes*max_row/2*60;
 
 	mvprintw(max_row/2+row,0+col,"______________________________________________________________________");
 	int count=0;

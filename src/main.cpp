@@ -271,7 +271,7 @@ int main(){
 			}
 		}
 		int y=0,x=0;
-		print_logs(a_log,-5,0,max_row,max_col,cell_minutes,cursor_pos_tm+cell_minutes*max_row/2*60);
+		print_logs(a_log,-5,0,max_row,max_col,cell_minutes,cursor_pos_tm);
 		//print_logs(a_log,-5,70,max_row,max_col,cell_minutes,cursor_pos_tm+cell_minutes*max_row/2*60-24*60*60);
 		if(state==logging && logging_state==2){
 			result= match_names(60, 80, a_log, sub_name, log_selection);
