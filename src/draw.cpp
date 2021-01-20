@@ -19,9 +19,28 @@ log_entry* draw_time_boxes(t_log* logp,int col_p,time_t cell_tm, int cell_minute
 	time_t next_cell_tm=cell_tm+(cell_minutes*60);
 	time_t local_time=(unsigned long)time(0);
 	int col=20;
+
+	tm* broken_down_cell_tm=localtime(&cell_tm);
+
+	move(cur_row,col_p);
+	if(broken_down_cell_tm->tm_mday%2==0){
+		mvprintw(cur_row,col_p+10,"////////"); 
+	}
+	mvprintw(cur_row,col_p,"%02d:%02d",broken_down_cell_tm->tm_hour,broken_down_cell_tm->tm_min); 
+	
+	if(broken_down_cell_tm->tm_min==0){
+		mvprintw(cur_row,6+col_p,"%02d",broken_down_cell_tm->tm_hour);
+		if(broken_down_cell_tm->tm_hour==0)
+			mvprintw(cur_row,9+col_p,"%02d/%02d/%02d",
+					broken_down_cell_tm->tm_mday,
+					broken_down_cell_tm->tm_mon+1,
+					broken_down_cell_tm->tm_year+1900);
+	}
+
 	if(cell_tm<local_time && next_cell_tm > local_time){
 			mvprintw(cur_row, col+22+col_p, "<-- now");
 	}
+
 	for(int i=logp->index-1;i>=0;i--){
 		time_t start_tm=logp->entries[i].start_time;
 		time_t end_time=logp->entries[i].end_time;
@@ -71,22 +90,10 @@ log_entry* print_logs(t_log* log_p,int row,int col,int max_row,int max_col,int c
 
 	for(int i=max_row+row;i>=0;i--){
 		time_t cell_tm=quantized_cursor_pos_tm-cell_minutes*60*count;
-		tm* broken_down_cell_tm=localtime(&cell_tm);
 
-		move(i,col);
-		mvprintw(i,col,"%02d:%02d",broken_down_cell_tm->tm_hour,broken_down_cell_tm->tm_min); 
-		if(broken_down_cell_tm->tm_min==0){
-			mvprintw(i,6+col,"%02d",broken_down_cell_tm->tm_hour);
-			if(broken_down_cell_tm->tm_hour==0)
-				mvprintw(i,9+col,"%02d/%02d/%02d",
-						broken_down_cell_tm->tm_mday,
-						broken_down_cell_tm->tm_mon+1,
-						broken_down_cell_tm->tm_year+1900);
-		}
 		current_entry=draw_time_boxes(log_p,col,cell_tm,cell_minutes,i,
 				quantized_cursor_pos_tm-cursor_offset);
 		if(current_entry!=0)result=current_entry;
-
 		count++;
 	}
 	return result;
