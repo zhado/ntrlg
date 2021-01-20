@@ -151,7 +151,7 @@ match_result match_names(int row, int col,t_log* log_p, char* search_string_p, i
 		evaled_names_ar[j].size=entry_char+len-start_at;
 	}
 
-	sort_sni_s(evaled_names_ar, count);
+	sort_sni_s(evaled_names_ar, comma_count );
 
 	for(int i=0;i<comma_count;i++){
 		char tempchar[evaled_names_ar[i].size];

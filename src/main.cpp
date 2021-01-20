@@ -166,6 +166,7 @@ int main(){
 	memset(name,0,MAX_NAME_SIZE);
 	memset(sub_name,0,MAX_NAME_SIZE);
 	 //2=subname 1=name
+	
 	int logging_state=1;
 	int log_selection=-1;
 	bool append_log=false;
@@ -173,6 +174,9 @@ int main(){
 	match_result result;
 	log_entry* entry_under_cursor=0;
 
+	//strcpy(sub_name, "xa");
+	//state=logging;
+	//logging_state=2;
 	while(true){
 
 		erase();
