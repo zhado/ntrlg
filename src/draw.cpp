@@ -24,7 +24,7 @@ log_entry* draw_time_boxes(t_log* logp,int col_p,time_t cell_tm, int cell_minute
 
 	move(cur_row,col_p);
 	if(broken_down_cell_tm->tm_mday%2==0){
-		mvprintw(cur_row,col_p+10,"////////"); 
+		mvprintw(cur_row,col_p+10," ////// "); 
 	}
 	mvprintw(cur_row,col_p,"%02d:%02d",broken_down_cell_tm->tm_hour,broken_down_cell_tm->tm_min); 
 	
@@ -56,7 +56,7 @@ log_entry* draw_time_boxes(t_log* logp,int col_p,time_t cell_tm, int cell_minute
 				return entry;
 			}
 			break;
-		}else if(end_time==0 &&  next_cell_tm > local_time && cell_tm < local_time ){
+		}else if(end_time==0 &&  next_cell_tm >= local_time && cell_tm <= local_time ){
 			log_entry* entry=&logp->entries[logp->index-1];
 			mvprintw(cur_row, col+col_p, "++++++");
 			printw("%s ",entry->name);
