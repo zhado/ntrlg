@@ -1,5 +1,12 @@
+#include <cstring>
 #include <ncurses.h>
 #include "logs.h"
+
+void print_str_n_times(int row,int col, char* str,int n){
+	for(int i=0;i<n/strlen(str);i++){
+		mvprintw(row, col+i*strlen(str), "%s",str);
+	}
+}
 
 void print_normal_time(time_t tim){
 	tm* broken_down_time=localtime(&tim);
@@ -8,11 +15,11 @@ void print_normal_time(time_t tim){
 			broken_down_time->tm_min); 
 }
 
-void print_duration(int duration){
+void print_duration(time_t duration){
 	if(duration/60/60>0)
-		printw("%dh ",duration/60/60);
+		printw("%luh ",duration/60/60);
 	if(duration/60>0)
-		printw("%dm",duration/60%60);
+		printw("%lum",duration/60%60);
 }
 
 log_entry* draw_time_boxes(t_log* logp,int col_p,time_t cell_tm, int cell_minutes,int cur_row, time_t quantized_cursor_pos_tm){
@@ -26,8 +33,8 @@ log_entry* draw_time_boxes(t_log* logp,int col_p,time_t cell_tm, int cell_minute
 	if(broken_down_cell_tm->tm_mday%2==0){
 		mvprintw(cur_row,col_p+10," ////// "); 
 	}
+
 	mvprintw(cur_row,col_p,"%02d:%02d",broken_down_cell_tm->tm_hour,broken_down_cell_tm->tm_min); 
-	
 	if(broken_down_cell_tm->tm_min==0){
 		mvprintw(cur_row,6+col_p,"%02d",broken_down_cell_tm->tm_hour);
 		if(broken_down_cell_tm->tm_hour==0)
@@ -56,7 +63,7 @@ log_entry* draw_time_boxes(t_log* logp,int col_p,time_t cell_tm, int cell_minute
 				return entry;
 			}
 			break;
-		}else if(end_time==0 &&  next_cell_tm >= local_time && cell_tm <= local_time ){
+		}else if(end_time==0 &&  next_cell_tm >= local_time && cell_tm < local_time ){
 			log_entry* entry=&logp->entries[logp->index-1];
 			mvprintw(cur_row, col+col_p, "++++++");
 			printw("%s ",entry->name);
@@ -83,7 +90,7 @@ log_entry* print_logs(t_log* log_p,int row,int col,int max_row,int max_col,int c
 	time_t cursor_offset=cell_minutes*max_row/2*60;
 	cursor_pos_tm+=cursor_offset;
 
-	mvprintw(max_row/2+row,0+col,"______________________________________________________________________");
+	print_str_n_times(max_row/2+row,0+col, "_", 70);
 	int count=0;
 
 	time_t quantized_cursor_pos_tm=cursor_pos_tm-(cursor_pos_tm%(cell_minutes*60));

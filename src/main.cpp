@@ -8,8 +8,9 @@
 #include <string.h>
 
 #include "main.h"
-#include "autocomp.cpp"
 #include "draw.cpp"
+#include "autocomp.cpp"
+#include "stats.cpp"
 #include "logs.h"
 
 bool UNSAVED_CHANGES=false;
@@ -32,7 +33,7 @@ void end_last_entry(t_log* log_p){
 	}else if(entry->end_time==0){
 		entry->end_time=(unsigned long)time(0);
 	}else{
-		UNSAVED_CHANGES=false;
+		//UNSAVED_CHANGES=false;
 	}
 }
 
@@ -174,11 +175,12 @@ int main(){
 	match_result result;
 	log_entry* entry_under_cursor=0;
 
-	//strcpy(sub_name, "xa");
+	//strcpy(sub_name, "x");
 	//state=logging;
 	//logging_state=2;
 	while(true){
 
+		curs_set(0);
 		erase();
 		getmaxyx(stdscr,max_row,max_col);
 		if (c == 27){
@@ -293,40 +295,40 @@ int main(){
 		//print_logs(a_log,-5,70,max_row,max_col,cell_minutes,cursor_pos_tm-24*60*60);
 		//print_logs(a_log,-5,140,max_row,max_col,cell_minutes,cursor_pos_tm-24*60*60*2);
 		if(state==logging && logging_state==2){
-			result= match_names(max_row-4, 8, a_log, sub_name, log_selection);
+			result= match_names(max_row-4, 8, a_log, sub_name, log_selection,true);
 		}
 
-		switch (state) {
-			case view:{
-				mvprintw(max_row-1, 0, "view scale=%d minutes",cell_minutes);
-				getyx(stdscr, y, x);
-				while(x<max_col-1){
-					addch('-');
-					getyx(stdscr, y, x);
-				}
-			}
-			break;
-			case logging:{
-				mvprintw(max_row-1, 0, "logging");
-				getyx(stdscr, y, x);
-				while(x<max_col-1){
-					addch('-');
-					getyx(stdscr, y, x);
-				}
-
-				mvprintw(max_row-3, 0, "name: %s",name);
-				mvprintw(max_row-2, 0, "subname: %s",sub_name);
-
-			}
-			break;
-		}
-		mvprintw(max_row-2,max_col-6,"%d=%d",max_row,max_col);
-		mvprintw(max_row-1,max_col-6,"%d=%c",c,c);
+		
+		print_str_n_times(max_row-1, 0, "-", max_col);
 		if(UNSAVED_CHANGES){
 			const char* msg="unsaved changes";
 			attron(COLOR_PAIR(3));
 			mvprintw(max_row-1,max_col/2-strlen(msg)/2,"%s",msg);
 			attroff(COLOR_PAIR(3));
+		}
+		mvprintw(max_row-2,max_col-6,"%d=%d",max_row,max_col);
+		mvprintw(max_row-1,max_col-6,"%d=%c",c,c);
+		char aaa[]="programin, sleep, waste, film, med, chama, xatva";
+		draw_durations(max_row-10, max_col-50, a_log, aaa,cursor_pos_tm,(unsigned long)time(0));
+		switch (state) {
+			case view:{
+				mvprintw(max_row-1, 0, "view scale=%d minutes",cell_minutes);
+			}
+			break;
+			case logging:{
+				curs_set(1);
+				mvprintw(max_row-1, 0, "logging");
+
+				if(logging_state==2){
+					mvprintw(max_row-3, 0, "name: %s",name);
+					mvprintw(max_row-2, 0, "subname: %s",sub_name);
+				}else{
+					mvprintw(max_row-2, 0, "subname: %s",sub_name);
+					mvprintw(max_row-3, 0, "name: %s",name);
+				}
+
+			}
+			break;
 		}
 		refresh();
 		c=getch();
