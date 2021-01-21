@@ -43,7 +43,7 @@ void remove_commas_from_end(char* str){
 	}
 }
 
-void append_entry(t_log* log_p, char* name, char* sub_name,time_t start_time,time_t end_time){
+void add_entry(t_log* log_p, char* name, char* sub_name,time_t start_time,time_t end_time){
 	UNSAVED_CHANGES=true;
 	if(log_p->index!=0)
 		end_last_entry(log_p);
@@ -99,7 +99,7 @@ t_log* load_log(const char* file_name){
 		sscanf(line,"%lu %lu",&temp_start_time,&temp_end_time);
 		remove_spaces(temp_subname);
 
-		append_entry(a_log, temp_name, temp_subname, temp_start_time, temp_end_time);
+		add_entry(a_log, temp_name, temp_subname, temp_start_time, temp_end_time);
 		line_index++;
 		memset(temp_name,0,MAX_NAME_SIZE);
 		memset(temp_subname,0,MAX_NAME_SIZE);
@@ -115,6 +115,7 @@ void save_log(t_log* log_p, const char* file_name){
 	UNSAVED_CHANGES=false;
 	FILE* fp=fopen(file_name,"w");
 
+	//fprintf(fp, "%s",stat_input);
 	for(int i=0;i<log_p->index;i++){
 		log_entry* entry=&log_p->entries[i];
 		fprintf(fp, "%lu %lu \"%s\" \"%s\"\n",entry->start_time,entry->end_time,entry->name,entry->sub_name);
@@ -219,7 +220,7 @@ int main(){
 					if(log_selection==-1){
 						if(append_log){
 							end_last_entry(a_log);
-							append_entry(a_log, name, sub_name,a_log->entries[a_log->index-1].end_time,0);
+							add_entry(a_log, name, sub_name,a_log->entries[a_log->index-1].end_time,0);
 							append_log=false;
 						}else if(change_log){
 							strcpy(entry_under_cursor->name, name);
@@ -227,7 +228,7 @@ int main(){
 							change_log=false;
 							UNSAVED_CHANGES=true;
 						}else{
-							append_entry(a_log, name, sub_name,(unsigned long)time(0),0);
+							add_entry(a_log, name, sub_name,(unsigned long)time(0),0);
 						}
 						
 						memset(name,0,MAX_NAME_SIZE);

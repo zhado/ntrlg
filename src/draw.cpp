@@ -25,7 +25,9 @@ void print_duration(time_t duration){
 log_entry* draw_time_boxes(t_log* logp,int col_p,time_t cell_tm, int cell_minutes,int cur_row, time_t quantized_cursor_pos_tm){
 	time_t next_cell_tm=cell_tm+(cell_minutes*60);
 	time_t local_time=(unsigned long)time(0);
+	time_t last_duration=0;
 	int col=20;
+	bool find_longest_entry=false;
 
 	tm* broken_down_cell_tm=localtime(&cell_tm);
 
@@ -48,21 +50,19 @@ log_entry* draw_time_boxes(t_log* logp,int col_p,time_t cell_tm, int cell_minute
 			mvprintw(cur_row, col+22+col_p, "<-- now");
 	}
 
+	log_entry* longest_entry;
 	for(int i=logp->index-1;i>=0;i--){
 		time_t start_tm=logp->entries[i].start_time;
 		time_t end_time=logp->entries[i].end_time;
 		if(end_time < next_cell_tm && end_time > cell_tm){
+			find_longest_entry=true;
 			log_entry* entry=&logp->entries[i];
 			mvprintw(cur_row, col+col_p, "=---->");
-			printw("%s ",entry->name);
 
-			attron(COLOR_PAIR(1));
-			print_duration(entry->end_time-entry->start_time);
-			attroff(COLOR_PAIR(1));
-			if(end_time>=quantized_cursor_pos_tm && end_time <=(quantized_cursor_pos_tm+cell_minutes*60)){
-				return entry;
+			if((entry->end_time-entry->start_time) > last_duration){
+				last_duration=entry->end_time-entry->start_time;
+				longest_entry=entry;
 			}
-			break;
 		}else if(end_time==0 &&  next_cell_tm >= local_time && cell_tm < local_time ){
 			log_entry* entry=&logp->entries[logp->index-1];
 			mvprintw(cur_row, col+col_p, "++++++");
@@ -81,12 +81,23 @@ log_entry* draw_time_boxes(t_log* logp,int col_p,time_t cell_tm, int cell_minute
 			//printw("%s ",entry->name);
 		}
 	}
+
+	if(find_longest_entry){
+		printw("%s ",longest_entry->name);
+		attron(COLOR_PAIR(1));
+		print_duration(longest_entry->end_time-longest_entry->start_time);
+		attroff(COLOR_PAIR(1));
+		if(longest_entry->end_time>=quantized_cursor_pos_tm && longest_entry->end_time <=(quantized_cursor_pos_tm+cell_minutes*60)){
+			return longest_entry;
+		}
+	}
 	return 0;
 }
 
 log_entry* print_logs(t_log* log_p,int row,int col,int max_row,int max_col,int cell_minutes,time_t cursor_pos_tm){
 	log_entry* result=0;
 	log_entry* current_entry=0;
+
 	time_t cursor_offset=cell_minutes*max_row/2*60;
 	cursor_pos_tm+=cursor_offset;
 
