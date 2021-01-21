@@ -13,6 +13,11 @@
 #include "stats.cpp"
 #include "logs.h"
 
+struct app_state{
+	t_log logs;
+	char* stat_input;
+};
+
 bool UNSAVED_CHANGES=false;
 
 enum window_state {
@@ -65,12 +70,13 @@ void add_entry(t_log* log_p, char* name, char* sub_name,time_t start_time,time_t
 	log_p->index++;
 }
 
-t_log* load_log(const char* file_name){
+app_state load_log(const char* file_name){
 	FILE* fp=fopen(file_name,"r");
-	t_log* a_log=(t_log*)malloc(sizeof(t_log));
-	a_log->allocated=0;
-	a_log->index=0;
-	a_log->entries=0;
+	app_state app;
+	app.logs.allocated=0;
+	app.logs.index=0;
+	app.logs.entries=0;
+	app.stat_input=(char*)calloc(sizeof(char)*MAX_NAME_SIZE,1);
 
 	char line[400];
 	int line_index=0;
@@ -82,40 +88,52 @@ t_log* load_log(const char* file_name){
 		memset(temp_subname, 0, MAX_NAME_SIZE);
 		time_t temp_start_time=0;
 		time_t temp_end_time=0;
-		for(int i=0;i<strlen(line);i++){
-			if(line[i]=='"'){
-				quotes[index++]=i;
+
+		if(sscanf(line,"%lu %lu",&temp_start_time,&temp_end_time)==2){
+			for(int i=0;i<strlen(line);i++){
+				if(line[i]=='"'){
+					quotes[index++]=i;
+				}
 			}
-		}
 
-		// TODO: sahinelebaa es
-		if(quotes[1]!=0){
-			memcpy(temp_name, line+quotes[0]+1,quotes[1]-quotes[0]-1);
-		}
-		if(quotes[3]!=0){
-			memcpy(temp_subname, line+quotes[2]+1,quotes[3]-quotes[2]-1);
-		}
+			// TODO: sahinelebaa es
+			if(quotes[1]!=0){
+				memcpy(temp_name, line+quotes[0]+1,quotes[1]-quotes[0]-1);
+			}
+			if(quotes[3]!=0){
+				memcpy(temp_subname, line+quotes[2]+1,quotes[3]-quotes[2]-1);
+			}
 
-		sscanf(line,"%lu %lu",&temp_start_time,&temp_end_time);
-		remove_spaces(temp_subname);
+			remove_spaces(temp_subname);
 
-		add_entry(a_log, temp_name, temp_subname, temp_start_time, temp_end_time);
+			add_entry(&app.logs, temp_name, temp_subname, temp_start_time, temp_end_time);
+			memset(temp_name,0,MAX_NAME_SIZE);
+			memset(temp_subname,0,MAX_NAME_SIZE);
+		}else{
+			if(line_index!=0){
+				fprintf(stderr, "database file error\n");
+				exit(1);
+			}
+			memcpy(app.stat_input, line,strlen(line)-1);
+		}
 		line_index++;
-		memset(temp_name,0,MAX_NAME_SIZE);
-		memset(temp_subname,0,MAX_NAME_SIZE);
 	}
-	a_log->index=line_index;
+	if(app.stat_input[0]==0)
+		app.logs.index=line_index;
+	else
+		app.logs.index=line_index-1;
 
 	fclose(fp);
 	UNSAVED_CHANGES=false;
-	return a_log;
+	return app;
 }
 
-void save_log(t_log* log_p, const char* file_name){
+void save_log(app_state* app, const char* file_name){
 	UNSAVED_CHANGES=false;
+	t_log* log_p=&app->logs;
 	FILE* fp=fopen(file_name,"w");
 
-	//fprintf(fp, "%s",stat_input);
+	fprintf(fp, "%s\n",app->stat_input);
 	for(int i=0;i<log_p->index;i++){
 		log_entry* entry=&log_p->entries[i];
 		fprintf(fp, "%lu %lu \"%s\" \"%s\"\n",entry->start_time,entry->end_time,entry->name,entry->sub_name);
@@ -124,13 +142,17 @@ void save_log(t_log* log_p, const char* file_name){
 	fclose(fp);
 }
 
-void free_log(t_log* log_p){
+void free_app(app_state* app){
+	t_log* log_p=&app->logs;
 	for (int i=0;i<log_p->index;i++){
 		log_entry* entry=&log_p->entries[i];
 		free(entry->name);
 		free(entry->sub_name);
 	}
 	free(log_p);
+	free(app->stat_input);
+	log_p=0;
+	app->stat_input=0;
 }
 
 int main(){
@@ -144,8 +166,10 @@ int main(){
 	int max_row=0,max_col=0;
 	window_state state=view;
 	
-	free_log(a_log);
-	a_log=load_log(database_file);
+	app_state app=load_log(database_file);
+	//app.stat_input=(char*)malloc(sizeof(char)*MAX_NAME_SIZE);
+	char* stat_input=app.stat_input;
+	a_log=&app.logs;
 
 	initscr();
 	start_color();
@@ -165,10 +189,9 @@ int main(){
 
 	char name[MAX_NAME_SIZE];
 	char sub_name[MAX_NAME_SIZE];
-	char stat_input[MAX_NAME_SIZE];
 	memset(name,0,MAX_NAME_SIZE);
 	memset(sub_name,0,MAX_NAME_SIZE);
-	memset(stat_input,0,MAX_NAME_SIZE);
+	//memset(stat_input,0,MAX_NAME_SIZE);
 	//2=subname 1=name
 	
 	int logging_state=1;
@@ -282,7 +305,7 @@ int main(){
 				state=logging;
 			}else if(c =='s'){
 				mvprintw(max_row-3,max_col-sizeof("saved log")+1,"saved log");
-				save_log(a_log, database_file);
+				save_log(&app, database_file);
 			}else if(c =='a'){
 				state=logging;
 				append_log=true;
@@ -343,7 +366,7 @@ int main(){
 		}
 		mvprintw(max_row-2,max_col-6,"%d=%d",max_row,max_col);
 		mvprintw(max_row-1,max_col-6,"%d=%c",c,c);
-		draw_durations(23, 70, a_log, stat_input,cursor_pos_tm,(unsigned long)time(0));
+		draw_durations(23, 70, a_log, stat_input);
 		switch (state) {
 			case view:{
 				mvprintw(max_row-1, 0, "view scale=%d minutes",cell_minutes);
