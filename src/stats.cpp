@@ -4,6 +4,7 @@
 #include "logs.h"
 #include "autocomp.h"
 #include "draw.h"
+#include "main.h"
 
 time_t tm_clamp(time_t in, time_t min, time_t max){
 	if(in > min && in < max){
@@ -18,6 +19,7 @@ time_t tm_clamp(time_t in, time_t min, time_t max){
 
 time_t get_duration_in_range(t_log* a_log, char* str,time_t start_tm,time_t end_tm){
 	time_t duration=0;
+	if(strlen(str)==0)return duration;
 	for(int i=0;i<a_log->index;i++){
 		log_entry cur_entry=a_log->entries[i];
 		if(cur_entry.end_time==0)cur_entry.end_time=(unsigned long)time(0);
@@ -40,26 +42,30 @@ char* next_comma(char* str){
 }
 
 void draw_durations(int row, int col,t_log* a_log, char* str,time_t start_tm,time_t end_tm){
-	remove_spaces(str);
+	char my_str[MAX_NAME_SIZE];
+	memset(&my_str,0,MAX_NAME_SIZE);
+	strcpy(my_str, str);
+	remove_spaces(my_str);
 
-	char temp_str[strlen(str)];
-	char* ch_start_p=str;
+	char temp_str[MAX_NAME_SIZE];
+	char* ch_start_p=my_str;
 
 	for(;;){
-		memset(temp_str,0,strlen(str));
+		memset(&temp_str,0,MAX_NAME_SIZE);
 
 		char* n_comma=next_comma(ch_start_p);
 		if(n_comma==0){
-			memcpy(temp_str,ch_start_p,strlen(str));
+			memcpy(temp_str,ch_start_p,strlen(my_str));
 		}else{
 			memcpy(temp_str,ch_start_p,n_comma-ch_start_p);
 		}
 
 		move(row++,col);
-		printw("%s: ",temp_str);
+		if(temp_str[0]!=0)
+			printw("%s: ",temp_str);
 		print_duration(get_duration_in_range(a_log, temp_str, start_tm, end_tm));
 
-		if(!n_comma)break;
+		if(!n_comma || n_comma==ch_start_p+strlen(ch_start_p))break;
 		ch_start_p=n_comma+1;
 	}
 	

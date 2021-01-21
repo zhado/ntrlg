@@ -16,7 +16,7 @@
 bool UNSAVED_CHANGES=false;
 
 enum window_state {
-	view,logging
+	view,logging,stat_editing
 };
 
 char char_at(int row,int col){
@@ -164,9 +164,11 @@ int main(){
 
 	char name[MAX_NAME_SIZE];
 	char sub_name[MAX_NAME_SIZE];
+	char stat_input[MAX_NAME_SIZE];
 	memset(name,0,MAX_NAME_SIZE);
 	memset(sub_name,0,MAX_NAME_SIZE);
-	 //2=subname 1=name
+	memset(stat_input,0,MAX_NAME_SIZE);
+	//2=subname 1=name
 	
 	int logging_state=1;
 	int log_selection=-1;
@@ -246,6 +248,34 @@ int main(){
 				}
 			}
 
+		} else if(state==stat_editing){
+			if(c > 31 && c <=126){
+				if(strlen(stat_input) < MAX_NAME_SIZE)
+					stat_input[strlen(stat_input)]=c;
+				log_selection=-1;
+			}else if (c == 263 || c==127){
+				stat_input[strlen(stat_input)-1]=0;
+			}else if (c == KEY_UP){
+				if(log_selection<result.match_count)
+					log_selection++;
+			}else if (c == KEY_DOWN){
+				if(log_selection>-1)
+					log_selection--;
+			}else if (c == 10){
+				if(log_selection==-1){
+					state=view;
+				}else{
+					if(get_after_last_comma(stat_input)!=stat_input)
+						memcpy(stat_input+strlen(stat_input)-strlen(get_after_last_comma(stat_input)+1),
+								result.requested_str, result.size);
+					else
+						memcpy(stat_input+strlen(stat_input)-strlen(get_after_last_comma(stat_input)),
+								result.requested_str, result.size);
+					stat_input[strlen(stat_input)]=',';
+					stat_input[strlen(stat_input)]=' ';
+					log_selection=-1;
+				}
+			}
 		} else if(state==view){
 			if(c =='l'){
 				state=logging;
@@ -255,6 +285,8 @@ int main(){
 			}else if(c =='a'){
 				state=logging;
 				append_log=true;
+			}else if(c =='t'){
+				state=stat_editing;
 			}else if(c =='e'){
 				mvprintw(max_row-3,max_col-sizeof("ending last entry"),"ending last entry");
 				end_last_entry(a_log);
@@ -296,6 +328,8 @@ int main(){
 		//print_logs(a_log,-5,140,max_row,max_col,cell_minutes,cursor_pos_tm-24*60*60*2);
 		if(state==logging && logging_state==2){
 			result= match_names(max_row-4, 8, a_log, sub_name, log_selection,true);
+		}else if(state==stat_editing){
+			result= match_names(21, 70, a_log, stat_input, log_selection,true);
 		}
 
 		
@@ -308,8 +342,7 @@ int main(){
 		}
 		mvprintw(max_row-2,max_col-6,"%d=%d",max_row,max_col);
 		mvprintw(max_row-1,max_col-6,"%d=%c",c,c);
-		char aaa[]="programin, sleep, waste, film, med, chama, xatva";
-		draw_durations(max_row-10, max_col-50, a_log, aaa,cursor_pos_tm,(unsigned long)time(0));
+		draw_durations(23, 70, a_log, stat_input,cursor_pos_tm,(unsigned long)time(0));
 		switch (state) {
 			case view:{
 				mvprintw(max_row-1, 0, "view scale=%d minutes",cell_minutes);
@@ -327,6 +360,11 @@ int main(){
 					mvprintw(max_row-3, 0, "name: %s",name);
 				}
 
+			}
+		        break;
+			case stat_editing:{
+				curs_set(1);
+				mvprintw(22, 70, "stat_input: %s",stat_input);
 			}
 			break;
 		}

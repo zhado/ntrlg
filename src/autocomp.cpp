@@ -185,10 +185,10 @@ match_result match_names(int row, int col,t_log* log_p, char* search_string_p, i
 		memset(tempchar, 0, cur_sni.size);
 		if(cur_sni.score >= cur_sni.size+1 || i > AUTOCOM_WIN_MAX_SIZE)
 			break;
-		print_str_n_times(row-i, 0, " ", 55);
+		print_str_n_times(row-i, col-10, " ", 55);
 		if(choice == i){
 			attron(COLOR_PAIR(2));
-			print_str_n_times(row-i, 0, "- ", 55);
+			print_str_n_times(row-i, col-10, "- ", 55);
 		}
 		memcpy(tempchar, cur_sni.offset,cur_sni.size);
 		tempchar[cur_sni.size]=0;
