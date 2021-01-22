@@ -47,13 +47,14 @@ void draw_durations(int row, int col,t_log* a_log, char* str){
 	strcpy(my_str, str);
 	remove_spaces(my_str);
 
-	int last_days= 7;
+	int last_days= 8;
 	time_t local_time=(unsigned long)time(NULL);
 	time_t secs_in_day=24*60*60;
 
 	char temp_str[MAX_NAME_SIZE];
 	char* ch_start_p=my_str;
 
+	int start_row=row;
 	for(;;){
 		memset(&temp_str,0,MAX_NAME_SIZE);
 
@@ -74,9 +75,14 @@ void draw_durations(int row, int col,t_log* a_log, char* str){
 				printw("|");
 			if(i==0){
 				print_duration(get_duration_in_range(a_log, temp_str, last_midnight , local_time ));
+				if(row==start_row+1)
+					mvprintw(start_row-2,col+12+9*i+1,"%02d",get_day(last_midnight));
 			}else{
 				time_t start_time=last_midnight - secs_in_day*i-4*60*60;
 				time_t end_time=last_midnight - secs_in_day*(i-1)-4*60*60;
+				if(row==start_row+1)
+					mvprintw(start_row-2,col+12+9*i+1,"%02d",get_day(end_time));
+				move(row-1,col+12+9*i+1);
 				
 				print_duration(get_duration_in_range(a_log, temp_str,start_time,end_time));
 			}
