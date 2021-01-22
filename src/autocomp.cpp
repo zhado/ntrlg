@@ -147,7 +147,8 @@ match_result match_names(int row, int col,t_log* log_p, char* search_string_p, i
 	size_n_index evaled_names_ar[comma_count];
 
 	for(int i=0,j=0;i<count;i++,j++){
-		char* entry_char=log_p->entries[i].sub_name;
+		int reverse_index=count-i-1;
+		char* entry_char=log_p->entries[reverse_index].sub_name;
 		int len=strlen(entry_char);
 		char* start_at=entry_char;
 		char tempchar[len];
@@ -158,10 +159,10 @@ match_result match_names(int row, int col,t_log* log_p, char* search_string_p, i
 				memcpy(tempchar, start_at, entry_char-start_at+k);
 				tempchar[entry_char-start_at+k]=0;
 				evaled_names_ar[j].score=match_score(tempchar,search_string);
-				evaled_names_ar[j].index=i;
+				evaled_names_ar[j].index=reverse_index;
 				evaled_names_ar[j].offset=start_at;
 				evaled_names_ar[j].size=entry_char-start_at+k;
-				evaled_names_ar[j].root_entry=&log_p->entries[i];
+				evaled_names_ar[j].root_entry=&log_p->entries[reverse_index];
 				start_at=&entry_char[k]+1;
 				j++;
 			}
@@ -170,10 +171,10 @@ match_result match_names(int row, int col,t_log* log_p, char* search_string_p, i
 		if(len!=0)
 			memcpy(tempchar, start_at, entry_char+len-start_at-1);
 		evaled_names_ar[j].score=match_score(tempchar,search_string);
-		evaled_names_ar[j].index=i;
+		evaled_names_ar[j].index=reverse_index;
 		evaled_names_ar[j].offset=start_at;
 		evaled_names_ar[j].size=entry_char+len-start_at;
-		evaled_names_ar[j].root_entry=&log_p->entries[i];
+		evaled_names_ar[j].root_entry=&log_p->entries[reverse_index];
 	}
 
 	sort_sni_s(evaled_names_ar, comma_count);
