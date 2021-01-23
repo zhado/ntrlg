@@ -1,16 +1,9 @@
 #include <ncurses.h>
 #include <string.h>
 #include "main.h"
-#include "autocomp.h"
 #include "logs.h"
 #include "log_edit.h"
-
-char last_char(char* str){
-	int len=strlen(str);
-	if(len==0) 
-		return 0;
-	return str[strlen(str)-1];
-}
+#include "trlg_string.h"
 
 log_edit_buffer init_log_edit(t_log* a_log, bool only_tag_str, char* name, char* sub_name){
 	log_edit_buffer buffer;
@@ -83,7 +76,7 @@ int log_edit(log_edit_buffer* buffer,int row,int col, int chr){
 		}
 	}
 	if(last_char(name)==10 || only_tag_str){
-		*result= match_names(row, col+5, a_log, tag_str, *autocomp_selection,true);
+		*result= match_names(row-1, col+5, a_log, tag_str, *autocomp_selection,true);
 	}
 	
 	if(!only_tag_str){

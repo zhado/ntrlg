@@ -50,7 +50,7 @@ log_entry* draw_time_boxes(t_log* logp,int cur_row,int col_p,time_t cell_tm, int
 	tm* broken_down_cell_tm=localtime(&cell_tm);
 	int day1=broken_down_cell_tm->tm_mday;
 	if(day1!=day2){
-		//print_str_n_times(cur_row, col_p, "-", 30);
+		print_str_n_times(cur_row, col_p, "-", 70);
 		mvprintw(cur_row,9+col_p,"%02d/%02d/%02d",
 				broken_down_cell_tm->tm_mday,
 				broken_down_cell_tm->tm_mon+1,

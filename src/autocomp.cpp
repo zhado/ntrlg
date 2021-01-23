@@ -90,27 +90,6 @@ void remove_duplicate_and_empty_sni_s(size_n_index* sni, int* comma_count){
 	}
 }
 
-char* get_after_last_comma (char* str){
-	int last_comma_pos=0;
-	for(int i=0;i<strlen(str);i++){
-		if(str[i]==','){
-			last_comma_pos=i+1;
-		}
-	}
-	return str+last_comma_pos;
-}
-
-char* remove_spaces(char* str){
-	int len=strlen(str);
-	for(int i=0;i<len;i++){
-		if(str[i]==' '){
-			memcpy(str+i, str+i+1,len-i);
-			i--;
-		}
-	}
-	return str;
-}
-
 match_result match_names(int row, int col,t_log* log_p, char* search_string_p, int choice,bool remove_dups){
 	//extract last mdzime
 	search_string_p=get_after_last_comma(search_string_p);
@@ -173,12 +152,10 @@ match_result match_names(int row, int col,t_log* log_p, char* search_string_p, i
 		memset(tempchar, 0, cur_sni.size);
 		if(cur_sni.score >= cur_sni.size+1 || i > AUTOCOM_WIN_MAX_SIZE)
 			break;
-		if(choice>0){
-			print_str_n_times(row-i, col-10, " ", 55);
-			if(choice == i){
-				attron(COLOR_PAIR(2));
-				print_str_n_times(row-i, col-10, "- ", 55);
-			}
+		print_str_n_times(row-i, col-10, " ", 55);
+		if(choice == i){
+			attron(COLOR_PAIR(2));
+			print_str_n_times(row-i, col-10, "- ", 55);
 		}
 		memcpy(tempchar, cur_sni.offset,cur_sni.size);
 		tempchar[cur_sni.size]=0;

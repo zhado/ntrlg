@@ -13,6 +13,7 @@
 #include "log_edit.cpp"
 #include "autocomp.cpp"
 #include "stats.cpp"
+#include "trlg_string.cpp"
 
 struct app_state{
 	t_log logs;
