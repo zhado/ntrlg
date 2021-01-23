@@ -8,10 +8,11 @@
 #include <string.h>
 
 #include "main.h"
+#include "logs.h"
 #include "draw.cpp"
+#include "log_edit.cpp"
 #include "autocomp.cpp"
 #include "stats.cpp"
-#include "logs.h"
 
 struct app_state{
 	t_log logs;
@@ -21,7 +22,7 @@ struct app_state{
 bool UNSAVED_CHANGES=false;
 
 enum window_state {
-	view,logging,stat_editing
+	view,logging,stat_editing,append_log
 };
 
 char char_at(int row,int col){
@@ -156,6 +157,7 @@ void free_app(app_state* app){
 }
 
 int main(){
+	bool skip_ch=false;
 	int cell_minutes=20;
 	time_t cursor_pos_tm=(unsigned long)time(0);
 	t_log* a_log=(t_log*)malloc(sizeof(t_log));
@@ -194,122 +196,67 @@ int main(){
 	//memset(stat_input,0,MAX_NAME_SIZE);
 	//2=subname 1=name
 	
-	int logging_state=1;
-	int log_selection=-1;
-	bool append_log=false;
-	bool change_log=false;
-	match_result result;
 	log_entry* entry_under_cursor=0;
+	log_edit_buffer buffr;
 
 	//strcpy(sub_name, "x");
 	//state=logging;
-	//logging_state=2;
 	while(true){
 
 		curs_set(0);
 		erase();
 		getmaxyx(stdscr,max_row,max_col);
+
+
 		if (c == 27){
 			mvprintw(max_row-3,max_col-11,"esc pressed");
 			memset(name,0,100);
 			memset(sub_name,0,100);
 			state=view;
-			logging_state=1;
 		}
 		if(state==logging){
-			if(c > 31 && c <=126){
-				if(logging_state==1 && strlen(name) < MAX_NAME_SIZE){
-					name[strlen(name)]=c;
-				}else if ( logging_state ==2 && strlen(sub_name) < MAX_NAME_SIZE){
-					sub_name[strlen(sub_name)]=c;
-				}
-			log_selection=-1;
-			}else if (c == 263 || c==127){
-				if(logging_state==1){
-					name[strlen(name)-1]=0;
-				}else{
-					sub_name[strlen(sub_name)-1]=0;
-				}
-			}else if (c == KEY_UP){
-				if(log_selection<result.match_count)
-					log_selection++;
-			}else if (c == KEY_DOWN){
-				if(log_selection>-1)
-					log_selection--;
-			}else if (c == 10){
-				if(logging_state==1){
-					logging_state++;
-				}else{
-					if(log_selection==-1){
-						if(append_log){
-							end_last_entry(a_log);
-							add_entry(a_log, name, sub_name,a_log->entries[a_log->index-1].end_time,0);
-							append_log=false;
-						}else if(change_log){
-							strcpy(entry_under_cursor->name, name);
-							strcpy(entry_under_cursor->sub_name, sub_name);
-							change_log=false;
-							UNSAVED_CHANGES=true;
-						}else{
-							add_entry(a_log, name, sub_name,(unsigned long)time(0),0);
-						}
-						
-						memset(name,0,MAX_NAME_SIZE);
-						memset(sub_name,0,MAX_NAME_SIZE);
-						logging_state=1;
-						state=view;
-					}else{
-						if(get_after_last_comma(sub_name)!=sub_name)
-							memcpy(sub_name+strlen(sub_name)-strlen(get_after_last_comma(sub_name)+1),
-									result.requested_str, result.size);
-						else
-							memcpy(sub_name+strlen(sub_name)-strlen(get_after_last_comma(sub_name)),
-									result.requested_str, result.size);
-						sub_name[strlen(sub_name)]=',';
-						sub_name[strlen(sub_name)]=' ';
-						log_selection=-1;
-					}
-				}
+			curs_set(1);
+			mvprintw(max_row-1, 0, "logging");
+			int res=log_edit(&buffr, max_row-3, 0,  c);
+			if(res==0){
+				add_entry(a_log, buffr.name, buffr.sub_name,(unsigned long)time(0) , 0);
+				state=view;
 			}
-
 		} else if(state==stat_editing){
-			if(c > 31 && c <=126){
-				if(strlen(stat_input) < MAX_NAME_SIZE)
-					stat_input[strlen(stat_input)]=c;
-				log_selection=-1;
-			}else if (c == 263 || c==127){
-				stat_input[strlen(stat_input)-1]=0;
-			}else if (c == KEY_UP){
-				if(log_selection<result.match_count)
-					log_selection++;
-			}else if (c == KEY_DOWN){
-				if(log_selection>-1)
-					log_selection--;
-			}else if (c == 10){
-				if(log_selection==-1){
-					state=view;
-				}else{
-					if(get_after_last_comma(stat_input)!=stat_input)
-						memcpy(stat_input+strlen(stat_input)-strlen(get_after_last_comma(stat_input)+1),
-								result.requested_str, result.size);
-					else
-						memcpy(stat_input+strlen(stat_input)-strlen(get_after_last_comma(stat_input)),
-								result.requested_str, result.size);
-					stat_input[strlen(stat_input)]=',';
-					stat_input[strlen(stat_input)]=' ';
-					log_selection=-1;
-				}
+			int res=log_edit(&buffr, 20, 70,  c);
+			strcpy(stat_input, buffr.sub_name);
+			if(res==0){
+				state=view;
+			}
+		} else if(state==append_log){
+			curs_set(1);
+			mvprintw(max_row-1, 0, "append logging");
+			int res=log_edit(&buffr, max_row-3, 0,  c);
+			if(res==0){
+				add_entry(a_log, buffr.name, buffr.sub_name,a_log->entries[a_log->index-1].end_time , 0);
+				state=view;
 			}
 		} else if(state==view){
+
+			mvprintw(max_row-1, 0, "view scale=%d minutes",cell_minutes);
 			if(c =='l'){
+				buffr=init_log_edit(a_log, false,0,0);
 				state=logging;
+				c=0;
+				skip_ch=true;
 			}else if(c =='s'){
 				mvprintw(max_row-3,max_col-sizeof("saved log")+1,"saved log");
 				save_log(&app, database_file);
 			}else if(c =='a'){
-				state=logging;
-				append_log=true;
+				buffr=init_log_edit(a_log, false,0,0);
+				state=append_log;
+				c=0;
+				skip_ch=true;
 			}else if(c =='t'){
+				buffr=init_log_edit(a_log, true,0,stat_input);
+				curs_set(1);
+				c=0;
+				skip_ch=true;
 				state=stat_editing;
 			}else if(c =='e'){
 				mvprintw(max_row-3,max_col-sizeof("ending last entry"),"ending last entry");
@@ -325,7 +272,6 @@ int main(){
 			}else if(c =='c' && entry_under_cursor!=0){
 				memcpy(name, entry_under_cursor->name, strlen(entry_under_cursor->name));
 				memcpy(sub_name, entry_under_cursor->sub_name, strlen(entry_under_cursor->sub_name));
-				change_log=true;
 				state=logging;
 			}else if(c ==259){
 				//uparrow
@@ -346,18 +292,9 @@ int main(){
 			}
 		}
 
-		int y=0,x=0;
 		entry_under_cursor=print_logs(a_log,-5,0,max_row,max_col,cell_minutes,cursor_pos_tm);
-		//print_logs(a_log,-5,70,max_row,max_col,cell_minutes,cursor_pos_tm-24*60*60);
-		//print_logs(a_log,-5,140,max_row,max_col,cell_minutes,cursor_pos_tm-24*60*60*2);
-		if(state==logging && logging_state==2){
-			result= match_names(max_row-4, 8, a_log, sub_name, log_selection,true);
-		}else if(state==stat_editing){
-			result= match_names(21, 70, a_log, stat_input, log_selection,true);
-		}
-
 		
-		print_str_n_times(max_row-1, 0, "-", max_col);
+		//print_str_n_times(max_row-1, 0, "-", max_col);
 		if(UNSAVED_CHANGES){
 			const char* msg="unsaved changes";
 			attron(COLOR_PAIR(3));
@@ -367,36 +304,14 @@ int main(){
 		mvprintw(max_row-2,max_col-6,"%d=%d",max_row,max_col);
 		mvprintw(max_row-1,max_col-6,"%d=%c",c,c);
 		draw_durations(23, 70, a_log, stat_input);
-		switch (state) {
-			case view:{
-				mvprintw(max_row-1, 0, "view scale=%d minutes",cell_minutes);
-			}
-			break;
-			case logging:{
-				curs_set(1);
-				mvprintw(max_row-1, 0, "logging");
-
-				if(logging_state==2){
-					mvprintw(max_row-3, 0, "name: %s",name);
-					mvprintw(max_row-2, 0, "subname: %s",sub_name);
-				}else{
-					mvprintw(max_row-2, 0, "subname: %s",sub_name);
-					mvprintw(max_row-3, 0, "name: %s",name);
-				}
-
-			}
-		        break;
-			case stat_editing:{
-				curs_set(1);
-				mvprintw(22, 70, "stat_input: %s",stat_input);
-			}
-			break;
-		}
 		refresh();
-		c=getch();
-		if(c==ERR){
-			c=0;
-			//ungetch(c);
+		if(!skip_ch){
+			c=getch();
+			if(c==ERR){
+				c=0;
+			}
+		}else{
+			skip_ch=false;
 		}
 	}
 

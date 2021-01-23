@@ -6,20 +6,7 @@
 #include "logs.h"
 #include "main.h"
 #include "draw.h"
-
-struct size_n_index{
-	int score;
-	int index;
-	char* offset;
-	int size;
-	log_entry* root_entry;
-};
-
-struct match_result{
-	int match_count;
-	char* requested_str;
-	int size;
-};
+#include "autocomp.h"
 
 int match_score(char* st1, char* st2){
 	int res=0,
@@ -186,10 +173,12 @@ match_result match_names(int row, int col,t_log* log_p, char* search_string_p, i
 		memset(tempchar, 0, cur_sni.size);
 		if(cur_sni.score >= cur_sni.size+1 || i > AUTOCOM_WIN_MAX_SIZE)
 			break;
-		print_str_n_times(row-i, col-10, " ", 55);
-		if(choice == i){
-			attron(COLOR_PAIR(2));
-			print_str_n_times(row-i, col-10, "- ", 55);
+		if(choice>0){
+			print_str_n_times(row-i, col-10, " ", 55);
+			if(choice == i){
+				attron(COLOR_PAIR(2));
+				print_str_n_times(row-i, col-10, "- ", 55);
+			}
 		}
 		memcpy(tempchar, cur_sni.offset,cur_sni.size);
 		tempchar[cur_sni.size]=0;

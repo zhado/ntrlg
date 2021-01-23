@@ -11,10 +11,10 @@ struct log_entry {
 };
 
 struct t_log {
-	
 	int index;
 	int allocated;
 	log_entry* entries;
 };
+
 
 #endif

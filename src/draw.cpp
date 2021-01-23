@@ -1,6 +1,7 @@
 #include <cstring>
 #include <ncurses.h>
 #include "logs.h"
+#include "autocomp.h"
 
 void print_str_n_times(int row,int col, char* str,int n){
 	for(int i=0;i<n/strlen(str);i++){
@@ -119,7 +120,6 @@ log_entry* print_logs(t_log* log_p,int row,int col,int max_row,int max_col,int c
 	log_entry* current_entry=0;
 
 	time_t cursor_offset=cell_minutes*max_row/2*60;
-	mvprintw(max_row-10,max_col-10,"%lu",cursor_offset);
 	cursor_pos_tm+=cursor_offset;
 
 	print_str_n_times(max_row/2+row,0+col, "_", 70);
