@@ -4,7 +4,7 @@
 #include <string.h>
 
 #include "logs.h"
-#include "main.h"
+#include "trlg_common.h"
 #include "draw.h"
 #include "autocomp.h"
 
@@ -90,7 +90,7 @@ void remove_duplicate_and_empty_sni_s(size_n_index* sni, int* comma_count){
 	}
 }
 
-match_result match_names(int row, int col,t_log* log_p, char* search_string_p, int choice,bool remove_dups){
+void match_names(t_log* log_p, char* search_string_p, bool remove_dups, size_n_index* output, int* matched_count){
 	//extract last mdzime
 	search_string_p=get_after_last_comma(search_string_p);
 	char search_string[MAX_NAME_SIZE];
@@ -145,13 +145,21 @@ match_result match_names(int row, int col,t_log* log_p, char* search_string_p, i
 
 	sort_sni_s(evaled_names_ar, comma_count);
 	remove_duplicate_and_empty_sni_s(evaled_names_ar,&comma_count);
+	memcpy(output, evaled_names_ar, sizeof(size_n_index)*AUTOCOM_WIN_MAX_SIZE);
 
-	for(int i=0;i<comma_count;i++){
+	for(int i=0;i<AUTOCOM_WIN_MAX_SIZE;i++){
 		size_n_index cur_sni=evaled_names_ar[i];
-		char tempchar[cur_sni.size];
-		memset(tempchar, 0, cur_sni.size);
-		if(cur_sni.score >= cur_sni.size+1 || i > AUTOCOM_WIN_MAX_SIZE)
+		if(cur_sni.score >= cur_sni.size+1 || i > AUTOCOM_WIN_MAX_SIZE){
+			*matched_count=i;
 			break;
+		}
+	}
+}
+
+void draw_sni(int row, int col,size_n_index sni[AUTOCOM_WIN_MAX_SIZE], int choice,int matched_count){
+	for(int i=0;i<matched_count;i++){
+		size_n_index cur_sni=sni[i];
+		char tempchar[cur_sni.size];
 		print_str_n_times(row-i, col-10, " ", 55);
 		if(choice == i){
 			attron(COLOR_PAIR(2));
@@ -162,11 +170,5 @@ match_result match_names(int row, int col,t_log* log_p, char* search_string_p, i
 		mvprintw(row-i,col,"| %s %d",tempchar,cur_sni.score);
 		//mvprintw(row-i,col,"| %s",tempchar);
 		attroff(COLOR_PAIR(2));
-		res.match_count=i;
 	}
-	if(choice!=-1){
-		res.requested_str= evaled_names_ar[choice].offset;
-		res.size= evaled_names_ar[choice].size;
-	}
-	return res;
 }

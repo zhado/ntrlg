@@ -4,7 +4,7 @@
 #include "logs.h"
 #include "autocomp.h"
 #include "draw.h"
-#include "main.h"
+#include "trlg_common.h"
 
 time_t tm_clamp(time_t in, time_t min, time_t max){
 	if(in > min && in < max){

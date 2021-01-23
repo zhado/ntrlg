@@ -7,7 +7,7 @@
 #include <math.h>
 #include <string.h>
 
-#include "main.h"
+#include "trlg_common.h"
 #include "logs.h"
 #include "draw.cpp"
 #include "log_edit.cpp"
@@ -208,7 +208,6 @@ int main(){
 		erase();
 		getmaxyx(stdscr,max_row,max_col);
 
-
 		if (c == 27){
 			mvprintw(max_row-3,max_col-11,"esc pressed");
 			memset(name,0,100);
@@ -295,7 +294,6 @@ int main(){
 
 		entry_under_cursor=print_logs(a_log,-5,0,max_row,max_col,cell_minutes,cursor_pos_tm);
 		
-		//print_str_n_times(max_row-1, 0, "-", max_col);
 		if(UNSAVED_CHANGES){
 			const char* msg="unsaved changes";
 			attron(COLOR_PAIR(3));
