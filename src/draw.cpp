@@ -37,7 +37,7 @@ int get_day(time_t tim){
 	return broken_down_time->tm_mday;
 }
 
-log_entry* draw_time_boxes(t_log* logp,int cur_row,int col_p,time_t cell_tm, int cell_minutes, time_t quantized_cursor_pos_tm){
+void draw_time_boxes(t_log* logp,int cur_row,int col_p,time_t cell_tm, int cell_minutes, time_t quantized_cursor_pos_tm){
 	time_t next_cell_tm=cell_tm+(cell_minutes*60);
 	time_t next_cell_tm_2=cell_tm-(cell_minutes*60);
 	time_t current_time=(unsigned long)time(0);
@@ -88,9 +88,6 @@ log_entry* draw_time_boxes(t_log* logp,int cur_row,int col_p,time_t cell_tm, int
 			attron(COLOR_PAIR(1));
 			print_duration(current_time-entry->start_time);
 			attroff(COLOR_PAIR(1));
-			if(current_time>=quantized_cursor_pos_tm && current_time <=(quantized_cursor_pos_tm+cell_minutes*60)){
-				return entry;
-			}
 		}else if(((next_cell_tm<end_time || end_time==0 )&& cell_tm < current_time) && cell_tm>start_tm){
 			mvprintw(cur_row, col+col_p, "|    |");
 			break;
@@ -106,17 +103,12 @@ log_entry* draw_time_boxes(t_log* logp,int cur_row,int col_p,time_t cell_tm, int
 		attron(COLOR_PAIR(1));
 		print_duration(longest_entry->end_time-longest_entry->start_time);
 		attroff(COLOR_PAIR(1));
-		if(longest_entry->end_time>=quantized_cursor_pos_tm && longest_entry->end_time <=(quantized_cursor_pos_tm+cell_minutes*60)){
-			return longest_entry;
-		}
 	}
 
 	//printw("      %u %u",br_2->tm_mday,broken_down_cell_tm->tm_mday);
-	return 0;
 }
 
-log_entry* print_logs(t_log* log_p,int row,int col,int max_row,int max_col,int cell_minutes,time_t cursor_pos_tm){
-	log_entry* result=0;
+void print_logs(t_log* log_p,int row,int col,int max_row,int max_col,int cell_minutes,time_t cursor_pos_tm){
 	log_entry* current_entry=0;
 
 	time_t cursor_offset=cell_minutes*max_row/2*60;
@@ -131,11 +123,9 @@ log_entry* print_logs(t_log* log_p,int row,int col,int max_row,int max_col,int c
 	for(int i=max_row+row;i>=0;i--){
 		time_t cell_tm=quantized_cursor_pos_tm-cell_minutes*60*count;
 
-		current_entry=draw_time_boxes(log_p,i,col,cell_tm,cell_minutes,quantized_cursor_pos_tm-cell_minutes*(max_row/2+1)*60);
-		if(current_entry!=0)result=current_entry;
+		draw_time_boxes(log_p,i,col,cell_tm,cell_minutes,quantized_cursor_pos_tm-cell_minutes*(max_row/2+1)*60);
 		count++;
 	}
-	return result;
 	//if(max_col>125)
 	//for(int i=0;i<log_p->index;i++){
 		//log_entry* entry=&log_p->entries[i];
@@ -146,4 +136,24 @@ log_entry* print_logs(t_log* log_p,int row,int col,int max_row,int max_col,int c
 			//print_normal_time(0+i,77,entry->end_time);
 		//printw(" %s, %s\n",entry->name,entry->sub_name);
 	//}
+}
+
+log_entry* entry_under_cursor_fun(t_log* log_p,int max_row,int cell_minutes,time_t cursor_pos_tm){
+	log_entry* longest_entry=0;
+	time_t current_time=(unsigned long)time(0);
+	time_t cursor_offset=cell_minutes*max_row/2*60;
+	cursor_pos_tm+=cursor_offset;
+	time_t quantized_cursor_pos_tm=cursor_pos_tm-(cursor_pos_tm%(cell_minutes*60));
+	time_t fixed=quantized_cursor_pos_tm-cell_minutes*(max_row/2+1)*60;
+	time_t last_duration=0;
+	for(int i=0;i<log_p->index;i++){
+		log_entry* entry=&log_p->entries[i];
+		if(entry->end_time>=fixed && entry->end_time <=(fixed+cell_minutes*60)){
+			if((entry->end_time-entry->start_time) > last_duration){
+				last_duration=entry->end_time-entry->start_time;
+				longest_entry=entry;
+			}
+		}
+	}
+	return longest_entry;
 }

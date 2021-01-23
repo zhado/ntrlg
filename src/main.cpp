@@ -23,7 +23,7 @@ struct app_state{
 bool UNSAVED_CHANGES=false;
 
 enum window_state {
-	view,logging,stat_editing,append_log
+	view,logging,stat_editing,append_log, log_editing
 };
 
 char char_at(int row,int col){
@@ -158,7 +158,6 @@ void free_app(app_state* app){
 }
 
 int main(){
-	bool skip_ch=false;
 	int cell_minutes=20;
 	time_t cursor_pos_tm=(unsigned long)time(0);
 	t_log* a_log=(t_log*)malloc(sizeof(t_log));
@@ -216,34 +215,38 @@ int main(){
 		}
 		if(state==logging){
 			curs_set(1);
-			mvprintw(max_row-1, 0, "logging");
-			int res=log_edit(&buffr, max_row-3, 0,  c);
+			int res=log_edit(&buffr,  c);
 			if(res==0){
 				add_entry(a_log, buffr.name, buffr.sub_name,(unsigned long)time(0) , 0);
 				state=view;
 			}
 		} else if(state==stat_editing){
-			int res=log_edit(&buffr, 20, 70,  c);
+			int res=log_edit(&buffr,   c);
 			strcpy(stat_input, buffr.sub_name);
 			if(res==0){
 				state=view;
 			}
 		} else if(state==append_log){
 			curs_set(1);
-			mvprintw(max_row-1, 0, "append logging");
-			int res=log_edit(&buffr, max_row-3, 0,  c);
+			int res=log_edit(&buffr, c);
 			if(res==0){
 				add_entry(a_log, buffr.name, buffr.sub_name,a_log->entries[a_log->index-1].end_time , 0);
 				state=view;
 			}
+		} else if(state==log_editing){
+			curs_set(1);
+			int res=log_edit(&buffr, c);
+			if(res==0){
+				memcpy(entry_under_cursor->name, buffr.name, MAX_NAME_SIZE);
+				memcpy(entry_under_cursor->sub_name, buffr.sub_name, MAX_NAME_SIZE);
+				state=view;
+			}
 		} else if(state==view){
 
-			mvprintw(max_row-1, 0, "view scale=%d minutes",cell_minutes);
 			if(c =='l'){
 				buffr=init_log_edit(a_log, false,0,0);
 				state=logging;
 				c=0;
-				skip_ch=true;
 			}else if(c =='s'){
 				mvprintw(max_row-3,max_col-sizeof("saved log")+1,"saved log");
 				save_log(&app, database_file);
@@ -251,12 +254,10 @@ int main(){
 				buffr=init_log_edit(a_log, false,0,0);
 				state=append_log;
 				c=0;
-				skip_ch=true;
 			}else if(c =='t'){
 				buffr=init_log_edit(a_log, true,0,stat_input);
 				curs_set(1);
 				c=0;
-				skip_ch=true;
 				state=stat_editing;
 			}else if(c =='e'){
 				mvprintw(max_row-3,max_col-sizeof("ending last entry"),"ending last entry");
@@ -269,10 +270,11 @@ int main(){
 				}
 			}else if(c =='x'){
 				cell_minutes=cell_minutes+5;
-			}else if(c =='c' && entry_under_cursor!=0){
-				memcpy(name, entry_under_cursor->name, strlen(entry_under_cursor->name));
-				memcpy(sub_name, entry_under_cursor->sub_name, strlen(entry_under_cursor->sub_name));
-				state=logging;
+			}else if(c =='c'){
+				entry_under_cursor=entry_under_cursor_fun(a_log, max_row, cell_minutes, cursor_pos_tm);
+				if(entry_under_cursor!=0)
+					buffr=init_log_edit(a_log, false,entry_under_cursor->name,entry_under_cursor->sub_name);
+				state=log_editing;
 			}else if(c ==259){
 				//uparrow
 				cursor_pos_tm-=cell_minutes*60;
@@ -292,8 +294,21 @@ int main(){
 			}
 		}
 
-		entry_under_cursor=print_logs(a_log,-5,0,max_row,max_col,cell_minutes,cursor_pos_tm);
-		
+		//drawing happens here
+		print_logs(a_log,-5,0,max_row,max_col,cell_minutes,cursor_pos_tm);
+		if(state==view){
+			mvprintw(max_row-1, 0, "view scale=%d minutes",cell_minutes);
+		}else if(state==logging){
+			draw_log_edit(&buffr, max_row-3, 0);
+			mvprintw(max_row-1, 0, "logging");
+		}else if(state==stat_editing){
+			draw_log_edit(&buffr, 20, 70);
+		}else if(state==log_editing){
+			draw_log_edit(&buffr, max_row-3, 0);
+		}else if(state==append_log){
+			draw_log_edit(&buffr, max_row-3, 0);
+			mvprintw(max_row-1, 0, "append logging");
+		}
 		if(UNSAVED_CHANGES){
 			const char* msg="unsaved changes";
 			attron(COLOR_PAIR(3));
@@ -303,14 +318,11 @@ int main(){
 		mvprintw(max_row-2,max_col-6,"%d=%d",max_row,max_col);
 		mvprintw(max_row-1,max_col-6,"%d=%c",c,c);
 		draw_durations(23, 70, a_log, stat_input);
+
 		refresh();
-		if(!skip_ch){
-			c=getch();
-			if(c==ERR){
-				c=0;
-			}
-		}else{
-			skip_ch=false;
+		c=getch();
+		if(c==ERR){
+			c=0;
 		}
 	}
 

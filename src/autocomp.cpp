@@ -146,14 +146,15 @@ void match_names(t_log* log_p, char* search_string_p, bool remove_dups, size_n_i
 	sort_sni_s(evaled_names_ar, comma_count);
 	remove_duplicate_and_empty_sni_s(evaled_names_ar,&comma_count);
 	memcpy(output, evaled_names_ar, sizeof(size_n_index)*AUTOCOM_WIN_MAX_SIZE);
-
-	for(int i=0;i<AUTOCOM_WIN_MAX_SIZE;i++){
+	int i=0;
+	for(;i<AUTOCOM_WIN_MAX_SIZE;i++){
 		size_n_index cur_sni=evaled_names_ar[i];
 		if(cur_sni.score >= cur_sni.size+1 || i > AUTOCOM_WIN_MAX_SIZE){
-			*matched_count=i;
+			*matched_count=i-1;
 			break;
 		}
 	}
+	*matched_count=i-1;
 }
 
 void draw_sni(int row, int col,size_n_index sni[AUTOCOM_WIN_MAX_SIZE], int choice,int matched_count){
