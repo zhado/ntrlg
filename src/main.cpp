@@ -185,9 +185,8 @@ int main(){
 	keypad(stdscr, TRUE);
 	halfdelay(20);
 	noecho();
-	curs_set(0);
 
-	int c=0;
+	int chr=0;
 
 	char name[MAX_NAME_SIZE];
 	char sub_name[MAX_NAME_SIZE];
@@ -207,87 +206,89 @@ int main(){
 		erase();
 		getmaxyx(stdscr,max_row,max_col);
 
-		if (c == 27){
+		if (chr == 27){
 			mvprintw(max_row-3,max_col-11,"esc pressed");
 			memset(name,0,100);
 			memset(sub_name,0,100);
 			state=view;
 		}
+
 		if(state==logging){
 			curs_set(1);
-			int res=log_edit(&buffr,  c);
+			int res=log_edit(&buffr,  chr);
 			if(res==0){
 				add_entry(a_log, buffr.name, buffr.sub_name,(unsigned long)time(0) , 0);
 				state=view;
 			}
 		} else if(state==stat_editing){
-			int res=log_edit(&buffr,   c);
+			int res=log_edit(&buffr,   chr);
 			strcpy(stat_input, buffr.sub_name);
 			if(res==0){
 				state=view;
 			}
 		} else if(state==append_log){
 			curs_set(1);
-			int res=log_edit(&buffr, c);
+			int res=log_edit(&buffr, chr);
 			if(res==0){
 				add_entry(a_log, buffr.name, buffr.sub_name,a_log->entries[a_log->index-1].end_time , 0);
 				state=view;
 			}
 		} else if(state==log_editing){
 			curs_set(1);
-			int res=log_edit(&buffr, c);
+			int res=log_edit(&buffr, chr);
 			if(res==0){
 				memcpy(entry_under_cursor->name, buffr.name, MAX_NAME_SIZE);
 				memcpy(entry_under_cursor->sub_name, buffr.sub_name, MAX_NAME_SIZE);
 				state=view;
 			}
+			entry_under_cursor=0;
 		} else if(state==view){
-
-			if(c =='l'){
+			if(chr =='l'){
 				buffr=init_log_edit(a_log, false,0,0);
 				state=logging;
-				c=0;
-			}else if(c =='s'){
+				chr=0;
+			}else if(chr =='s'){
 				mvprintw(max_row-3,max_col-sizeof("saved log")+1,"saved log");
 				save_log(&app, database_file);
-			}else if(c =='a'){
+			}else if(chr =='a'){
 				buffr=init_log_edit(a_log, false,0,0);
 				state=append_log;
-				c=0;
-			}else if(c =='t'){
+				chr=0;
+			}else if(chr =='t'){
 				buffr=init_log_edit(a_log, true,0,stat_input);
 				curs_set(1);
-				c=0;
+				chr=0;
 				state=stat_editing;
-			}else if(c =='e'){
+			}else if(chr =='e'){
 				mvprintw(max_row-3,max_col-sizeof("ending last entry"),"ending last entry");
 				end_last_entry(a_log);
-			}else if(c =='q'){
+			}else if(chr =='q'){
 				break;
-			}else if(c =='z'){
+			}else if(chr =='z'){
 				if(cell_minutes!=5){
 					cell_minutes=cell_minutes-5;
 				}
-			}else if(c =='x'){
+			}else if(chr =='x'){
 				cell_minutes=cell_minutes+5;
-			}else if(c =='c'){
+			}else if(chr =='c'){
 				entry_under_cursor=entry_under_cursor_fun(a_log, max_row, cell_minutes, cursor_pos_tm);
-				if(entry_under_cursor!=0)
+				if(entry_under_cursor!=0){
 					buffr=init_log_edit(a_log, false,entry_under_cursor->name,entry_under_cursor->sub_name);
-				state=log_editing;
-			}else if(c ==259){
+					state=log_editing;
+				}
+			}else if(chr ==259){
 				//uparrow
 				cursor_pos_tm-=cell_minutes*60;
-			}else if(c ==258){
+			}else if(chr ==258){
 				//downarrow
 				cursor_pos_tm+=cell_minutes*60;
-			}else if(c ==339){
+			}else if(chr ==339){
 				//pgup
 				cursor_pos_tm-=cell_minutes*60*4;
-			}else if(c ==338){
+			}else if(chr ==338){
 				//pgdown
 				cursor_pos_tm+=cell_minutes*60*4;
-			}else if(c ==262){
+			}else if(chr ==262){
 				//home
 				cursor_pos_tm=(unsigned long)time(0);
 				cell_minutes=20;
@@ -295,15 +296,18 @@ int main(){
 		}
 
 		//drawing happens here
+		print_str_n_times(max_row-1, 0,"-", max_col);
 		print_logs(a_log,-5,0,max_row,max_col,cell_minutes,cursor_pos_tm);
 		if(state==view){
-			mvprintw(max_row-1, 0, "view scale=%d minutes",cell_minutes);
+			mvprintw(max_row-1, 0, "view mode, scale=%d minutes",cell_minutes);
 		}else if(state==logging){
 			draw_log_edit(&buffr, max_row-3, 0);
 			mvprintw(max_row-1, 0, "logging");
 		}else if(state==stat_editing){
+			mvprintw(max_row-1, 0, "stat editing");
 			draw_log_edit(&buffr, 20, 70);
 		}else if(state==log_editing){
+			mvprintw(max_row-1, 0, "log editing");
 			draw_log_edit(&buffr, max_row-3, 0);
 		}else if(state==append_log){
 			draw_log_edit(&buffr, max_row-3, 0);
@@ -316,13 +320,13 @@ int main(){
 			attroff(COLOR_PAIR(3));
 		}
 		mvprintw(max_row-2,max_col-6,"%d=%d",max_row,max_col);
-		mvprintw(max_row-1,max_col-6,"%d=%c",c,c);
+		mvprintw(max_row-1,max_col-6,"%d=%chr",chr,chr);
 		draw_durations(23, 70, a_log, stat_input);
 
 		refresh();
-		c=getch();
-		if(c==ERR){
-			c=0;
+		chr=getch();
+		if(chr==ERR){
+			chr=0;
 		}
 	}
 
