@@ -145,6 +145,8 @@ log_entry* entry_under_cursor_fun(t_log* log_p,int max_row,int cell_minutes,time
 				last_duration=entry->end_time-entry->start_time;
 				longest_entry=entry;
 			}
+		}else if(entry->end_time==0 && current_time>=fixed && current_time <=(fixed+cell_minutes*60)){
+			return entry;
 		}
 	}
 	return longest_entry;
