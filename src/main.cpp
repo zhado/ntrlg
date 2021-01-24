@@ -24,7 +24,12 @@ struct app_state{
 bool UNSAVED_CHANGES=false;
 
 enum window_state {
-	view,logging,stat_editing,append_log, log_editing
+	view,
+	logging,
+	stat_editing,
+	append_log, 
+	log_editing,
+	entry_resize
 };
 
 char char_at(int row,int col){
@@ -198,6 +203,9 @@ int main(){
 	//2=subname 1=name
 	
 	log_entry* entry_under_cursor=0;
+	log_entry* entry_ur_cursor_nx=0;
+	log_entry* entry_ur_cursor_pr=0;
+	log_entry* entry_to_resize=0;
 	log_edit_buffer buffr;
 
 	//strcpy(sub_name, "x");
@@ -211,6 +219,7 @@ int main(){
 			mvprintw(max_row-3,max_col-11,"esc pressed");
 			memset(name,0,100);
 			memset(sub_name,0,100);
+			entry_to_resize=0;
 			state=view;
 		}
 
@@ -232,6 +241,35 @@ int main(){
 				add_entry(a_log, buffr.name, buffr.sub_name,a_log->entries[a_log->index-1].end_time , 0);
 				state=view;
 			}
+		} else if(state==entry_resize){
+			entry_ur_cursor_pr=entry_under_cursor_fun(a_log, max_row, cell_minutes, cursor_pos_tm-cell_minutes*60);
+			entry_under_cursor=entry_under_cursor_fun(a_log, max_row, cell_minutes, cursor_pos_tm);
+			entry_ur_cursor_nx=entry_under_cursor_fun(a_log, max_row, cell_minutes, cursor_pos_tm+cell_minutes*60);
+			if(chr ==259 && entry_ur_cursor_pr==0){
+				//uparrow
+				cursor_pos_tm-=cell_minutes*60;
+			}else if(chr ==10){
+				state=view;
+				entry_to_resize=0;
+			}else if(chr ==258 && entry_ur_cursor_nx==0){
+				//downarrow
+				cursor_pos_tm+=cell_minutes*60;
+			}else if(chr ==339){
+				//pgup
+				cursor_pos_tm-=cell_minutes*60*4;
+			}else if(chr ==338){
+				//pgdown
+				cursor_pos_tm+=cell_minutes*60*4;
+			}else if(chr =='z'){
+				if(cell_minutes!=5){
+					cell_minutes=cell_minutes-5;
+				}
+			}else if(chr =='x'){
+				cell_minutes=cell_minutes+5;
+			}
+			if(entry_to_resize!=0)
+				entry_to_resize->end_time=cursor_pos_tm;
+
 		} else if(state==log_editing){
 			int res=log_edit(&buffr, chr);
 			if(res==0){
@@ -254,9 +292,14 @@ int main(){
 				chr=0;
 			}else if(chr =='t'){
 				buffr=init_log_edit(a_log, true,0,stat_input);
-				curs_set(1);
 				chr=0;
 				state=stat_editing;
+			}else if(chr =='d'){
+				entry_under_cursor=entry_under_cursor_fun(a_log, max_row, cell_minutes, cursor_pos_tm);
+				if(entry_under_cursor!=0){
+					entry_to_resize=entry_under_cursor;
+					state=entry_resize;
+				}
 			}else if(chr =='e'){
 				mvprintw(max_row-3,max_col-sizeof("ending last entry"),"ending last entry");
 				end_last_entry(a_log);
@@ -317,6 +360,9 @@ int main(){
 			curs_set(1);
 			draw_log_edit(&buffr, max_row-3, 0);
 			mvprintw(max_row-1, 0, "append logging");
+		}else if(state==entry_resize){
+			curs_set(0);
+			mvprintw(max_row-1, 0, "entry resize mode");
 		}
 		if(UNSAVED_CHANGES){
 			const char* msg="unsaved changes";
