@@ -3,6 +3,7 @@
 #include <linux/types.h>
 #include <sys/types.h>
 #include <ncurses.h>
+#include <locale.h>
 #include <cstdlib>
 #include <math.h>
 #include <string.h>
@@ -173,6 +174,7 @@ int main(){
 	char* stat_input=app.stat_input;
 	a_log=&app.logs;
 
+	setlocale(LC_CTYPE, "");
 	initscr();
 	start_color();
 	use_default_colors();
@@ -202,7 +204,6 @@ int main(){
 	//state=logging;
 	while(true){
 
-		curs_set(0);
 		erase();
 		getmaxyx(stdscr,max_row,max_col);
 
@@ -214,7 +215,6 @@ int main(){
 		}
 
 		if(state==logging){
-			curs_set(1);
 			int res=log_edit(&buffr,  chr);
 			if(res==0){
 				add_entry(a_log, buffr.name, buffr.sub_name,(unsigned long)time(0) , 0);
@@ -227,14 +227,12 @@ int main(){
 				state=view;
 			}
 		} else if(state==append_log){
-			curs_set(1);
 			int res=log_edit(&buffr, chr);
 			if(res==0){
 				add_entry(a_log, buffr.name, buffr.sub_name,a_log->entries[a_log->index-1].end_time , 0);
 				state=view;
 			}
 		} else if(state==log_editing){
-			curs_set(1);
 			int res=log_edit(&buffr, chr);
 			if(res==0){
 				memcpy(entry_under_cursor->name, buffr.name, MAX_NAME_SIZE);
@@ -298,18 +296,25 @@ int main(){
 		//drawing happens here
 		print_str_n_times(max_row-1, 0,"-", max_col);
 		print_logs(a_log,-5,0,max_row,max_col,cell_minutes,cursor_pos_tm);
+		if(max_col>100)
+			draw_durations(23, 90, a_log, stat_input);
 		if(state==view){
+			curs_set(0);
 			mvprintw(max_row-1, 0, "view mode, scale=%d minutes",cell_minutes);
 		}else if(state==logging){
+			curs_set(1);
 			draw_log_edit(&buffr, max_row-3, 0);
 			mvprintw(max_row-1, 0, "logging");
 		}else if(state==stat_editing){
+			curs_set(1);
 			mvprintw(max_row-1, 0, "stat editing");
-			draw_log_edit(&buffr, 20, 70);
+			draw_log_edit(&buffr, 20, 90);
 		}else if(state==log_editing){
+			curs_set(1);
 			mvprintw(max_row-1, 0, "log editing");
 			draw_log_edit(&buffr, max_row-3, 0);
 		}else if(state==append_log){
+			curs_set(1);
 			draw_log_edit(&buffr, max_row-3, 0);
 			mvprintw(max_row-1, 0, "append logging");
 		}
@@ -321,7 +326,7 @@ int main(){
 		}
 		mvprintw(max_row-2,max_col-6,"%d=%d",max_row,max_col);
 		mvprintw(max_row-1,max_col-6,"%d=%chr",chr,chr);
-		draw_durations(23, 70, a_log, stat_input);
+		move(buffr.cursor_row,buffr.cursor_col);
 
 		refresh();
 		chr=getch();

@@ -15,6 +15,8 @@ log_edit_buffer init_log_edit(t_log* a_log, bool only_tag_str, char* name, char*
 	buffer.tag_autocomp_selection=-1;
 	buffer.only_tag_str=only_tag_str;
 	buffer.matched_count=0;
+	buffer.cursor_row=0;
+	buffer.cursor_col=0;
 	return buffer;
 }
 
@@ -103,6 +105,17 @@ void draw_log_edit(log_edit_buffer* buffer,int row,int col){
 		mvprintw(row+1, col, "tags: %s",buffer->sub_name);
 	}else{
 		mvprintw(row, col, "tags: %s",buffer->sub_name);
+	}
+
+	if(last_char(name)!=10 && !only_tag_str ){
+		buffer->cursor_col=col+ sizeof("name: ")+strlen(buffer->name)-1;
+		buffer->cursor_row=row;
+	}else{
+		buffer->cursor_col=col+ sizeof("tags: ")+strlen(buffer->sub_name)-1;
+		if(!only_tag_str)
+			buffer->cursor_row=row+1;
+		else
+			buffer->cursor_row=row;
 	}
 }
 

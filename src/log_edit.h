@@ -14,5 +14,7 @@ struct log_edit_buffer{
 	bool only_tag_str;
 	size_n_index sni[AUTOCOM_WIN_MAX_SIZE];
 	int matched_count;
+	int cursor_row;
+	int cursor_col;
 };
 #endif

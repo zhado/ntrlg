@@ -23,10 +23,14 @@ void print_normal_time(time_t tim){
 }
 void print_normal_date_time(time_t tim){
 	tm broken_down_time=get_tm(tim);
-	printw("%02d/%02d/%02d %02d:%02d",
+	//printw("%02d/%02d/%02d %02d:%02d",
+			//broken_down_time.tm_mday,
+			//broken_down_time.tm_mon+1,
+			//broken_down_time.tm_year+1900,
+			//broken_down_time.tm_hour,
+			//broken_down_time.tm_min); 
+	printw("%02d %02d:%02d",
 			broken_down_time.tm_mday,
-			broken_down_time.tm_mon+1,
-			broken_down_time.tm_year+1900,
 			broken_down_time.tm_hour,
 			broken_down_time.tm_min); 
 }
@@ -87,6 +91,7 @@ void draw_time_boxes(t_log* logp,int cur_row,int col_p,time_t cell_tm, int cell_
 			attron(COLOR_PAIR(1));
 			print_duration(current_time-entry->start_time);
 			attroff(COLOR_PAIR(1));
+			break;
 		}else if(((next_cell_tm<end_time || end_time==0 )&& cell_tm < current_time) && cell_tm>start_tm){
 			mvprintw(cur_row, col+col_p, "|    |");
 			break;
@@ -110,7 +115,10 @@ void print_logs(t_log* log_p,int row,int col,int max_row,int max_col,int cell_mi
 
 	time_t cursor_offset=cell_minutes*max_row/2*60;
 	cursor_pos_tm+=cursor_offset;
-	print_str_n_times(max_row/2+row,0+col, "_", 70);
+	if(max_col>COL_CUTOFF)
+		print_str_n_times(max_row/2+row,0+col, "_", 70);
+	//else
+		//mvprintw(max_row/2+row,70,"<<<");
 	int count=0;
 	time_t quantized_cursor_pos_tm=cursor_pos_tm-(cursor_pos_tm%(cell_minutes*60));
 	for(int i=max_row+row;i>=0;i--){
@@ -136,7 +144,13 @@ log_entry* entry_under_cursor_fun(t_log* log_p,int max_row,int cell_minutes,time
 	time_t cursor_offset=cell_minutes*max_row/2*60;
 	cursor_pos_tm+=cursor_offset;
 	time_t quantized_cursor_pos_tm=cursor_pos_tm-(cursor_pos_tm%(cell_minutes*60));
+	move(max_row-12,40);
+	print_normal_date_time(quantized_cursor_pos_tm);
+	move(max_row-13,40);
+	printw("maxrow/2=%d",max_row/2);
 	time_t fixed=quantized_cursor_pos_tm-cell_minutes*(max_row/2+1)*60;
+	move(max_row-11,40);
+	print_normal_date_time(fixed);
 	time_t last_duration=0;
 	for(int i=0;i<log_p->index;i++){
 		log_entry* entry=&log_p->entries[i];
