@@ -25,6 +25,7 @@ bool UNSAVED_CHANGES=false;
 
 enum window_state {
 	view,
+	week_view,
 	logging,
 	stat_editing,
 	append_log, 
@@ -311,7 +312,7 @@ int main(){
 				state=view;
 				entry_under_cursor=0;
 			}
-		} else if(state==view){
+		} else if(state==view || state==week_view){
 			if(chr =='l'){
 				buffr=init_log_edit(a_log, false,0,0);
 				state=logging;
@@ -333,6 +334,12 @@ int main(){
 					entry_to_resize=entry_under_cursor;
 					state=entry_resize;
 				}
+			}else if(chr =='w'){
+				cursor_pos_tm=(unsigned long)time(0);
+				state=week_view;
+			}else if(chr =='v'){
+				cursor_pos_tm=(unsigned long)time(0);
+				state=view;
 			}else if(chr =='e'){
 				mvprintw(max_row-3,max_col-sizeof("ending last entry"),"ending last entry");
 				end_last_entry(a_log);
@@ -371,13 +378,16 @@ int main(){
 
 		//drawing happens here
 		print_str_n_times(max_row-1, 0,"-", max_col);
-		//print_logs(a_log,-5,0,max_row,max_col,cell_minutes,cursor_pos_tm);
-		print_weeks(a_log, max_row, max_col, cell_minutes, cursor_pos_tm);
-		//if(max_col>100)
-			//draw_durations(23, 90, a_log, stat_input);
 		if(state==view){
+			print_logs(a_log,-5,0,max_row,max_col,cell_minutes,cursor_pos_tm);
+			if(max_col>100)
+				draw_durations(23, 90, a_log, stat_input);
 			curs_set(0);
 			mvprintw(max_row-1, 0, "view mode, scale=%d minutes",cell_minutes);
+		}else if(state==week_view){
+			print_weeks(a_log, max_row, max_col, cell_minutes, cursor_pos_tm);
+			curs_set(0);
+			mvprintw(max_row-1, 0, "week view mode, scale=%d minutes",cell_minutes);
 		}else if(state==logging){
 			curs_set(1);
 			draw_log_edit(&buffr, max_row-3, 0);
