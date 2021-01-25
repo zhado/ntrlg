@@ -32,12 +32,6 @@ enum window_state {
 	entry_resize
 };
 
-char char_at(int row,int col){
-	chtype a=mvinch(row,col);
-	char ret= A_CHARTEXT & a;
-	return ret;
-}
-
 void end_last_entry(t_log* log_p){
 	log_entry* entry=&log_p->entries[log_p->index-1];
 	if(entry->start_time==0){

@@ -2,6 +2,7 @@
 #include <ncurses.h>
 #include "logs.h"
 #include "autocomp.h"
+#include "trlg_string.h"
 
 void print_str_n_times(int row,int col, char* str,int n){
 	for(int i=0;i<n/strlen(str);i++){
@@ -103,7 +104,12 @@ void draw_time_boxes(t_log* logp,int cur_row,int col_p,time_t cell_tm, int cell_
 	}
 
 	if(find_longest_entry){
-		printw("%s ",longest_entry->name);
+		//get
+		int row=0,col=0;
+		getyx(stdscr, row, col);
+		print_warp_str(row,col, longest_entry->name,25 );
+		//printw("%s",longest_entry->name);
+		printw(" ");
 		attron(COLOR_PAIR(1));
 		print_duration(longest_entry->end_time-longest_entry->start_time);
 		attroff(COLOR_PAIR(1));
@@ -127,16 +133,6 @@ void print_logs(t_log* log_p,int row,int col,int max_row,int max_col,int cell_mi
 		draw_time_boxes(log_p,i,col,cell_tm,cell_minutes,quantized_cursor_pos_tm);
 		count++;
 	}
-	//if(max_col>125)
-	//for(int i=0;i<log_p->index;i++){
-		//log_entry* entry=&log_p->entries[i];
-		//print_normal_time(0+i,70,entry->start_time);
-		//if(entry->end_time == 0) 
-			//mvprintw(0+i,79,"now");
-		//else 
-			//print_normal_time(0+i,77,entry->end_time);
-		//printw(" %s, %s\n",entry->name,entry->sub_name);
-	//}
 }
 
 log_entry* entry_under_cursor_fun(t_log* log_p,int max_row,int cell_minutes,time_t cursor_pos_tm){
@@ -148,7 +144,7 @@ log_entry* entry_under_cursor_fun(t_log* log_p,int max_row,int cell_minutes,time
 	time_t pos_start=quantized_cursor_pos_tm;
 	time_t pos_end=pos_start+cell_minutes*60;
 	time_t last_duration=0;
-	for(int i=0;i<log_p->index;i++){
+	for(int i=log_p->index-1;i>=0;i--){
 		log_entry* entry=&log_p->entries[i];
 		if(entry->end_time>=pos_start && entry->end_time <=pos_end){
 			if((entry->end_time-entry->start_time) > last_duration){
