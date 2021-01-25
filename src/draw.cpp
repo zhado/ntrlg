@@ -55,11 +55,25 @@ void draw_time_boxes(t_log* logp,int cur_row,int col_p,time_t cell_tm, int cell_
 
 	tm broken_down_cell_2=get_tm(next_cell_tm_2);
 	tm broken_down_cell_tm=get_tm(cell_tm);
+
+	if(get_tm(cell_tm).tm_mday!=get_tm(next_cell_tm_2).tm_mday && draw_mask & DRAW_DAY_DIVIDER){
+		print_str_n_times(cur_row, col_p, "-", 70);
+	}
+
+	if(draw_mask & DRAW_hm ){
+		mvprintw(cur_row,col_p ,"%02d:%02d",broken_down_cell_tm.tm_hour,broken_down_cell_tm.tm_min); 
+		col+=6;
+	}
+	if(draw_mask & DRAW_h){
+		if(broken_down_cell_tm.tm_min==0 ){
+			mvprintw(cur_row,col+col_p,"%02d",broken_down_cell_tm.tm_hour);
+		}
+		col+=3;
+	}
+
 	if(draw_mask & DRAW_DATE ){
 		if(get_tm(cell_tm).tm_mday!=get_tm(next_cell_tm_2).tm_mday){
-			if(draw_mask & DRAW_DAY_DIVIDER)
-				print_str_n_times(cur_row, col_p, "-", 70);
-			mvprintw(cur_row,9+col_p,"%02d/%02d/%02d",
+			mvprintw(cur_row,col_p+col,"%02d/%02d/%02d",
 					broken_down_cell_tm.tm_mday,
 					broken_down_cell_tm.tm_mon+1,
 					broken_down_cell_tm.tm_year+1900);
@@ -68,16 +82,6 @@ void draw_time_boxes(t_log* logp,int cur_row,int col_p,time_t cell_tm, int cell_
 	}
 	move(cur_row,col_p);
 
-	if(draw_mask & DRAW_hm ){
-		mvprintw(cur_row,col_p,"%02d:%02d",broken_down_cell_tm.tm_hour,broken_down_cell_tm.tm_min); 
-		col+=6;
-	}
-	if(draw_mask & DRAW_h){
-		if(broken_down_cell_tm.tm_min==0 ){
-			mvprintw(cur_row,6+col_p,"%02d",broken_down_cell_tm.tm_hour);
-		}
-		col+=3;
-	}
 
 	if(cell_tm<=current_time && next_cell_tm > current_time){
 			mvprintw(cur_row, col+30+col_p, "<-- now");
@@ -85,7 +89,7 @@ void draw_time_boxes(t_log* logp,int cur_row,int col_p,time_t cell_tm, int cell_
 
 	log_entry* longest_entry;
 	bool draw_this_cell= (mask_end_tm==0) || (cell_tm > mask_start_tm && cell_tm < mask_end_tm);
-	if(draw_this_cell)
+	if(draw_this_cell){
 		for(int i=logp->index-1;i>=0;i--){
 			time_t start_tm=logp->entries[i].start_time;
 			time_t end_time=logp->entries[i].end_time;
@@ -118,16 +122,17 @@ void draw_time_boxes(t_log* logp,int cur_row,int col_p,time_t cell_tm, int cell_
 			}
 		}
 
-	if(find_longest_entry){
-		//get
-		int row=0,col=0;
-		getyx(stdscr, row, col);
-		print_warp_str(row,col, longest_entry->name,25 );
-		//printw("%s",longest_entry->name);
-		printw(" ");
-		attron(COLOR_PAIR(1));
-		print_duration(longest_entry->end_time-longest_entry->start_time);
-		attroff(COLOR_PAIR(1));
+		if(find_longest_entry){
+			//get
+			int row=0,col=0;
+			getyx(stdscr, row, col);
+			print_warp_str(row,col, longest_entry->name,25 );
+			//printw("%s",longest_entry->name);
+			printw(" ");
+			attron(COLOR_PAIR(1));
+			print_duration(longest_entry->end_time-longest_entry->start_time);
+			attroff(COLOR_PAIR(1));
+		}
 	}
 }
 
@@ -148,7 +153,7 @@ void print_logs(t_log* log_p,int row,int col,int max_row,int max_col,int cell_mi
 	int count=0;
 	for(int i=max_row+row;i>=0;i--){
 		time_t cell_tm=quantized_cursor_pos_tm-cell_minutes*60*count;
-		draw_time_boxes(log_p,i,col,cell_tm,cell_minutes,quantized_cursor_pos_tm,1 | DRAW_h| DRAW_DATE|DRAW_DAY_DIVIDER,last_midnight,local_time);
+		draw_time_boxes(log_p,i,col,cell_tm,cell_minutes,quantized_cursor_pos_tm,0 | DRAW_DAY_DIVIDER,last_midnight,local_time);
 		count++;
 	}
 }
