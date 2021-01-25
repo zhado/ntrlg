@@ -7,6 +7,11 @@
 //     |||-- gverdita saati
 //     ||-- tarigi
 //     |-- cursor
+
+#define DRAW_DAY_DIVIDER 16
+#define DRAW_DATE 8
+#define DRAW_h 2
+#define DRAW_hm 1
 void print_str_n_times(int row,int col, char* ch,int n);
 void print_duration(int duration);
 void print_normal_time(time_t tim);

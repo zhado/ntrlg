@@ -168,6 +168,34 @@ uint32_t hash(t_log* log_p){
 	return hash;
 }
 
+log_entry* entry_under_cursor_fun(t_log* log_p,int max_row,int cell_minutes,time_t cursor_pos_tm){
+	log_entry* longest_entry=0;
+
+	time_t current_time=(unsigned long)time(0);
+	time_t quantized_cursor_pos_tm=cursor_pos_tm-(cursor_pos_tm%(cell_minutes*60));
+
+	time_t pos_start=quantized_cursor_pos_tm;
+	time_t pos_end=pos_start+cell_minutes*60;
+	time_t last_duration=0;
+	for(int i=log_p->index-1;i>=0;i--){
+		log_entry* entry=&log_p->entries[i];
+		if(entry->end_time>=pos_start && entry->end_time <=pos_end){
+			if((entry->end_time-entry->start_time) > last_duration){
+				last_duration=entry->end_time-entry->start_time;
+				longest_entry=entry;
+			}
+		}else if(entry->end_time==0 && current_time >= pos_start && current_time <=pos_end){
+			longest_entry=entry;
+		}
+		//}else if(entry->start_time >= pos_start && entry->start_time <=pos_end){
+			//if((entry->end_time-entry->start_time) > last_duration){
+				//last_duration=entry->end_time-entry->start_time;
+				//longest_entry=entry;
+			//}
+		//}
+	}
+	return longest_entry;
+}
 int main(){
 	int cell_minutes=20;
 	time_t cursor_pos_tm=(unsigned long)time(0);
