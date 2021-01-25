@@ -65,8 +65,8 @@ void draw_time_boxes(t_log* logp,int cur_row,int col_p,time_t cell_tm, int cell_
 	if(broken_down_cell_tm.tm_min==0)
 		mvprintw(cur_row,6+col_p,"%02d",broken_down_cell_tm.tm_hour);
 
-	if(cell_tm<current_time && next_cell_tm > current_time){
-			mvprintw(cur_row, col+22+col_p, "<-- now");
+	if(cell_tm<=current_time && next_cell_tm > current_time){
+			mvprintw(cur_row, col+30+col_p, "<-- now");
 	}
 
 	log_entry* longest_entry;
@@ -106,7 +106,6 @@ void draw_time_boxes(t_log* logp,int cur_row,int col_p,time_t cell_tm, int cell_
 		printw("%s ",longest_entry->name);
 		attron(COLOR_PAIR(1));
 		print_duration(longest_entry->end_time-longest_entry->start_time);
-		print_normal_time(longest_entry->end_time);
 		attroff(COLOR_PAIR(1));
 	}
 }
@@ -142,53 +141,29 @@ void print_logs(t_log* log_p,int row,int col,int max_row,int max_col,int cell_mi
 
 log_entry* entry_under_cursor_fun(t_log* log_p,int max_row,int cell_minutes,time_t cursor_pos_tm){
 	log_entry* longest_entry=0;
+
 	time_t current_time=(unsigned long)time(0);
 	time_t quantized_cursor_pos_tm=cursor_pos_tm-(cursor_pos_tm%(cell_minutes*60));
 
-	time_t fixed=quantized_cursor_pos_tm;
-	time_t pos_end=fixed+cell_minutes*60;
-	//move(max_row-11,40);
-	//printw("fixed=");
-	//print_normal_date_time(fixed);
-	//move(max_row-12,40);
-	//print_normal_date_time(cursor_pos_tm);
-	//move(max_row-13,40);
-	//printw("maxrow/2=%d",max_row/2);
-
+	time_t pos_start=quantized_cursor_pos_tm;
+	time_t pos_end=pos_start+cell_minutes*60;
 	time_t last_duration=0;
 	for(int i=0;i<log_p->index;i++){
 		log_entry* entry=&log_p->entries[i];
-		if(entry->end_time>=fixed && entry->end_time <=pos_end){
+		if(entry->end_time>=pos_start && entry->end_time <=pos_end){
 			if((entry->end_time-entry->start_time) > last_duration){
 				last_duration=entry->end_time-entry->start_time;
 				longest_entry=entry;
 			}
-		}else if(entry->end_time==0 && current_time>=fixed && current_time <=(fixed+cell_minutes*60)){
-			return entry;
+		}else if(entry->end_time==0 && current_time >= pos_start && current_time <=pos_end){
+			longest_entry=entry;
 		}
-	}
-	return longest_entry;
-}
-
-log_entry* entry_start_under_cursor_fun(t_log* log_p,int max_row,int cell_minutes,time_t cursor_pos_tm){
-	log_entry* longest_entry=0;
-	time_t current_time=(unsigned long)time(0);
-	time_t quantized_cursor_pos_tm=cursor_pos_tm-(cursor_pos_tm%(cell_minutes*60));
-
-	time_t fixed=quantized_cursor_pos_tm;
-	time_t pos_end=fixed+cell_minutes*60;
-
-	time_t last_duration=0;
-	for(int i=0;i<log_p->index;i++){
-		log_entry* entry=&log_p->entries[i];
-		if(entry->start_time>=fixed && entry->start_time <=pos_end){
-			if((entry->start_time-entry->start_time) > last_duration){
-				last_duration=entry->start_time-entry->start_time;
-				longest_entry=entry;
-			}
-		}else if(entry->start_time==0 && current_time>=fixed && current_time <=(fixed+cell_minutes*60)){
-			return entry;
-		}
+		//}else if(entry->start_time >= pos_start && entry->start_time <=pos_end){
+			//if((entry->end_time-entry->start_time) > last_duration){
+				//last_duration=entry->end_time-entry->start_time;
+				//longest_entry=entry;
+			//}
+		//}
 	}
 	return longest_entry;
 }

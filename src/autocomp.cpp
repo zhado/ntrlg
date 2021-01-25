@@ -5,15 +5,23 @@
 
 #include "logs.h"
 #include "trlg_common.h"
+#include "trlg_string.h"
 #include "draw.h"
 #include "autocomp.h"
 
-int match_score(char* st1, char* st2){
+int match_score(char* st1, char* st2,bool exact_match){
 	int res=0,
 	    res_t=0,
 	    l1=strlen(st1),
 	    l2=strlen(st2),
 	    min=INT32_MAX;
+	if(exact_match){
+		if(strcmp(st1, st2)==0){
+			return 0;
+		}else{
+			return INT32_MAX;
+		}
+	}
 
 	if(l2>l1) {
 		res=INT32_MAX;
@@ -32,6 +40,40 @@ int match_score(char* st1, char* st2){
 	return min;
 }
 
+int match_scores_by_comma(char* str, char* search_strin){
+	int score=0,min=INT32_MAX;
+	char my_str[MAX_NAME_SIZE];
+	memset(&my_str,0,MAX_NAME_SIZE);
+	strcpy(my_str, str);
+	remove_spaces(my_str);
+
+	int last_days= 7;
+	time_t local_time=(unsigned long)time(NULL);
+	time_t secs_in_day=24*60*60;
+
+	char temp_str[MAX_NAME_SIZE];
+	char* ch_start_p=my_str;
+
+	for(;;){
+		memset(&temp_str,0,MAX_NAME_SIZE);
+
+		char* n_comma=next_comma(ch_start_p);
+		if(n_comma==0){
+			memcpy(temp_str,ch_start_p,strlen(my_str));
+		}else{
+			memcpy(temp_str,ch_start_p,n_comma-ch_start_p);
+		}
+
+		score=match_score(temp_str,search_strin,true);
+		if(score<min){
+			min=score;
+		}
+		if(!n_comma || n_comma==ch_start_p+strlen(ch_start_p))break;
+		ch_start_p=n_comma+1;
+	}
+	return min;
+}
+
 void swap_sni_s(size_n_index* a, size_n_index* b){
 	if(a!=b){
 		int temp_score=b->score;
@@ -45,6 +87,7 @@ void swap_sni_s(size_n_index* a, size_n_index* b){
 		b->offset=a->offset;
 		b->size=a->size;
 		b->root_entry=a->root_entry;
+
 		a->score=temp_score;
 		a->index=temp_index;
 		a->offset=temp_offset;
@@ -124,7 +167,7 @@ void match_names(t_log* log_p, char* search_string_p, bool remove_dups, size_n_i
 				memset(tempchar, 0, len);
 				memcpy(tempchar, start_at, entry_char-start_at+k);
 				tempchar[entry_char-start_at+k]=0;
-				evaled_names_ar[j].score=match_score(tempchar,search_string);
+				evaled_names_ar[j].score=match_score(tempchar,search_string,false);
 				evaled_names_ar[j].index=reverse_index;
 				evaled_names_ar[j].offset=start_at;
 				evaled_names_ar[j].size=entry_char-start_at+k;
@@ -136,7 +179,7 @@ void match_names(t_log* log_p, char* search_string_p, bool remove_dups, size_n_i
 
 		if(len!=0)
 			memcpy(tempchar, start_at, entry_char+len-start_at-1);
-		evaled_names_ar[j].score=match_score(tempchar,search_string);
+		evaled_names_ar[j].score=match_score(tempchar,search_string,false);
 		evaled_names_ar[j].index=reverse_index;
 		evaled_names_ar[j].offset=start_at;
 		evaled_names_ar[j].size=entry_char+len-start_at;
@@ -149,12 +192,12 @@ void match_names(t_log* log_p, char* search_string_p, bool remove_dups, size_n_i
 	int i=0;
 	for(;i<AUTOCOM_WIN_MAX_SIZE;i++){
 		size_n_index cur_sni=evaled_names_ar[i];
-		if(cur_sni.score >= cur_sni.size+1 || i > AUTOCOM_WIN_MAX_SIZE){
-			*matched_count=i-1;
+		if(cur_sni.score > cur_sni.size || i > AUTOCOM_WIN_MAX_SIZE){
+			*matched_count=i;
 			break;
 		}
 	}
-	*matched_count=i-1;
+	*matched_count=i;
 }
 
 void draw_sni(int row, int col,size_n_index sni[AUTOCOM_WIN_MAX_SIZE], int choice,int matched_count){

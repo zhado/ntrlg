@@ -39,14 +39,11 @@ char char_at(int row,int col){
 }
 
 void end_last_entry(t_log* log_p){
-	UNSAVED_CHANGES=true;
 	log_entry* entry=&log_p->entries[log_p->index-1];
 	if(entry->start_time==0){
 		fprintf(stderr, "entry not started.");
 	}else if(entry->end_time==0){
 		entry->end_time=(unsigned long)time(0);
-	}else{
-		//UNSAVED_CHANGES=false;
 	}
 }
 
@@ -57,7 +54,6 @@ void remove_commas_from_end(char* str){
 }
 
 void add_entry(t_log* log_p, char* name, char* sub_name,time_t start_time,time_t end_time){
-	UNSAVED_CHANGES=true;
 	if(log_p->index!=0)
 		end_last_entry(log_p);
 	if(log_p->allocated < (log_p->index+1) ){
@@ -163,6 +159,21 @@ void free_app(app_state* app){
 	app->stat_input=0;
 }
 
+uint32_t hash(t_log* log_p){
+	uint32_t hash=0;
+	for(int i=0;i<log_p->index;i++){
+		hash+=log_p->index;
+		hash+=log_p->allocated;
+		hash+=log_p->entries[i].end_time;
+		hash+=log_p->entries[i].start_time;
+		for(int j=0;j<strlen(log_p->entries[i].name);j++)
+			hash+=*log_p->entries[j].name;
+		for(int j=0;j<strlen(log_p->entries[i].sub_name);j++)
+			hash+=(int)*log_p->entries[j].sub_name;
+	}
+	return hash;
+}
+
 int main(){
 	int cell_minutes=20;
 	time_t cursor_pos_tm=(unsigned long)time(0);
@@ -203,10 +214,9 @@ int main(){
 	//2=subname 1=name
 	
 	log_entry* entry_under_cursor=0;
-	log_entry* entry_ur_cursor_nx=0;
-	log_entry* entry_ur_cursor_pr=0;
 	log_entry* entry_to_resize=0;
 	log_edit_buffer buffr;
+	uint32_t last_hash=hash(a_log);
 
 	//strcpy(sub_name, "x");
 	//state=logging;
@@ -241,10 +251,11 @@ int main(){
 				add_entry(a_log, buffr.name, buffr.sub_name,a_log->entries[a_log->index-1].end_time , 0);
 				state=view;
 			}
+
 		} else if(state==entry_resize){
-			entry_ur_cursor_pr=entry_under_cursor_fun(a_log, max_row, cell_minutes, cursor_pos_tm-cell_minutes*60);
+			log_entry* entry_ur_cursor_pr=entry_under_cursor_fun(a_log, max_row, cell_minutes, cursor_pos_tm-cell_minutes*60);
+			log_entry* entry_ur_cursor_nx=entry_under_cursor_fun(a_log, max_row, cell_minutes, cursor_pos_tm+cell_minutes*60);
 			entry_under_cursor=entry_under_cursor_fun(a_log, max_row, cell_minutes, cursor_pos_tm);
-			entry_ur_cursor_nx=entry_under_cursor_fun(a_log, max_row, cell_minutes, cursor_pos_tm+cell_minutes*60);
 			if(chr ==259 && entry_ur_cursor_pr==0){
 				//uparrow
 				cursor_pos_tm-=cell_minutes*60;
@@ -254,10 +265,10 @@ int main(){
 			}else if(chr ==258 && entry_ur_cursor_nx==0){
 				//downarrow
 				cursor_pos_tm+=cell_minutes*60;
-			}else if(chr ==339){
+			}else if(chr ==339 && entry_ur_cursor_pr){
 				//pgup
 				cursor_pos_tm-=cell_minutes*60*4;
-			}else if(chr ==338){
+			}else if(chr ==338 && entry_ur_cursor_nx){
 				//pgdown
 				cursor_pos_tm+=cell_minutes*60*4;
 			}else if(chr =='z'){
@@ -276,8 +287,8 @@ int main(){
 				memcpy(entry_under_cursor->name, buffr.name, MAX_NAME_SIZE);
 				memcpy(entry_under_cursor->sub_name, buffr.sub_name, MAX_NAME_SIZE);
 				state=view;
+				entry_under_cursor=0;
 			}
-			entry_under_cursor=0;
 		} else if(state==view){
 			if(chr =='l'){
 				buffr=init_log_edit(a_log, false,0,0);
@@ -364,16 +375,21 @@ int main(){
 			curs_set(0);
 			mvprintw(max_row-1, 0, "entry resize mode");
 		}
+		mvprintw(max_row-2,max_col-6,"%d=%d",max_row,max_col);
+		mvprintw(max_row-1,max_col-6,"%d=%chr",chr,chr);
+		move(buffr.cursor_row,buffr.cursor_col);
+
+		uint32_t new_hash=hash(a_log);
+		if(last_hash!=new_hash){
+			last_hash=new_hash;
+			UNSAVED_CHANGES=true;
+		}
 		if(UNSAVED_CHANGES){
 			const char* msg="unsaved changes";
 			attron(COLOR_PAIR(3));
 			mvprintw(max_row-1,max_col/2-strlen(msg)/2,"%s",msg);
 			attroff(COLOR_PAIR(3));
 		}
-		mvprintw(max_row-2,max_col-6,"%d=%d",max_row,max_col);
-		mvprintw(max_row-1,max_col-6,"%d=%chr",chr,chr);
-		move(buffr.cursor_row,buffr.cursor_col);
-
 		refresh();
 		chr=getch();
 		if(chr==ERR){

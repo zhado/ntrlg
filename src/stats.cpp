@@ -5,6 +5,7 @@
 #include "autocomp.h"
 #include "draw.h"
 #include "trlg_common.h"
+#include "trlg_string.h"
 
 time_t tm_clamp(time_t in, time_t min, time_t max){
 	if(in > min && in < max){
@@ -23,7 +24,7 @@ time_t get_duration_in_range(t_log* a_log, char* str,time_t start_tm,time_t end_
 	for(int i=0;i<a_log->index;i++){
 		log_entry cur_entry=a_log->entries[i];
 		if(cur_entry.end_time==0)cur_entry.end_time=(unsigned long)time(0);
-		if(match_score(cur_entry.sub_name, str)==0){
+		if(match_scores_by_comma(cur_entry.sub_name, str)==0){
 			time_t temp_start_tm=tm_clamp(start_tm, cur_entry.start_time, cur_entry.end_time);
 			time_t temp_end_tm=tm_clamp(end_tm, cur_entry.start_time, cur_entry.end_time);
 			duration+=temp_end_tm-temp_start_tm;
@@ -32,14 +33,6 @@ time_t get_duration_in_range(t_log* a_log, char* str,time_t start_tm,time_t end_
 	return duration;
 }
 
-char* next_comma(char* str){
-	for(int i=0;i<strlen(str);i++){
-		if(str[i]==','){
-			return str+i;
-		}
-	}
-	return 0;
-}
 
 void draw_durations(int row, int col,t_log* a_log, char* str){
 	char my_str[MAX_NAME_SIZE];
@@ -82,7 +75,7 @@ void draw_durations(int row, int col,t_log* a_log, char* str){
 					//print_normal_date_time(end_time);
 				}
 				move(row-1,col+12+9*i);
-				printw("|");
+				printw("│");
 				
 				print_duration(get_duration_in_range(a_log, temp_str,start_time,end_time));
 		}
@@ -90,6 +83,4 @@ void draw_durations(int row, int col,t_log* a_log, char* str){
 		if(!n_comma || n_comma==ch_start_p+strlen(ch_start_p))break;
 		ch_start_p=n_comma+1;
 	}
-	
-	//move(row,col);
 }

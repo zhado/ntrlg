@@ -18,10 +18,11 @@ struct match_result{
 	int size;
 };
 
-int match_score(char* st1, char* st2);
+int match_score(char* st1, char* st2, bool exact_match);
 char* get_after_last_comma (char* str);
 char* remove_spaces(char* str);
 void match_names(t_log* log_p, char* search_string_p, bool remove_dups, size_n_index* output, int* matched_count);
 void draw_sni(int row, int col,size_n_index sni[AUTOCOM_WIN_MAX_SIZE], int choice,int matched_count);
+int match_scores_by_comma(char* str, char* search_strin);
 
 #endif

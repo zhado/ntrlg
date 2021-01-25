@@ -26,3 +26,12 @@ char last_char(char* str){
 		return 0;
 	return str[strlen(str)-1];
 }
+
+char* next_comma(char* str){
+	for(int i=0;i<strlen(str);i++){
+		if(str[i]==','){
+			return str+i;
+		}
+	}
+	return 0;
+}
