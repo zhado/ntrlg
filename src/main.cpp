@@ -371,9 +371,10 @@ int main(){
 
 		//drawing happens here
 		print_str_n_times(max_row-1, 0,"-", max_col);
-		print_logs(a_log,-5,0,max_row,max_col,cell_minutes,cursor_pos_tm);
-		if(max_col>100)
-			draw_durations(23, 90, a_log, stat_input);
+		//print_logs(a_log,-5,0,max_row,max_col,cell_minutes,cursor_pos_tm);
+		print_weeks(a_log, max_row, max_col, cell_minutes, cursor_pos_tm);
+		//if(max_col>100)
+			//draw_durations(23, 90, a_log, stat_input);
 		if(state==view){
 			curs_set(0);
 			mvprintw(max_row-1, 0, "view mode, scale=%d minutes",cell_minutes);
