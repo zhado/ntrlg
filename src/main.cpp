@@ -408,7 +408,6 @@ int main(){
 			draw_log_edit(&buffr, max_row-3, 0);
 			mvprintw(max_row-1, 0, "append logging");
 		}else if(state==entry_resize){
-			curs_set(0);
 			mvprintw(max_row-1, 0, "entry resize mode");
 		}
 		mvprintw(max_row-2,max_col-6,"%d=%d",max_row,max_col);

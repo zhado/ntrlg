@@ -46,21 +46,17 @@ void print_duration(time_t duration){
 		printw("%lum",duration/60%60);
 }
 
-void draw_time_boxes(t_log* logp,int cur_row,int col_p,time_t cell_tm, int cell_minutes,time_t cursor_offset, time_t quantized_cursor_pos_tm, u_int32_t draw_mask, time_t mask_start_tm, time_t mask_end_tm,int width){
+int draw_time_decorations(int cur_row,int col_p,time_t cell_tm, int cell_minutes,time_t cursor_offset, time_t quantized_cursor_pos_tm, u_int32_t draw_mask,int width){
 	time_t next_cell_tm=cell_tm+(cell_minutes*60);
 	time_t next_cell_tm_2=cell_tm-(cell_minutes*60);
 	time_t current_time=(unsigned long)time(0);
-	time_t last_duration=0;
 	int col=0;
-	bool find_longest_entry=false;
+	if(quantized_cursor_pos_tm-cursor_offset < next_cell_tm && quantized_cursor_pos_tm-cursor_offset >= cell_tm){
+		print_str_n_times(cur_row,col_p, "_", 70);
+		//move(cur_row,max_col-6);
+		//print_normal_time(cursor_pos_tm);
+	}
 
-	//if(quantized_cursor_pos_tm-cursor_offset < next_cell_tm && quantized_cursor_pos_tm-cursor_offset >= cell_tm){
-		//print_str_n_times(cur_row,col_p, "_", 70);
-		////move(cur_row,max_col-6);
-		////print_normal_time(cursor_pos_tm);
-	//}
-
-	tm broken_down_cell_2=get_tm(next_cell_tm_2);
 	tm broken_down_cell_tm=get_tm(cell_tm);
 
 	if(get_tm(cell_tm).tm_mday!=get_tm(next_cell_tm_2).tm_mday && draw_mask & DRAW_DAY_DIVIDER){
@@ -87,24 +83,30 @@ void draw_time_boxes(t_log* logp,int cur_row,int col_p,time_t cell_tm, int cell_
 		}
 		col+=11;
 	}
-	move(cur_row,col_p);
 
+	if(cell_tm<=current_time && next_cell_tm > current_time && draw_mask & DRAW_NOW){
+		mvprintw(cur_row,col_p+ width-sizeof("<-- now"), "<-- now");
+	}
+	return col;
+}
 
+void draw_time_boxes(t_log* logp,int cur_row,int col_p,time_t cell_tm, int cell_minutes, time_t mask_start_tm,time_t mask_end_tm,int width){
+	time_t next_cell_tm=cell_tm+(cell_minutes*60);
+	time_t next_cell_tm_2=cell_tm-(cell_minutes*60);
+	time_t current_time=(unsigned long)time(0);
+	time_t last_duration=0;
+	bool find_longest_entry=false;
 
 	log_entry* longest_entry;
 	bool draw_this_cell= (mask_end_tm==0) || (cell_tm > mask_start_tm && cell_tm < mask_end_tm);
-	if(draw_this_cell && !(draw_mask & DRAW_NO_BLOCKS)){
-		if(cell_tm<=current_time && next_cell_tm > current_time){
-			mvprintw(cur_row,col_p+ width-sizeof("<-- now"), "<-- now");
-		}
+	if(draw_this_cell){
 		for(int i=logp->index-1;i>=0;i--){
 			time_t start_tm=logp->entries[i].start_time;
 			time_t end_time=logp->entries[i].end_time;
 			if(end_time < next_cell_tm && end_time > cell_tm){
 				find_longest_entry=true;
 				log_entry* entry=&logp->entries[i];
-				mvprintw(cur_row, col+col_p, "=---->");
-
+				mvprintw(cur_row, col_p, "=---->");
 				if((entry->end_time-entry->start_time) > last_duration){
 					last_duration=entry->end_time-entry->start_time;
 					longest_entry=entry;
@@ -112,20 +114,18 @@ void draw_time_boxes(t_log* logp,int cur_row,int col_p,time_t cell_tm, int cell_
 				}
 			}else if(end_time==0 &&  next_cell_tm >= current_time && cell_tm < current_time ){
 				log_entry* entry=&logp->entries[logp->index-1];
-				mvprintw(cur_row, col+col_p, "++++++");
+				mvprintw(cur_row, col_p, "++++++");
 				printw("%s ",entry->name);
-
 				attron(COLOR_PAIR(1));
 				print_duration(current_time-entry->start_time);
 				attroff(COLOR_PAIR(1));
 				break;
 			}else if(((next_cell_tm<end_time || end_time==0 )&& cell_tm < current_time) && cell_tm>start_tm){
-				mvprintw(cur_row, col+col_p, "|    |");
+				mvprintw(cur_row, col_p, "|    |");
 				break;
 			}else if(start_tm>cell_tm && start_tm<next_cell_tm){
 				log_entry* entry=&logp->entries[i];
-				mvprintw(cur_row, col+col_p, "------");
-				//printw("%s ",entry->name);
+				mvprintw(cur_row, col_p, "------");
 			}
 		}
 
@@ -150,13 +150,11 @@ void print_logs(t_log* log_p,int row,int col,int max_row,int max_col,int cell_mi
 	time_t cursor_offset=cell_minutes*60*(floor(max_row/2));
 	quantized_cursor_pos_tm+=cursor_offset;
 
-	//if(max_col>COL_CUTOFF)
-	//else
-		//mvprintw(max_row/2+row,70,"<<<");
 	int count=0;
 	for(int i=max_row+row;i>=0;i--){
 		time_t cell_tm=quantized_cursor_pos_tm-cell_minutes*60*count;
-		draw_time_boxes(log_p,i,col,cell_tm,cell_minutes,cursor_offset,quantized_cursor_pos_tm,INT32_MAX ^ DRAW_NO_BLOCKS,0,0,70);
+		int dec_width=draw_time_decorations(i, 0, cell_tm, cell_minutes, cursor_offset, quantized_cursor_pos_tm, INT32_MAX , 70);
+		draw_time_boxes(log_p,i,col+dec_width,cell_tm,cell_minutes,0,0,70);
 		count++;
 	}
 }
@@ -175,6 +173,7 @@ void print_weeks(t_log* log_p,int max_row,int max_col,int cell_minutes,time_t cu
 	mvprintw(max_row-1,max_col-10,"%d",fudge_factor);
 	if(fudge_factor<width)
 		width+=fudge_factor;
+
 	for(int j=0;j<=days_to_fit;j++){
 		int day=days_to_fit-j;
 		time_t local_time=(unsigned long)time(NULL);
@@ -189,22 +188,23 @@ void print_weeks(t_log* log_p,int max_row,int max_col,int cell_minutes,time_t cu
 		for(int i=max_row-2;i>=0;i--){
 			time_t cell_tm=quantized_cursor_pos_tm-cell_minutes*60*count;
 			if(j==0){
-				draw_time_boxes(log_p,i,0,cell_tm,cell_minutes,cursor_offset,
+				draw_time_decorations(i, 0, cell_tm, cell_minutes, 
+						cursor_offset,
 						quantized_cursor_pos_tm,
-						DRAW_hm | DRAW_h | DRAW_NO_BLOCKS+ DRAW_DAY_DIVIDER ,
-						last_midnight-secs_in_day*(day),
-						last_midnight-secs_in_day*(day-1),
-						0);
-				draw_time_boxes(log_p,i,offset,cell_tm,cell_minutes,cursor_offset,
-						quantized_cursor_pos_tm,
-						DRAW_DAY_DIVIDER ,
+						INT32_MAX  ^ DRAW_DATE ^ DRAW_NOW,
+						width+offset);
+				draw_time_boxes(log_p,i,offset,cell_tm,cell_minutes,	
 						last_midnight-secs_in_day*(day),
 						last_midnight-secs_in_day*(day-1),
 						width);
 			}else{
-				draw_time_boxes(log_p,i,j*(width+space_between)+offset,cell_tm,cell_minutes, cursor_offset,
+				draw_time_decorations(i, j*(width+space_between)+offset, cell_tm,
+						cell_minutes,
+						cursor_offset,
 						quantized_cursor_pos_tm,
-						DRAW_DAY_DIVIDER,
+						DRAW_DAY_DIVIDER | (day==0)*DRAW_NOW,
+						width);
+				draw_time_boxes(log_p,i,j*(width+space_between)+offset,cell_tm,cell_minutes,	
 						last_midnight-secs_in_day*(day),
 						last_midnight-secs_in_day*(day-1),
 						width);

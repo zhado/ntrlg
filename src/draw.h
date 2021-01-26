@@ -7,9 +7,9 @@
 //    ||||-- gverdita saati
 //    |||-- tarigi
 //    ||-- cursor
-//    |-- no blocks
+//    |-- now indicator 
 
-#define DRAW_NO_BLOCKS 32
+#define DRAW_NOW 32
 #define DRAW_DAY_DIVIDER 16
 #define DRAW_DATE 8
 #define DRAW_h 2
