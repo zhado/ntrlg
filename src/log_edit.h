@@ -16,5 +16,6 @@ struct log_edit_buffer{
 	int matched_count;
 	int cursor_row;
 	int cursor_col;
+	int local_curs_pos;
 };
 #endif

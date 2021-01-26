@@ -67,3 +67,29 @@ void print_warp_str(int row, int col,char* str, int len){
 		mvprintw(row,col,"%s",str);
 	}
 }
+
+int add_chr_in_str(char chr, char* str,int index,int max_size){
+	int strln=strlen(str);
+
+	if(strln+2<max_size){
+		if(index>=max_size){
+			return -1;
+		}else if (index<0){
+			return -1;
+		}
+		for(int i=max_size-2;i>=index;i--){
+			str[i+1]=str[i];
+		}
+		str[index]=chr;
+
+		if(index>=strln){
+			str[index+1]=0;
+			for(int i=index;i>=0;i--){
+				if(str[i]==0)str[i]=32;
+			}
+		}
+	}else{
+		return -1;
+	}
+	return 0;
+}

@@ -17,6 +17,12 @@ log_edit_buffer init_log_edit(t_log* a_log, bool only_tag_str, char* name, char*
 	buffer.matched_count=0;
 	buffer.cursor_row=0;
 	buffer.cursor_col=0;
+	if(!only_tag_str){
+		buffer.local_curs_pos=strlen(buffer.name);
+	}else{
+		buffer.local_curs_pos=strlen(buffer.sub_name);
+	}
+
 	return buffer;
 }
 
@@ -30,38 +36,64 @@ int log_edit(log_edit_buffer* buffer, int chr){
 	char* requested_str=buffer->sni[*autocomp_selection].offset;
 	int requested_str_size=buffer->sni[*autocomp_selection].size;
 
+
 	if(chr > 31 && chr <=126){
 		if(!only_tag_str){
-			if( last_char(name)!=10 && strlen(name) < MAX_NAME_SIZE ){
-				name[strlen(name)]=chr;
-			}else if ((last_char(name)==10 ) && strlen(tag_str) < MAX_NAME_SIZE){
-				tag_str[strlen(tag_str)]=chr;
+			if( last_char(name)!=10 && strlen(name) < MAX_NAME_SIZE -2){
+				add_chr_in_str(chr, name, buffer->local_curs_pos, MAX_NAME_SIZE);
+				buffer->local_curs_pos++;
+			}else if ((last_char(name)==10 ) && strlen(tag_str) < MAX_NAME_SIZE-2){
+				add_chr_in_str(chr, tag_str, buffer->local_curs_pos, MAX_NAME_SIZE);
+				buffer->local_curs_pos++;
 			}
 		}else{
-			if (strlen(tag_str) < MAX_NAME_SIZE){
-				tag_str[strlen(tag_str)]=chr;
+			if (strlen(tag_str) < MAX_NAME_SIZE -2){
+				add_chr_in_str(chr, tag_str, buffer->local_curs_pos, MAX_NAME_SIZE);
+				buffer->local_curs_pos++;
 			}
 		}
 		*autocomp_selection=-1;
 	}else if (chr == 263 || chr==127){
 		if(!only_tag_str){
 			if(last_char(name)!=10 ){
-				name[strlen(name)-1]=0;
+				int name_len=strlen(name);
+				if(name_len>0 && buffer->local_curs_pos>0){
+					memcpy(name-1+buffer->local_curs_pos, name+buffer->local_curs_pos,MAX_NAME_SIZE-1-buffer->local_curs_pos);
+					buffer->local_curs_pos--;
+				}
 			}else{
-				tag_str[strlen(tag_str)-1]=0;
+				int tag_len=strlen(tag_str);
+				if(tag_len>0 && buffer->local_curs_pos>0){
+					memcpy(tag_str-1+buffer->local_curs_pos, tag_str+buffer->local_curs_pos,MAX_NAME_SIZE-1-buffer->local_curs_pos);
+					buffer->local_curs_pos--;
+				}
 			}
 		}else{
-				tag_str[strlen(tag_str)-1]=0;
+				int tag_len=strlen(tag_str);
+				if(tag_len>0 && buffer->local_curs_pos>0){
+					memcpy(tag_str-1+buffer->local_curs_pos, tag_str+buffer->local_curs_pos,MAX_NAME_SIZE-1-buffer->local_curs_pos);
+					buffer->local_curs_pos--;
+				}
 		}
+
 	}else if (chr == KEY_UP && (last_char(name)==10 || only_tag_str) ){
 		if(*autocomp_selection< buffer->matched_count-1)
 			*autocomp_selection=*autocomp_selection+1;
 	}else if (chr == KEY_DOWN && ( last_char(name)==10 || only_tag_str)){
 		if(*autocomp_selection>-1)
 			*autocomp_selection=*autocomp_selection-1;
+	}else if (chr == KEY_RIGHT ){
+		if( (last_char(name)==10 || only_tag_str) &&( strlen(buffer->sub_name) >buffer->local_curs_pos)){
+			buffer->local_curs_pos++;
+		}else if(last_char(name)!=10 && strlen(buffer->name)>buffer->local_curs_pos){
+			buffer->local_curs_pos++;
+		}
+	}else if (chr == KEY_LEFT && buffer->local_curs_pos>0){
+			buffer->local_curs_pos--;
 	}else if (chr == 10){
 		if(last_char(name)!=10 && !only_tag_str){
 			name[strlen(name)]=10;
+			buffer->local_curs_pos=0;
 		}else{
 			if(*autocomp_selection==-1){
 				if(!only_tag_str)
@@ -76,6 +108,7 @@ int log_edit(log_edit_buffer* buffer, int chr){
 							requested_str,requested_str_size);
 				tag_str[strlen(tag_str)]=',';
 				tag_str[strlen(tag_str)]=' ';
+				buffer->local_curs_pos=strlen(tag_str);
 				*autocomp_selection=-1;
 			}
 		}
@@ -108,10 +141,10 @@ void draw_log_edit(log_edit_buffer* buffer,int row,int col){
 	}
 
 	if(last_char(name)!=10 && !only_tag_str ){
-		buffer->cursor_col=col+ sizeof("name: ")+strlen(buffer->name)-1;
+		buffer->cursor_col=col+ sizeof("name: ")+buffer->local_curs_pos-1;
 		buffer->cursor_row=row;
 	}else{
-		buffer->cursor_col=col+ sizeof("tags: ")+strlen(buffer->sub_name)-1;
+		buffer->cursor_col=col+ sizeof("name: ")+buffer->local_curs_pos-1;
 		if(!only_tag_str)
 			buffer->cursor_row=row+1;
 		else
