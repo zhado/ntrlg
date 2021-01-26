@@ -40,7 +40,7 @@ void draw_durations(int row, int col,t_log* a_log, char* str){
 	strcpy(my_str, str);
 	remove_spaces(my_str);
 
-	int last_days= 9;
+	int last_days= 7;
 	time_t local_time=(unsigned long)time(NULL);
 	time_t secs_in_day=24*60*60;
 

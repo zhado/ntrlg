@@ -335,6 +335,7 @@ int main(){
 					state=entry_resize;
 				}
 			}else if(chr =='w'){
+				cell_minutes=30;
 				cursor_pos_tm=(unsigned long)time(0);
 				state=week_view;
 			}else if(chr =='v'){
@@ -378,8 +379,10 @@ int main(){
 
 		//drawing happens here
 		print_str_n_times(max_row-1, 0,"-", max_col);
-		if(state==view){
+		if(state != week_view)
 			print_logs(a_log,-5,0,max_row,max_col,cell_minutes,cursor_pos_tm);
+		if(state==view){
+			//print_logs(a_log,-5,0,max_row,max_col,cell_minutes,cursor_pos_tm);
 			if(max_col>100)
 				draw_durations(23, 90, a_log, stat_input);
 			curs_set(0);
