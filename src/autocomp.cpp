@@ -112,27 +112,6 @@ void sort_sni_s(size_n_index* sni,int count){
 
 }
 
-void mos(size_n_index* sni, int* tag_count){
-	for(int i=1;i<*tag_count;i++){
-		size_n_index* cur_entry=&sni[i];
-		size_n_index* prev_entry=&sni[i-1];
-		char temp_str1[cur_entry->size];
-		char temp_str2[prev_entry->size];
-		memset(temp_str1, 0, cur_entry->size);
-		memset(temp_str2, 0, prev_entry->size);
-		memcpy(temp_str1, cur_entry->offset, cur_entry->size);
-		memcpy(temp_str2, prev_entry->offset, prev_entry->size);
-		temp_str1[cur_entry->size]=0;
-		temp_str2[prev_entry->size]=0;
-		int comp_result=strcmp(temp_str1, temp_str2);
-		if((cur_entry->size==prev_entry->size && comp_result==0) || prev_entry->size==0 ){
-			memcpy(prev_entry, cur_entry, sizeof(size_n_index)*(*tag_count-i));
-			*tag_count=*tag_count-1;
-			i--;
-		}
-	}
-}
-
 void remove_sni(size_n_index* sni, int* tag_count,int index){
 	for(int i=index;i<*tag_count-1;i++){
 		sni[i].index=sni[i+1].index;
@@ -171,11 +150,12 @@ bool cmp_sni(size_n_index sni1, size_n_index sni2){
 
 void remove_duplicate_and_empty_sni(size_n_index* sni, int* tag_count){
 	for(int i=0;i<*tag_count;i++){
-		for(int j=i+1;j<*tag_count;j++){
+		for(int j=i+1;j<*tag_count-1;j++){
 			size_n_index sni1=sni[i];
 			size_n_index sni2=sni[j];
-			while(cmp_sni(sni[i], sni[j])){
+			if(cmp_sni(sni[i], sni[j])){
 				remove_sni(sni, tag_count,j);
+				j--;
 			}
 		}
 	}
@@ -225,8 +205,10 @@ void match_names(t_log* log_p, char* search_string_p, bool remove_dups, size_n_i
 			}
 		}
 
-		if(len!=0)
-			memcpy(tempchar, start_at, entry_char+len-start_at-1);
+		if(len!=0){
+			memcpy(tempchar, start_at, entry_char+len-start_at);
+			tempchar[entry_char-start_at+len]=0;
+		}
 		evaled_names_ar[j].score=match_score(tempchar,search_string,false);
 		evaled_names_ar[j].index=reverse_index;
 		evaled_names_ar[j].offset=start_at;
@@ -240,7 +222,7 @@ void match_names(t_log* log_p, char* search_string_p, bool remove_dups, size_n_i
 	int i=0;
 	for(;i<AUTOCOM_WIN_MAX_SIZE;i++){
 		size_n_index cur_sni=evaled_names_ar[i];
-		if( i > AUTOCOM_WIN_MAX_SIZE){
+		if( i > AUTOCOM_WIN_MAX_SIZE|| i>= tag_count){
 			*matched_count=i;
 			break;
 		}

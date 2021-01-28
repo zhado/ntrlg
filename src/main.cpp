@@ -162,9 +162,9 @@ uint32_t hash(t_log* log_p){
 		hash+=log_p->entries[i].end_time;
 		hash+=log_p->entries[i].start_time;
 		for(int j=0;j<strlen(log_p->entries[i].name);j++)
-			hash+=*log_p->entries[j].name;
+			hash+=log_p->entries[i].name[j];
 		for(int j=0;j<strlen(log_p->entries[i].sub_name);j++)
-			hash+=(int)*log_p->entries[j].sub_name;
+			hash+=log_p->entries[i].sub_name[j];
 	}
 	return hash;
 }
@@ -388,8 +388,8 @@ int main(){
 		print_str_n_times(max_row-1, 0,"-", max_col);
 		if(state != week_view){
 			print_logs(a_log,-5,0,max_row,max_col,cell_minutes,cursor_pos_tm);
-			if(max_col>100)
-				draw_durations(23, 90, a_log, stat_input);
+			//if(max_col>100)
+				//draw_durations(23, 90, a_log, stat_input);
 		}
 
 		if(state==view){
