@@ -148,7 +148,7 @@ void free_app(app_state* app){
 		free(entry->name);
 		free(entry->sub_name);
 	}
-	free(log_p);
+	//free(log_p);
 	free(app->stat_input);
 	log_p=0;
 	app->stat_input=0;
@@ -200,11 +200,12 @@ log_entry* entry_under_cursor_fun(t_log* log_p,int max_row,int cell_minutes,time
 int main(){
 	int cell_minutes=20;
 	time_t cursor_pos_tm=(unsigned long)time(0);
-	t_log* a_log=(t_log*)malloc(sizeof(t_log));
+	//t_log* a_log=(t_log*)malloc(sizeof(t_log));
+	t_log* a_log;
 
-	a_log->index=0;
-	a_log->entries=(log_entry*)malloc(sizeof(log_entry)*100);
-	a_log->allocated=100;
+	//a_log->index=0;
+	//a_log->entries=(log_entry*)malloc(sizeof(log_entry)*100);
+	//a_log->allocated=100;
 	int max_row=0,max_col=0;
 	window_state state=view;
 	
@@ -213,6 +214,7 @@ int main(){
 	char* stat_input=app.stat_input;
 	a_log=&app.logs;
 
+
 	setlocale(LC_CTYPE, "");
 	initscr();
 	start_color();
@@ -220,6 +222,8 @@ int main(){
 	init_pair(1, COLOR_GREEN, -1);
 	init_pair(2, -1, COLOR_BLACK);
 	init_pair(3, -1, COLOR_MAGENTA);
+	init_pair(4, 15, 16);
+
 	cbreak();
 	raw();
 	set_escdelay(20);
@@ -276,6 +280,7 @@ int main(){
 			}
 
 		} else if(state==entry_resize){
+
 			log_entry* entry_ur_cursor_pr=entry_under_cursor_fun(a_log, max_row, cell_minutes, cursor_pos_tm-cell_minutes*60);
 			log_entry* entry_ur_cursor_nx=entry_under_cursor_fun(a_log, max_row, cell_minutes, cursor_pos_tm+cell_minutes*60);
 			entry_under_cursor=entry_under_cursor_fun(a_log, max_row, cell_minutes, cursor_pos_tm);
@@ -305,6 +310,7 @@ int main(){
 				entry_to_resize->end_time=cursor_pos_tm;
 
 		} else if(state==log_editing){
+
 			int res=log_edit(&buffr, chr);
 			if(res==0){
 				memcpy(entry_under_cursor->name, buffr.name, MAX_NAME_SIZE);
@@ -313,6 +319,7 @@ int main(){
 				entry_under_cursor=0;
 			}
 		} else if(state==view || state==week_view){
+
 			if(chr =='l'){
 				buffr=init_log_edit(a_log, false,0,0);
 				state=logging;
@@ -379,12 +386,14 @@ int main(){
 
 		//drawing happens here
 		print_str_n_times(max_row-1, 0,"-", max_col);
-		if(state != week_view)
+		if(state != week_view){
 			print_logs(a_log,-5,0,max_row,max_col,cell_minutes,cursor_pos_tm);
-		if(state==view){
-			//print_logs(a_log,-5,0,max_row,max_col,cell_minutes,cursor_pos_tm);
 			if(max_col>100)
 				draw_durations(23, 90, a_log, stat_input);
+		}
+
+		if(state==view){
+			//print_logs(a_log,-5,0,max_row,max_col,cell_minutes,cursor_pos_tm);
 			curs_set(0);
 			mvprintw(max_row-1, 0, "view mode, scale=%d minutes",cell_minutes);
 		}else if(state==week_view){
@@ -432,6 +441,7 @@ int main(){
 		}
 	}
 
+	//free_app(&app);
 	endwin();
 	return 0;
 }

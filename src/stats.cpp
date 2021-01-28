@@ -84,3 +84,4 @@ void draw_durations(int row, int col,t_log* a_log, char* str){
 		ch_start_p=n_comma+1;
 	}
 }
+

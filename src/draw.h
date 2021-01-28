@@ -3,12 +3,14 @@
 #include <time.h>
 
 // 00000000
-//    |||||-- saati da wuti
-//    ||||-- gverdita saati
-//    |||-- tarigi
-//    ||-- cursor
-//    |-- now indicator 
+//   ||||||-- saati da wuti
+//   |||||-- gverdita saati
+//   ||||-- tarigi
+//   |||-- cursor
+//   ||-- now indicator 
+//   |-- draw_cursor
 
+#define DRAW_cursor 64
 #define DRAW_NOW 32
 #define DRAW_DAY_DIVIDER 16
 #define DRAW_DATE 8

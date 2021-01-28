@@ -110,6 +110,7 @@ int log_edit(log_edit_buffer* buffer, int chr){
 				tag_str[strlen(tag_str)]=' ';
 				buffer->local_curs_pos=strlen(tag_str);
 				*autocomp_selection=-1;
+			
 			}
 		}
 	}

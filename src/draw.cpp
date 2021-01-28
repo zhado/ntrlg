@@ -51,10 +51,9 @@ int draw_time_decorations(int cur_row,int col_p,time_t cell_tm, int cell_minutes
 	time_t next_cell_tm_2=cell_tm-(cell_minutes*60);
 	time_t current_time=(unsigned long)time(0);
 	int col=0;
-	if(quantized_cursor_pos_tm-cursor_offset < next_cell_tm && quantized_cursor_pos_tm-cursor_offset >= cell_tm){
+	if(quantized_cursor_pos_tm-cursor_offset < next_cell_tm && quantized_cursor_pos_tm-cursor_offset >= cell_tm && draw_mask & DRAW_cursor){
 		print_str_n_times(cur_row,col_p, "_", 70);
 		//move(cur_row,max_col-6);
-		//print_normal_time(cursor_pos_tm);
 	}
 
 	tm broken_down_cell_tm=get_tm(cell_tm);
@@ -64,11 +63,15 @@ int draw_time_decorations(int cur_row,int col_p,time_t cell_tm, int cell_minutes
 	}
 
 	if(draw_mask & DRAW_hm ){
+			//if(get_tm(cell_tm).tm_hour!=get_tm(next_cell_tm_2).tm_hour )
+		if (broken_down_cell_tm.tm_min==0) 
+			attron(COLOR_PAIR(4));
 		mvprintw(cur_row,col_p ,"%02d:%02d",broken_down_cell_tm.tm_hour,broken_down_cell_tm.tm_min); 
+		attroff(COLOR_PAIR(4));
 		col+=6;
 	}
 	if(draw_mask & DRAW_h){
-		if(broken_down_cell_tm.tm_min==0 ){
+		if (broken_down_cell_tm.tm_min==0) {
 			mvprintw(cur_row,col+col_p,"%02d",broken_down_cell_tm.tm_hour);
 		}
 		col+=3;
@@ -89,6 +92,7 @@ int draw_time_decorations(int cur_row,int col_p,time_t cell_tm, int cell_minutes
 	}
 	return col;
 }
+
 
 void draw_time_boxes(t_log* logp,int cur_row,int col_p,time_t cell_tm, int cell_minutes, time_t mask_start_tm,time_t mask_end_tm,int width){
 	time_t next_cell_tm=cell_tm+(cell_minutes*60);
@@ -115,12 +119,14 @@ void draw_time_boxes(t_log* logp,int cur_row,int col_p,time_t cell_tm, int cell_
 			}else if(end_time==0 &&  next_cell_tm >= current_time && cell_tm < current_time ){
 				log_entry* entry=&logp->entries[logp->index-1];
 				mvprintw(cur_row, col_p, "++++++");
+				//printw(" ");
 				printw("%s ",entry->name);
 				attron(COLOR_PAIR(1));
 				print_duration(current_time-entry->start_time);
 				attroff(COLOR_PAIR(1));
 				break;
 			}else if(((next_cell_tm<end_time || end_time==0 )&& cell_tm < current_time) && cell_tm>start_tm){
+				log_entry* entry=&logp->entries[i];
 				mvprintw(cur_row, col_p, "|    |");
 				break;
 			}else if(start_tm>cell_tm && start_tm<next_cell_tm){
@@ -130,6 +136,7 @@ void draw_time_boxes(t_log* logp,int cur_row,int col_p,time_t cell_tm, int cell_
 		}
 
 		if(find_longest_entry){
+			printw(" ");
 			//get
 			int row=0,col=0;
 			getyx(stdscr, row, col);
@@ -170,7 +177,6 @@ void print_weeks(t_log* log_p,int max_row,int max_col,int cell_minutes,time_t cu
 	int fudge_factor=0;
 	if(days_to_fit>=0)
 		fudge_factor=(int)(((max_col-offset-2)%((width+space_between)*(days_to_fit+1)))/(days_to_fit+1));
-	mvprintw(max_row-1,max_col-10,"%d",fudge_factor);
 	if(fudge_factor<width)
 		width+=fudge_factor;
 
@@ -182,18 +188,25 @@ void print_weeks(t_log* log_p,int max_row,int max_col,int cell_minutes,time_t cu
 		time_t quantized_cursor_pos_tm=cursor_pos_tm-(cursor_pos_tm%(cell_minutes*60));
 		time_t cursor_offset=cell_minutes*60*(int(max_row/2)+1);
 		quantized_cursor_pos_tm+=cursor_offset- day*secs_in_day;
+		//time_t prefered_time_offset=-16*60*60;
+		time_t prefered_time_offset=0;
 
-		time_t last_midnight=local_time-broken_down_time.tm_hour*60*60-broken_down_time.tm_min*60-broken_down_time.tm_sec;
+		time_t last_midnight=local_time-broken_down_time.tm_hour*60*60-broken_down_time.tm_min*60-broken_down_time.tm_sec - prefered_time_offset;
 		int count=0;
 		for(int i=max_row-2;i>=0;i--){
 			time_t cell_tm=quantized_cursor_pos_tm-cell_minutes*60*count;
 			if(j==0){
-				draw_time_decorations(i, 0, cell_tm, cell_minutes, 
+				draw_time_decorations(i, 0, cell_tm-prefered_time_offset, cell_minutes, 
 						cursor_offset,
 						quantized_cursor_pos_tm,
-						INT32_MAX  ^ DRAW_DATE ^ DRAW_NOW,
+						0  |DRAW_hm,
 						width+offset);
-				draw_time_boxes(log_p,i,offset,cell_tm,cell_minutes,	
+				draw_time_decorations(i, offset, cell_tm, cell_minutes, 
+						cursor_offset,
+						quantized_cursor_pos_tm,
+						DRAW_cursor + DRAW_DAY_DIVIDER,
+						width);
+				draw_time_boxes(log_p,i,offset,cell_tm-prefered_time_offset,cell_minutes,	
 						last_midnight-secs_in_day*(day),
 						last_midnight-secs_in_day*(day-1),
 						width);
@@ -202,9 +215,10 @@ void print_weeks(t_log* log_p,int max_row,int max_col,int cell_minutes,time_t cu
 						cell_minutes,
 						cursor_offset,
 						quantized_cursor_pos_tm,
-						DRAW_DAY_DIVIDER | (day==0)*DRAW_NOW,
+						 (day==0)*DRAW_NOW+ DRAW_cursor + DRAW_DAY_DIVIDER,
 						width);
-				draw_time_boxes(log_p,i,j*(width+space_between)+offset,cell_tm,cell_minutes,	
+				draw_time_boxes(log_p,i,j*(width+space_between)+offset,cell_tm-prefered_time_offset
+						,cell_minutes,	
 						last_midnight-secs_in_day*(day),
 						last_midnight-secs_in_day*(day-1),
 						width);

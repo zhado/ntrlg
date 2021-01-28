@@ -112,8 +112,8 @@ void sort_sni_s(size_n_index* sni,int count){
 
 }
 
-void remove_duplicate_and_empty_sni_s(size_n_index* sni, int* comma_count){
-	for(int i=1;i<*comma_count;i++){
+void mos(size_n_index* sni, int* tag_count){
+	for(int i=1;i<*tag_count;i++){
 		size_n_index* cur_entry=&sni[i];
 		size_n_index* prev_entry=&sni[i-1];
 		char temp_str1[cur_entry->size];
@@ -126,9 +126,57 @@ void remove_duplicate_and_empty_sni_s(size_n_index* sni, int* comma_count){
 		temp_str2[prev_entry->size]=0;
 		int comp_result=strcmp(temp_str1, temp_str2);
 		if((cur_entry->size==prev_entry->size && comp_result==0) || prev_entry->size==0 ){
-			memcpy(prev_entry, cur_entry, sizeof(size_n_index)*(*comma_count-i));
-			*comma_count=*comma_count-1;
+			memcpy(prev_entry, cur_entry, sizeof(size_n_index)*(*tag_count-i));
+			*tag_count=*tag_count-1;
 			i--;
+		}
+	}
+}
+
+void remove_sni(size_n_index* sni, int* tag_count,int index){
+	for(int i=index;i<*tag_count-1;i++){
+		sni[i].index=sni[i+1].index;
+		sni[i].offset=sni[i+1].offset;
+		sni[i].root_entry=sni[i+1].root_entry;
+		sni[i].score=sni[i+1].score;
+		sni[i].size=sni[i+1].size;
+	}
+	*tag_count=*tag_count-1;
+}
+
+void null_sni(size_n_index* sni,int index){
+	sni[index].index=0;
+	sni[index].offset=0;
+	sni[index].root_entry=0;
+	sni[index].score=INT32_MAX;
+	sni[index].size=0;
+}
+
+bool cmp_sni(size_n_index sni1, size_n_index sni2){
+	char temp_str1[sni1.size];
+	memcpy(temp_str1, sni1.offset, sni1.size);
+	temp_str1[sni1.size]=0;
+
+	char temp_str2[sni2.size];
+	memcpy(temp_str2, sni2.offset, sni2.size);
+	temp_str2[sni2.size]=0;
+
+	int comp_result=strcmp(temp_str1, temp_str2);
+
+	if(comp_result==0)
+		return true;
+	else 
+		return false;
+}
+
+void remove_duplicate_and_empty_sni(size_n_index* sni, int* tag_count){
+	for(int i=0;i<*tag_count;i++){
+		for(int j=i+1;j<*tag_count;j++){
+			size_n_index sni1=sni[i];
+			size_n_index sni2=sni[j];
+			while(cmp_sni(sni[i], sni[j])){
+				remove_sni(sni, tag_count,j);
+			}
 		}
 	}
 }
@@ -141,7 +189,7 @@ void match_names(t_log* log_p, char* search_string_p, bool remove_dups, size_n_i
 	remove_spaces(search_string);
 	//extract all mdzimeebi into array
 	int count=log_p->index;
-	int comma_count=count;
+	int tag_count=count;
 	int rev=0;
 	match_result res;
 
@@ -149,11 +197,11 @@ void match_names(t_log* log_p, char* search_string_p, bool remove_dups, size_n_i
 		log_entry* entry=&log_p->entries[i];
 		for(int j=0;j<strlen(entry->sub_name);j++){
 			if(entry->sub_name[j]==','){
-				comma_count++;
+				tag_count++;
 			}
 		}
 	}
-	size_n_index evaled_names_ar[comma_count];
+	size_n_index evaled_names_ar[tag_count];
 
 	for(int i=0,j=0;i<count;i++,j++){
 		int reverse_index=count-i-1;
@@ -186,13 +234,13 @@ void match_names(t_log* log_p, char* search_string_p, bool remove_dups, size_n_i
 		evaled_names_ar[j].root_entry=&log_p->entries[reverse_index];
 	}
 
-	sort_sni_s(evaled_names_ar, comma_count);
-	remove_duplicate_and_empty_sni_s(evaled_names_ar,&comma_count);
+	sort_sni_s(evaled_names_ar, tag_count);
+	remove_duplicate_and_empty_sni(evaled_names_ar,&tag_count);
 	memcpy(output, evaled_names_ar, sizeof(size_n_index)*AUTOCOM_WIN_MAX_SIZE);
 	int i=0;
 	for(;i<AUTOCOM_WIN_MAX_SIZE;i++){
 		size_n_index cur_sni=evaled_names_ar[i];
-		if(cur_sni.score > cur_sni.size || i > AUTOCOM_WIN_MAX_SIZE){
+		if( i > AUTOCOM_WIN_MAX_SIZE){
 			*matched_count=i;
 			break;
 		}

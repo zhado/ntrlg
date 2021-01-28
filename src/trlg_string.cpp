@@ -1,5 +1,6 @@
 #include <string.h>
 #include <ncurses.h>
+#include "trlg_common.h"
 
 char* get_after_last_comma (char* str){
 	int last_comma_pos=0;
@@ -57,7 +58,7 @@ void print_warp_str(int row, int col,char* str, int len){
 		mvprintw(row,col,"%s",tmp_str);
 		printw("-");
 		memcpy(rest_str,str+tmp_str_len,strl_len-tmp_str_len);
-		if(char_at(row+1, col)==' ' || char_at(row+1, col)=='_'){
+		if(char_at(row+1, col+1)==' ' || char_at(row+1, col+1)=='_'){
 			print_warp_str(row+1, col, rest_str, len);
 		}else{
 			move(row,col+strlen(tmp_str)+1);
@@ -92,4 +93,32 @@ int add_chr_in_str(char chr, char* str,int index,int max_size){
 		return -1;
 	}
 	return 0;
+}
+
+
+bool exact_match_comma(char* str,char* str2){
+	char my_str[MAX_NAME_SIZE];
+	memset(&my_str,0,MAX_NAME_SIZE);
+	strcpy(my_str, str);
+	remove_spaces(my_str);
+
+	char temp_str[MAX_NAME_SIZE];
+	char* ch_start_p=my_str;
+
+	for(;;){
+		memset(&temp_str,0,MAX_NAME_SIZE);
+
+		char* n_comma=next_comma(ch_start_p);
+		if(n_comma==0){
+			memcpy(temp_str,ch_start_p,strlen(my_str));
+		}else{
+			memcpy(temp_str,ch_start_p,n_comma-ch_start_p);
+		}
+		if(temp_str[0]!=0 && strcmp(temp_str, str2)==0 )
+			return true;
+
+		if(!n_comma || n_comma==ch_start_p+strlen(ch_start_p))break;
+		ch_start_p=n_comma+1;
+	}
+	return false;
 }
