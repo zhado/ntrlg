@@ -30,7 +30,9 @@ enum window_state {
 	stat_editing,
 	append_log, 
 	log_editing,
-	entry_resize
+	entry_start_resize,
+	entry_end_resize,
+	entry_body_resize
 };
 
 void end_last_entry(t_log* log_p){
@@ -169,32 +171,90 @@ uint32_t hash(t_log* log_p){
 	return hash;
 }
 
-log_entry* entry_under_cursor_fun(t_log* log_p,int max_row,int cell_minutes,time_t cursor_pos_tm){
+int get_log_entry_index(t_log* a_log,log_entry* entry){
+	int entry_size=sizeof(log_entry);
+	return (entry-a_log->entries);
+}
+
+bool crash_with_other_entry(t_log* a_log,log_entry* entry){
+	log_entry* next_entry=0;
+	log_entry* prev_entry=0;
+	time_t local_time=(unsigned long)time(NULL);
+
+	int res_entry_index=get_log_entry_index(a_log, entry);
+
+	if(res_entry_index!=a_log->index-1)
+		next_entry=&a_log->entries[res_entry_index+1];
+	if(res_entry_index!=0)
+		prev_entry=&a_log->entries[res_entry_index-1];
+
+	if(prev_entry ==0 && next_entry==0){
+		if(entry->start_time >= entry->end_time){
+			return true;
+		}
+	}else if(prev_entry ==0){
+		if(entry->end_time >next_entry->start_time && next_entry!=0){
+			return true;
+		}else if(entry->start_time >= entry->end_time){
+			return true;
+		}
+	}else if(next_entry==0){
+		if(entry->start_time<prev_entry->end_time){
+			return true;
+		}else if(entry->start_time >= entry->end_time){
+			return true;
+		}
+	}else{
+		if(entry->start_time<prev_entry->end_time){
+			return true;
+		}else if(entry->end_time >next_entry->start_time && next_entry!=0){
+			return true;
+		}else if(entry->start_time >= entry->end_time){
+			return true;
+		}
+	}
+	if(entry->end_time>local_time || entry->start_time > local_time)
+		return	true;
+
+	return false;
+}
+
+log_entry* entry_under_cursor_fun(t_log* log_p,int cell_minutes,time_t cursor_pos_tm, int* match_p){
 	log_entry* longest_entry=0;
 
 	time_t current_time=(unsigned long)time(0);
 	time_t quantized_cursor_pos_tm=cursor_pos_tm-(cursor_pos_tm%(cell_minutes*60));
 
-	time_t pos_start=quantized_cursor_pos_tm;
-	time_t pos_end=pos_start+cell_minutes*60;
+	time_t curs_start=quantized_cursor_pos_tm;
+	time_t curs_end=curs_start+cell_minutes*60;
 	time_t last_duration=0;
+
+	//0 nomatch, 1 start match, 2 body match, 3 end match
+	int match_type=0;
 	for(int i=log_p->index-1;i>=0;i--){
 		log_entry* entry=&log_p->entries[i];
-		if(entry->end_time>=pos_start && entry->end_time <=pos_end){
+		if(entry->end_time>=curs_start && entry->end_time <=curs_end){
 			if((entry->end_time-entry->start_time) > last_duration){
 				last_duration=entry->end_time-entry->start_time;
 				longest_entry=entry;
+				match_type=3;
 			}
-		}else if(entry->end_time==0 && current_time >= pos_start && current_time <=pos_end){
+		}else if(entry->end_time==0 && current_time >= curs_start && current_time <=curs_end){
+			match_type=3;
+			longest_entry=entry;
+		}else if(entry->end_time==0 && current_time >= curs_end && entry->start_time <=curs_start){
+			match_type=2;
+			longest_entry=entry;
+		}else if(entry->start_time >= curs_start && entry->start_time <=curs_end && last_duration==0){
+			match_type=1;
+			longest_entry=entry;
+		}else if(entry->start_time<=curs_start && entry->end_time >= curs_end){
+			match_type=2;
 			longest_entry=entry;
 		}
-		//}else if(entry->start_time >= pos_start && entry->start_time <=pos_end){
-			//if((entry->end_time-entry->start_time) > last_duration){
-				//last_duration=entry->end_time-entry->start_time;
-				//longest_entry=entry;
-			//}
-		//}
 	}
+	if(match_p!=0)
+		*match_p=match_type;
 	return longest_entry;
 }
 int main(){
@@ -279,24 +339,25 @@ int main(){
 				state=view;
 			}
 
-		} else if(state==entry_resize){
+		} else if(state==entry_start_resize || state==entry_body_resize || state==entry_end_resize){
 
-			log_entry* entry_ur_cursor_pr=entry_under_cursor_fun(a_log, max_row, cell_minutes, cursor_pos_tm-cell_minutes*60);
-			log_entry* entry_ur_cursor_nx=entry_under_cursor_fun(a_log, max_row, cell_minutes, cursor_pos_tm+cell_minutes*60);
-			entry_under_cursor=entry_under_cursor_fun(a_log, max_row, cell_minutes, cursor_pos_tm);
-			if(chr ==259 && entry_ur_cursor_pr==0){
+
+			time_t initial_cursor_pos_tm=cursor_pos_tm;
+			time_t initial_start_time=entry_to_resize->start_time;
+			time_t initial_end_time=entry_to_resize->end_time;
+
+			if(chr ==259){
 				//uparrow
 				cursor_pos_tm-=cell_minutes*60;
 			}else if(chr ==10){
 				state=view;
-				entry_to_resize=0;
-			}else if(chr ==258 && entry_ur_cursor_nx==0){
+			}else if(chr ==258){
 				//downarrow
 				cursor_pos_tm+=cell_minutes*60;
-			}else if(chr ==339 && entry_ur_cursor_pr){
+			}else if(chr ==339){
 				//pgup
 				cursor_pos_tm-=cell_minutes*60*4;
-			}else if(chr ==338 && entry_ur_cursor_nx){
+			}else if(chr ==338){
 				//pgdown
 				cursor_pos_tm+=cell_minutes*60*4;
 			}else if(chr =='z'){
@@ -306,8 +367,21 @@ int main(){
 			}else if(chr =='x'){
 				cell_minutes=cell_minutes+5;
 			}
-			if(entry_to_resize!=0)
+
+			if(state==entry_end_resize){
 				entry_to_resize->end_time=cursor_pos_tm;
+			}else if(state==entry_start_resize) {
+				entry_to_resize->start_time=cursor_pos_tm;
+			}else if(state==entry_body_resize) {
+				entry_to_resize->start_time+=cursor_pos_tm-initial_cursor_pos_tm;
+				entry_to_resize->end_time+=cursor_pos_tm-initial_cursor_pos_tm;
+			}
+
+			if(crash_with_other_entry(a_log, entry_to_resize)){
+				entry_to_resize->start_time=initial_start_time;
+				entry_to_resize->end_time=initial_end_time;
+				cursor_pos_tm=initial_cursor_pos_tm;
+			}
 
 		} else if(state==log_editing){
 
@@ -336,10 +410,17 @@ int main(){
 				chr=0;
 				state=stat_editing;
 			}else if(chr =='d'){
-				entry_under_cursor=entry_under_cursor_fun(a_log, max_row, cell_minutes, cursor_pos_tm);
-				if(entry_under_cursor!=0){
+				int match_type=0;
+				entry_under_cursor=entry_under_cursor_fun(a_log, cell_minutes, cursor_pos_tm,&match_type);
+				if(match_type==1){
 					entry_to_resize=entry_under_cursor;
-					state=entry_resize;
+					state=entry_start_resize;
+				}else if(match_type==2){
+					entry_to_resize=entry_under_cursor;
+					state=entry_body_resize;
+				}else if(match_type==3){
+					entry_to_resize=entry_under_cursor;
+					state=entry_end_resize;
 				}
 			}else if(chr =='w'){
 				cell_minutes=30;
@@ -360,7 +441,7 @@ int main(){
 			}else if(chr =='x'){
 				cell_minutes=cell_minutes+5;
 			}else if(chr =='c'){
-				entry_under_cursor=entry_under_cursor_fun(a_log, max_row, cell_minutes, cursor_pos_tm);
+				entry_under_cursor=entry_under_cursor_fun(a_log, max_row, cursor_pos_tm,0);
 				if(entry_under_cursor!=0){
 					buffr=init_log_edit(a_log, false,entry_under_cursor->name,entry_under_cursor->sub_name);
 					state=log_editing;
@@ -388,8 +469,8 @@ int main(){
 		print_str_n_times(max_row-1, 0,"-", max_col);
 		if(state != week_view){
 			print_logs(a_log,-5,0,max_row,max_col,cell_minutes,cursor_pos_tm);
-			//if(max_col>100)
-				//draw_durations(23, 90, a_log, stat_input);
+			if(max_col>100)
+				draw_durations(23, 90, a_log, stat_input);
 		}
 
 		if(state==view){
@@ -416,8 +497,12 @@ int main(){
 			curs_set(1);
 			draw_log_edit(&buffr, max_row-3, 0);
 			mvprintw(max_row-1, 0, "append logging");
-		}else if(state==entry_resize){
-			mvprintw(max_row-1, 0, "entry resize mode");
+		}else if(state==entry_start_resize){
+			mvprintw(max_row-1, 0, "entry start resize mode");
+		}else if(state==entry_body_resize){
+			mvprintw(max_row-1, 0, "entry body resize mode");
+		}else if(state==entry_end_resize){
+			mvprintw(max_row-1, 0, "entry end resize mode");
 		}
 		mvprintw(max_row-2,max_col-6,"%d=%d",max_row,max_col);
 		mvprintw(max_row-1,max_col-6,"%d=%chr",chr,chr);

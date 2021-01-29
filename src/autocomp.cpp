@@ -222,7 +222,7 @@ void match_names(t_log* log_p, char* search_string_p, bool remove_dups, size_n_i
 	int i=0;
 	for(;i<AUTOCOM_WIN_MAX_SIZE;i++){
 		size_n_index cur_sni=evaled_names_ar[i];
-		if( i > AUTOCOM_WIN_MAX_SIZE|| i>= tag_count){
+		if( cur_sni.score!=0|| i > AUTOCOM_WIN_MAX_SIZE|| i>= tag_count){
 			*matched_count=i;
 			break;
 		}
