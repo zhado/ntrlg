@@ -66,6 +66,7 @@ void draw_durations(int row, int col,t_log* a_log, char* str){
 
 		tm broken_down_time=get_tm(local_time);
 		time_t last_midnight=local_time-broken_down_time.tm_hour*60*60-broken_down_time.tm_min*60-broken_down_time.tm_sec;
+		
 		for(int i=0;i<=last_days;i++){
 				time_t start_time=last_midnight - secs_in_day*i;
 				time_t end_time=last_midnight - secs_in_day*(i-1);

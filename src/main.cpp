@@ -211,8 +211,6 @@ bool crash_with_other_entry(t_log* a_log,log_entry* entry){
 	}else if(next_entry==0){
 		if(entry->start_time<prev_entry->end_time){
 			return true;
-		}else if(entry->start_time >= entry->end_time){
-			return true;
 		}
 	}else{
 		if(entry->start_time<prev_entry->end_time){
@@ -533,7 +531,7 @@ int main(int argc,char** argv){
 		print_str_n_times(max_row-1, 0,"-", max_col);
 		if(state != week_view){
 			print_logs(a_log,-5,0,max_row,max_col,cell_minutes,cursor_pos_tm);
-			if(max_col>100)
+			if(max_col>172)
 				draw_durations(23, 90, a_log, stat_input);
 		}
 
