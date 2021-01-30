@@ -304,6 +304,8 @@ int main(int argc,char** argv){
 	app.logs.allocated=0;
 	app.logs.index=0;
 	app.logs.entries=0;
+	app.stat_input=0;
+	load_log(&app, database_file);
 
 	char* stat_input=app.stat_input;
 	a_log=&app.logs;
@@ -480,6 +482,15 @@ int main(int argc,char** argv){
 						mvprintw(max_row-3,max_col-sizeof("succsefully recieved dtbs from server"),
 								"succsefully recieved dtbs from server");
 						load_log(&app, net_recieved_database);
+						a_log=&app.logs;
+						stat_input=app.stat_input;
+						if(remove(net_recieved_database)==0){
+							mvprintw(max_row-4,max_col-sizeof("deleted net_recieved_database file"),
+									"deleted net_recieved_database file");
+						}else{
+							mvprintw(max_row-4,max_col-sizeof("error deleteing file"),
+									"error deleteing file");
+						}
 					}else{
 						mvprintw(max_row-3,max_col-sizeof("error recieving file"),
 								"error recieving file");

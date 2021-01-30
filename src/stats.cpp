@@ -35,6 +35,8 @@ time_t get_duration_in_range(t_log* a_log, char* str,time_t start_tm,time_t end_
 
 
 void draw_durations(int row, int col,t_log* a_log, char* str){
+	if(str==0)
+		return;
 	char my_str[MAX_NAME_SIZE];
 	memset(&my_str,0,MAX_NAME_SIZE);
 	strcpy(my_str, str);

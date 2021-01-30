@@ -140,8 +140,8 @@ void draw_time_boxes(t_log* logp,int cur_row,int col_p,time_t cell_tm, int cell_
 			//get
 			int row=0,col=0;
 			getyx(stdscr, row, col);
-			print_warp_str(row,col, longest_entry->name,width-13);
-			//printw("%s",longest_entry->name);
+			//print_warp_str(row,col, longest_entry->name,width-13);
+			printw("%s",longest_entry->name);
 			printw(" ");
 			attron(COLOR_PAIR(1));
 			print_duration(longest_entry->end_time-longest_entry->start_time);
@@ -154,7 +154,7 @@ void print_logs(t_log* log_p,int row,int col,int max_row,int max_col,int cell_mi
 	log_entry* current_entry=0;
 
 	time_t quantized_cursor_pos_tm=cursor_pos_tm-(cursor_pos_tm%(cell_minutes*60));
-	time_t cursor_offset=cell_minutes*60*(floor(max_row/2));
+	time_t cursor_offset=cell_minutes*60*(int(max_row/2));
 	quantized_cursor_pos_tm+=cursor_offset;
 
 	int count=0;
