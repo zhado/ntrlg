@@ -1,6 +1,6 @@
 #!/bin/sh
 cd $(dirname $0)
-links='-lncurses -lstdc++'
+links='-lncurses -lstdc++ -pthread'
 flags="-Wno-write-strings"
 
 if [ "$1" = "buildrun" ]; then

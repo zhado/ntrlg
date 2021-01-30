@@ -22,6 +22,11 @@ struct app_state{
 	char* stat_input;
 };
 
+struct server_conf{
+	int port;
+	char* ip;
+};
+
 bool UNSAVED_CHANGES=false;
 
 enum window_state {
@@ -72,13 +77,17 @@ void add_entry(t_log* log_p, char* name, char* sub_name,time_t start_time,time_t
 	log_p->index++;
 }
 
-app_state load_log(const char* file_name){
+int load_log(app_state* app,const char* file_name){
 	FILE* fp=fopen(file_name,"r");
-	app_state app;
-	app.logs.allocated=0;
-	app.logs.index=0;
-	app.logs.entries=0;
-	app.stat_input=(char*)calloc(sizeof(char)*MAX_NAME_SIZE,1);
+	if(fp==0){
+		fprintf(stderr, "fopen error\n");
+		return 1;
+	}
+
+	app->logs.allocated=0;
+	app->logs.index=0;
+	app->logs.entries=0;
+	app->stat_input=(char*)calloc(sizeof(char)*MAX_NAME_SIZE,1);
 
 	char line[400];
 	int line_index=0;
@@ -108,26 +117,26 @@ app_state load_log(const char* file_name){
 
 			remove_spaces(temp_subname);
 
-			add_entry(&app.logs, temp_name, temp_subname, temp_start_time, temp_end_time);
+			add_entry(&app->logs, temp_name, temp_subname, temp_start_time, temp_end_time);
 			memset(temp_name,0,MAX_NAME_SIZE);
 			memset(temp_subname,0,MAX_NAME_SIZE);
 		}else{
 			if(line_index!=0){
 				fprintf(stderr, "database file error\n");
-				exit(1);
+				return 1;
 			}
-			memcpy(app.stat_input, line,strlen(line)-1);
+			memcpy(app->stat_input, line,strlen(line)-1);
 		}
 		line_index++;
 	}
-	if(app.stat_input[0]==0)
-		app.logs.index=line_index;
+	if(app->stat_input[0]==0)
+		app->logs.index=line_index;
 	else
-		app.logs.index=line_index-1;
+		app->logs.index=line_index-1;
 
 	fclose(fp);
 	UNSAVED_CHANGES=false;
-	return app;
+	return 0;
 }
 
 void save_log(app_state* app, const char* file_name){
@@ -259,6 +268,23 @@ log_entry* entry_under_cursor_fun(t_log* log_p,int cell_minutes,time_t cursor_po
 	return longest_entry;
 }
 
+server_conf* load_serv_conf(){
+	server_conf* conf=0;
+	FILE* fp=fopen(serv_conf_file,"r");
+	if(fp==0){
+		return conf;
+	}
+	conf=(server_conf*)calloc(sizeof(server_conf),1);
+	conf->ip=(char*)calloc(sizeof(char)*50,1);
+	char tempchar[100];
+	memset(tempchar, 0, 100);
+	fgets(tempchar, 100, fp);
+	sscanf(tempchar, "port %d",&conf->port);
+	memset(tempchar, 0, 100);
+	fgets(tempchar, 100, fp);
+	sscanf(tempchar, "%*s %s",conf->ip);
+	return conf;
+}
 
 int main(int argc,char** argv){
 	int cell_minutes=20;
@@ -269,20 +295,23 @@ int main(int argc,char** argv){
 	//a_log->index=0;
 	//a_log->entries=(log_entry*)malloc(sizeof(log_entry)*100);
 	//a_log->allocated=100;
+	server_conf* srv_conf=load_serv_conf();
+
 	int max_row=0,max_col=0;
 	window_state state=view;
 	
-	app_state app=load_log(database_file);
+	app_state app;
+	app.logs.allocated=0;
+	app.logs.index=0;
+	app.logs.entries=0;
+
 	char* stat_input=app.stat_input;
 	a_log=&app.logs;
 
-	if(argc!=2){
-		listen_server();
-	}else{
-		client(argv[1]);
+	if(argc==2){
+		start_net(atoi(argv[1]), true);
+		exit (1);
 	}
-
-	exit (1);
 
 	setlocale(LC_CTYPE, "");
 	initscr();
@@ -318,6 +347,8 @@ int main(int argc,char** argv){
 	//state=logging;
 	while(true){
 
+		a_log=&app.logs;
+		stat_input=app.stat_input;
 		erase();
 		getmaxyx(stdscr,max_row,max_col);
 
@@ -441,6 +472,19 @@ int main(int argc,char** argv){
 			}else if(chr =='e'){
 				mvprintw(max_row-3,max_col-sizeof("ending last entry"),"ending last entry");
 				end_last_entry(a_log);
+			}else if(chr =='L'){
+				load_log(&app, database_file);
+			}else if(chr =='N'){
+				if(srv_conf->ip!=0 && srv_conf->port!=0){
+					if(get_from_server(srv_conf->port, srv_conf->ip)==0){
+						mvprintw(max_row-3,max_col-sizeof("succsefully recieved dtbs from server"),
+								"succsefully recieved dtbs from server");
+						load_log(&app, net_recieved_database);
+					}else{
+						mvprintw(max_row-3,max_col-sizeof("error recieving file"),
+								"error recieving file");
+					}
+				}
 			}else if(chr =='q'){
 				break;
 			}else if(chr =='z'){
