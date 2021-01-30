@@ -383,6 +383,7 @@ int main(int argc,char** argv){
 
 
 			time_t initial_cursor_pos_tm=cursor_pos_tm;
+			time_t local_time=(unsigned long)time(0);
 			time_t initial_start_time=entry_to_resize->start_time;
 			time_t initial_end_time=entry_to_resize->end_time;
 
@@ -413,6 +414,8 @@ int main(int argc,char** argv){
 			}else if(state==entry_start_resize) {
 				entry_to_resize->start_time=cursor_pos_tm;
 			}else if(state==entry_body_resize) {
+				if(entry_to_resize->end_time==0)
+					entry_to_resize->end_time=local_time;
 				entry_to_resize->start_time+=cursor_pos_tm-initial_cursor_pos_tm;
 				entry_to_resize->end_time+=cursor_pos_tm-initial_cursor_pos_tm;
 			}
