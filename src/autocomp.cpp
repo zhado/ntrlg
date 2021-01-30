@@ -241,7 +241,8 @@ void draw_sni(int row, int col,size_n_index sni[AUTOCOM_WIN_MAX_SIZE], int choic
 		}
 		memcpy(tempchar, cur_sni.offset,cur_sni.size);
 		tempchar[cur_sni.size]=0;
-		mvprintw(row-i,col,"| %s %d",tempchar,cur_sni.score);
+		//mvprintw(row-i,col,"| %s %d",tempchar,cur_sni.score);
+		mvprintw(row-i,col,"| %s",tempchar);
 		//mvprintw(row-i,col,"| %s",tempchar);
 		attroff(COLOR_PAIR(2));
 	}

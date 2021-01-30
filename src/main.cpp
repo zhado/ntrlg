@@ -15,6 +15,7 @@
 #include "autocomp.cpp"
 #include "stats.cpp"
 #include "trlg_string.cpp"
+#include "net.cpp"
 
 struct app_state{
 	t_log logs;
@@ -257,7 +258,9 @@ log_entry* entry_under_cursor_fun(t_log* log_p,int cell_minutes,time_t cursor_po
 		*match_p=match_type;
 	return longest_entry;
 }
-int main(){
+
+
+int main(int argc,char** argv){
 	int cell_minutes=20;
 	time_t cursor_pos_tm=(unsigned long)time(0);
 	//t_log* a_log=(t_log*)malloc(sizeof(t_log));
@@ -270,10 +273,16 @@ int main(){
 	window_state state=view;
 	
 	app_state app=load_log(database_file);
-	//app.stat_input=(char*)malloc(sizeof(char)*MAX_NAME_SIZE);
 	char* stat_input=app.stat_input;
 	a_log=&app.logs;
 
+	if(argc!=2){
+		listen_server();
+	}else{
+		client(argv[1]);
+	}
+
+	exit (1);
 
 	setlocale(LC_CTYPE, "");
 	initscr();
@@ -441,7 +450,7 @@ int main(){
 			}else if(chr =='x'){
 				cell_minutes=cell_minutes+5;
 			}else if(chr =='c'){
-				entry_under_cursor=entry_under_cursor_fun(a_log, max_row, cursor_pos_tm,0);
+				entry_under_cursor=entry_under_cursor_fun(a_log, cell_minutes, cursor_pos_tm,0);
 				if(entry_under_cursor!=0){
 					buffr=init_log_edit(a_log, false,entry_under_cursor->name,entry_under_cursor->sub_name);
 					state=log_editing;
