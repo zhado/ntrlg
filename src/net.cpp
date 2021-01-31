@@ -126,8 +126,8 @@ int handle_connections(int server_fd){
 	FD_ZERO(&current_sockets);
 	FD_SET(server_fd, &current_sockets);
 	timeval tm;
-	tm.tv_sec=5;
-	tm.tv_usec=0;
+	tm.tv_sec=0;
+	tm.tv_usec=100;
 
 	ready_sockets=current_sockets;
 	if(select(FD_SETSIZE, &ready_sockets, NULL, NULL, &tm)<0){

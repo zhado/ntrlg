@@ -253,3 +253,17 @@ void draw_status(u_int32_t* state){
 	*state=*state+1;
 	refresh();
 }
+void draw_server_status(u_int32_t state){
+	int max_row,max_col;
+	getmaxyx(stdscr,max_row,max_col);
+	erase();
+	int row=max_row/2,col=max_col/2;
+	for(int i=-5;i<5;i++)
+		hline(' ',row+i);
+	if(state==0)
+		mvprintw(row+5,col-10,"stalling");
+	else if(state ==1)
+		mvprintw(row+5,col-10,"done.");
+	refresh();
+
+}

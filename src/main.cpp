@@ -423,9 +423,13 @@ int main(int argc,char** argv){
 		} else if(state==server_mode){
 			if(chr !=0){
 				state=view;
-			}else if (handle_connections(server_fd)!=0){
-				char msg[]="connectio handling error";
-				mvprintw(max_row-4,max_col-sizeof(msg),msg);
+			}else {
+				//draw_server_status(0);
+				if (handle_connections(server_fd)!=0){
+					char msg[]="connectio handling error";
+					mvprintw(max_row-4,max_col-sizeof(msg),msg);
+				}
+				//draw_server_status(1);
 			}
 		} else if(state==log_editing){
 
