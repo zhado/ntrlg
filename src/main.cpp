@@ -522,6 +522,10 @@ int main(int argc,char** argv){
 					buffr=init_log_edit(a_log, false,entry_under_cursor->name,entry_under_cursor->sub_name);
 					state=log_editing;
 				}
+			}else if(chr ==KEY_LEFT){
+				cursor_pos_tm-=60*60*24;
+			}else if(chr ==KEY_RIGHT){
+				cursor_pos_tm+=60*60*24;
 			}else if(chr ==259){
 				//uparrow
 				cursor_pos_tm-=cell_minutes*60;

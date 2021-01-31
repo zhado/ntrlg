@@ -93,6 +93,32 @@ int draw_time_decorations(int cur_row,int col_p,time_t cell_tm, int cell_minutes
 	return col;
 }
 
+void print_week_day(int row,int col,time_t tm,int cell_minutes){
+	int weekday=get_tm(tm+cell_minutes*60).tm_wday;
+	switch(weekday){
+	case 0:
+		mvprintw(row-1,col,"Sun");
+		break;
+	case 1:
+		mvprintw(row-1,col,"Mon");
+		break;
+	case 2:
+		mvprintw(row-1,col,"Tue");
+		break;
+	case 3:
+		mvprintw(row-1,col,"Wen");
+		break;
+	case 4:
+		mvprintw(row-1,col,"Thu");
+		break;
+	case 5:
+		mvprintw(row-1,col,"Fri");
+		break;
+	case 6:
+		mvprintw(row-1,col,"Sat");
+		break;
+	}
+}
 
 void draw_time_boxes(t_log* logp,int cur_row,int col_p,time_t cell_tm, int cell_minutes, time_t mask_start_tm,time_t mask_end_tm,int width){
 	time_t next_cell_tm=cell_tm+(cell_minutes*60);
@@ -102,7 +128,13 @@ void draw_time_boxes(t_log* logp,int cur_row,int col_p,time_t cell_tm, int cell_
 	bool find_longest_entry=false;
 
 	log_entry* longest_entry;
+
 	bool draw_this_cell= (mask_end_tm==0) || (cell_tm > mask_start_tm && cell_tm < mask_end_tm);
+	if(!draw_this_cell && (cell_tm+cell_minutes*60) > mask_start_tm && (cell_tm+cell_minutes*60) < mask_end_tm){
+		print_week_day(cur_row,col_p,cell_tm+cell_minutes*60,cell_minutes);
+		printw(" %d",get_tm(cell_tm+cell_minutes*60).tm_mday);
+	}
+
 	if(draw_this_cell){
 		for(int i=logp->index-1;i>=0;i--){
 			time_t start_tm=logp->entries[i].start_time;
@@ -200,6 +232,7 @@ void print_weeks(t_log* log_p,int cell_minutes,time_t cursor_pos_tm){
 		int count=0;
 		for(int i=max_row-2;i>=0;i--){
 			time_t cell_tm=quantized_cursor_pos_tm-cell_minutes*60*count;
+			time_t cur_end_day=last_midnight-secs_in_day*(day);
 			if(j==0){
 				draw_time_decorations(i, 0, cell_tm-prefered_time_offset, cell_minutes, 
 						cursor_offset,
