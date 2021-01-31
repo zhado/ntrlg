@@ -36,7 +36,7 @@ int match_end(char* start, char* match){
 		return false;
 }
 
-void handle_con(int connfd){
+void handle_accept(int connfd){
 	char rec_buff[MAX_NAME_SIZE];
 	memset (rec_buff,0,MAX_NAME_SIZE);
 	bool writing_dtbs=false;
@@ -75,7 +75,7 @@ void handle_con(int connfd){
 		//write(connfd,temp_chr,7);
 
 		FILE* fp=fopen(database_file,"r");
-		printf("sending dtbs\n");
+		//printf("sending dtbs\n");
 		while((n = fread(file_contents,1,MAX_NAME_SIZE,fp ))>0){
 			write(connfd,file_contents,n);
 		}
@@ -85,9 +85,7 @@ void handle_con(int connfd){
 	memset (rec_buff,0,MAX_NAME_SIZE);
 }
 
-
-void* listen_server(void* argv){
-	int port=*(int*)argv;
+int setup_server(int port){
 	int listenfd,connfd,n;
 	struct sockaddr_in address;
 	int opt=1;
@@ -118,31 +116,46 @@ void* listen_server(void* argv){
 		printf("listen error");
 		exit(1);
 	}
-
-	while(1){
-		if ((connfd = accept(listenfd, 0,0))<0) 
-		{ 
-			printf("accept error"); 
-			exit(1); 
-		} 
-
-		handle_con(connfd);
-		close(connfd);
-		shutdown(connfd,2);
-	}
-
-	return NULL;
+	return listenfd;
 }
 
-void start_net(int port, bool block){
-	pthread_t listener;
-	pthread_create(&listener, NULL, listen_server, &port);
-	if(block){
-		printf("starting server without tui\n");
-		while(1){
-			sleep(1000);
+int handle_connections(int server_fd){
+	int connfd;
+
+	fd_set current_sockets,ready_sockets;
+	FD_ZERO(&current_sockets);
+	FD_SET(server_fd, &current_sockets);
+	timeval tm;
+	tm.tv_sec=5;
+	tm.tv_usec=0;
+
+	ready_sockets=current_sockets;
+	if(select(FD_SETSIZE, &ready_sockets, NULL, NULL, &tm)<0){
+		printf("seleect error"); 
+		return 1;
+	}
+	//printf("select initied\n");
+
+	for(int i=0;i<FD_SETSIZE;i++){
+		if(FD_ISSET(i, &ready_sockets)){
+			if(i==server_fd){
+				//printf("new conection\n");
+				if ((connfd = accept(server_fd, 0,0))<0) 
+				{ 
+					printf("accept error"); 
+					return 1;
+				} 
+				//FD_SET(connfd, &current_sockets);
+				handle_accept(connfd);
+				close(connfd);
+				shutdown(connfd,2);
+			}else{
+				//printf("handling connection\n");
+				//FD_CLR(i, &current_sockets);
+			}
 		}
 	}
+	return 0;
 }
 
 int get_from_server(int port, char* ip){

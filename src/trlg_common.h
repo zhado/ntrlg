@@ -18,7 +18,8 @@ enum window_state {
 	log_editing,
 	entry_start_resize,
 	entry_end_resize,
-	entry_body_resize
+	entry_body_resize,
+	server_mode
 };
 
 #endif

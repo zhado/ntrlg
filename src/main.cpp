@@ -24,6 +24,7 @@ struct app_state{
 
 struct server_conf{
 	int port;
+	int my_port;
 	char* ip;
 };
 
@@ -264,10 +265,13 @@ server_conf* load_serv_conf(){
 	}
 	conf=(server_conf*)calloc(sizeof(server_conf),1);
 	conf->ip=(char*)calloc(sizeof(char)*50,1);
+	conf->my_port=0;
 	char tempchar[100];
 	memset(tempchar, 0, 100);
 	fgets(tempchar, 100, fp);
 	sscanf(tempchar, "port %d",&conf->port);
+	fgets(tempchar, 100, fp);
+	sscanf(tempchar, "my_port %d",&conf->my_port);
 	memset(tempchar, 0, 100);
 	fgets(tempchar, 100, fp);
 	sscanf(tempchar, "%*s %s",conf->ip);
@@ -280,9 +284,6 @@ int main(int argc,char** argv){
 	//t_log* a_log=(t_log*)malloc(sizeof(t_log));
 	t_log* a_log;
 
-	//a_log->index=0;
-	//a_log->entries=(log_entry*)malloc(sizeof(log_entry)*100);
-	//a_log->allocated=100;
 	server_conf* srv_conf=load_serv_conf();
 
 	int max_row=0,max_col=0;
@@ -297,10 +298,13 @@ int main(int argc,char** argv){
 
 	char* stat_input=app.stat_input;
 	a_log=&app.logs;
-
+	int server_fd=0;
 	if(argc==2){
-		start_net(atoi(argv[1]), true);
+		while(1)
+			handle_connections(server_fd);
 		exit (1);
+	}else{
+		//server_fd=setup_server(1902);
 	}
 
 	setlocale(LC_CTYPE, "");
@@ -416,6 +420,13 @@ int main(int argc,char** argv){
 				cursor_pos_tm=initial_cursor_pos_tm;
 			}
 
+		} else if(state==server_mode){
+			if(chr !=0){
+				state=view;
+			}else if (handle_connections(server_fd)!=0){
+				char msg[]="connectio handling error";
+				mvprintw(max_row-4,max_col-sizeof(msg),msg);
+			}
 		} else if(state==log_editing){
 
 			int res=log_edit(&buffr, chr);
@@ -465,9 +476,14 @@ int main(int argc,char** argv){
 			}else if(chr =='e'){
 				mvprintw(max_row-3,max_col-sizeof("ending last entry"),"ending last entry");
 				end_last_entry(a_log);
+			}else if(chr =='H'){
+				if(server_fd==0)
+					server_fd=setup_server(srv_conf->my_port);
+				state=server_mode;
 			}else if(chr =='L'){
 				load_log(&app, database_file);
 			}else if(chr =='N'){
+
 				if(srv_conf->ip!=0 && srv_conf->port!=0){
 					if(get_from_server(srv_conf->port, srv_conf->ip)==0){
 						mvprintw(max_row-3,max_col-sizeof("succsefully recieved dtbs from server"),
@@ -555,6 +571,8 @@ int main(int argc,char** argv){
 			mvprintw(max_row-1, 0, "append logging");
 		}else if(state==entry_start_resize){
 			mvprintw(max_row-1, 0, "entry start resize mode");
+		}else if(state==server_mode){
+			mvprintw(max_row-1, 0, "server_mode");
 		}else if(state==entry_body_resize){
 			mvprintw(max_row-1, 0, "entry body resize mode");
 		}else if(state==entry_end_resize){
