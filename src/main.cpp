@@ -485,13 +485,13 @@ int main(int argc,char** argv){
 						load_log(&app, net_recieved_database);
 						a_log=&app.logs;
 						stat_input=app.stat_input;
-						//if(remove(net_recieved_database)==0){
-							//mvprintw(max_row-4,max_col-sizeof("deleted net_recieved_database file"),
-									//"deleted net_recieved_database file");
-						//}else{
-							//mvprintw(max_row-4,max_col-sizeof("error deleteing file"),
-									//"error deleteing file");
-						//}
+						if(remove(net_recieved_database)==0){
+							mvprintw(max_row-4,max_col-sizeof("deleted net_recieved_database file"),
+									"deleted net_recieved_database file");
+						}else{
+							mvprintw(max_row-4,max_col-sizeof("error deleteing file"),
+									"error deleteing file");
+						}
 					}else{
 						mvprintw(max_row-3,max_col-sizeof("error recieving file"),
 								"error recieving file");
@@ -533,7 +533,7 @@ int main(int argc,char** argv){
 		//drawing happens here
 		print_str_n_times(max_row-1, 0,"-", max_col);
 		if(state != week_view){
-			print_logs(a_log,-5,0,max_row,max_col,cell_minutes,cursor_pos_tm);
+			print_logs(a_log,-5,0,cell_minutes,cursor_pos_tm);
 			if(max_col>172)
 				draw_durations(23, 90, a_log, stat_input);
 		}
@@ -543,7 +543,7 @@ int main(int argc,char** argv){
 			curs_set(0);
 			mvprintw(max_row-1, 0, "view mode, scale=%d minutes",cell_minutes);
 		}else if(state==week_view){
-			print_weeks(a_log, max_row, max_col, cell_minutes, cursor_pos_tm);
+			print_weeks(a_log, cell_minutes, cursor_pos_tm);
 			curs_set(0);
 			mvprintw(max_row-1, 0, "week view mode, scale=%d minutes",cell_minutes);
 		}else if(state==logging){

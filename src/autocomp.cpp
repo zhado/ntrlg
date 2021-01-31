@@ -37,6 +37,8 @@ int match_score(char* st1, char* st2,bool exact_match){
 		}
 		res=0;
 	}
+	if(min<0)
+		return INT32_MAX;
 	return min;
 }
 
@@ -149,6 +151,10 @@ bool cmp_sni(size_n_index sni1, size_n_index sni2){
 }
 
 void remove_duplicate_and_empty_sni(size_n_index* sni, int* tag_count){
+	if(*tag_count>0)
+		if(sni[0].offset[0]==0){
+			remove_sni(sni, tag_count,0);
+		}
 	for(int i=0;i<*tag_count;i++){
 		for(int j=i+1;j<*tag_count-1;j++){
 			size_n_index sni1=sni[i];
@@ -167,6 +173,7 @@ void match_names(t_log* log_p, char* search_string_p, bool remove_dups, size_n_i
 	char search_string[MAX_NAME_SIZE];
 	strcpy(search_string, search_string_p);
 	remove_spaces(search_string);
+	
 	//extract all mdzimeebi into array
 	int count=log_p->index;
 	int tag_count=count;
@@ -222,6 +229,7 @@ void match_names(t_log* log_p, char* search_string_p, bool remove_dups, size_n_i
 	int i=0;
 	for(;i<AUTOCOM_WIN_MAX_SIZE;i++){
 		size_n_index cur_sni=evaled_names_ar[i];
+		//if( i > AUTOCOM_WIN_MAX_SIZE|| i>= tag_count){
 		if( cur_sni.score!=0|| i > AUTOCOM_WIN_MAX_SIZE|| i>= tag_count){
 			*matched_count=i;
 			break;

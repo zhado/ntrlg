@@ -150,7 +150,9 @@ void draw_time_boxes(t_log* logp,int cur_row,int col_p,time_t cell_tm, int cell_
 	}
 }
 
-void print_logs(t_log* log_p,int row,int col,int max_row,int max_col,int cell_minutes,time_t cursor_pos_tm){
+void print_logs(t_log* log_p,int row,int col,int cell_minutes,time_t cursor_pos_tm){
+	int max_row,max_col;
+	getmaxyx(stdscr,max_row,max_col);
 	log_entry* current_entry=0;
 
 	time_t quantized_cursor_pos_tm=cursor_pos_tm-(cursor_pos_tm%(cell_minutes*60));
@@ -166,7 +168,10 @@ void print_logs(t_log* log_p,int row,int col,int max_row,int max_col,int cell_mi
 	}
 }
 
-void print_weeks(t_log* log_p,int max_row,int max_col,int cell_minutes,time_t cursor_pos_tm){
+void print_weeks(t_log* log_p,int cell_minutes,time_t cursor_pos_tm){
+	int max_row,max_col;
+	getmaxyx(stdscr,max_row,max_col);
+
 	log_entry* current_entry=0;
 
 	int offset=9;
