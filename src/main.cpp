@@ -29,17 +29,6 @@ struct server_conf{
 
 bool UNSAVED_CHANGES=false;
 
-enum window_state {
-	view,
-	week_view,
-	logging,
-	stat_editing,
-	append_log, 
-	log_editing,
-	entry_start_resize,
-	entry_end_resize,
-	entry_body_resize
-};
 
 void end_last_entry(t_log* log_p){
 	log_entry* entry=&log_p->entries[log_p->index-1];
@@ -160,8 +149,9 @@ void free_app(app_state* app){
 		free(entry->name);
 		free(entry->sub_name);
 	}
-	//free(log_p);
+
 	free(app->stat_input);
+	free(app->logs.entries);
 	log_p=0;
 	app->stat_input=0;
 }
@@ -482,6 +472,7 @@ int main(int argc,char** argv){
 					if(get_from_server(srv_conf->port, srv_conf->ip)==0){
 						mvprintw(max_row-3,max_col-sizeof("succsefully recieved dtbs from server"),
 								"succsefully recieved dtbs from server");
+						free_app(&app);
 						load_log(&app, net_recieved_database);
 						a_log=&app.logs;
 						stat_input=app.stat_input;
@@ -591,7 +582,9 @@ int main(int argc,char** argv){
 		}
 	}
 
-	//free_app(&app);
+	free(srv_conf->ip);
+	free(srv_conf);
+	free_app(&app);
 	endwin();
 	return 0;
 }

@@ -16,5 +16,6 @@ struct t_log {
 	log_entry* entries;
 };
 
+bool crash_with_other_entry(t_log* a_log,log_entry* entry);
 
 #endif

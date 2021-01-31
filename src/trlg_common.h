@@ -9,4 +9,16 @@
 #define net_recieved_database "./cod_net"
 #define serv_conf_file "./serv_conf"
 
+enum window_state {
+	view,
+	week_view,
+	logging,
+	stat_editing,
+	append_log, 
+	log_editing,
+	entry_start_resize,
+	entry_end_resize,
+	entry_body_resize
+};
+
 #endif
