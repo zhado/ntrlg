@@ -485,13 +485,13 @@ int main(int argc,char** argv){
 						load_log(&app, net_recieved_database);
 						a_log=&app.logs;
 						stat_input=app.stat_input;
-						if(remove(net_recieved_database)==0){
-							mvprintw(max_row-4,max_col-sizeof("deleted net_recieved_database file"),
-									"deleted net_recieved_database file");
-						}else{
-							mvprintw(max_row-4,max_col-sizeof("error deleteing file"),
-									"error deleteing file");
-						}
+						//if(remove(net_recieved_database)==0){
+							//mvprintw(max_row-4,max_col-sizeof("deleted net_recieved_database file"),
+									//"deleted net_recieved_database file");
+						//}else{
+							//mvprintw(max_row-4,max_col-sizeof("error deleteing file"),
+									//"error deleteing file");
+						//}
 					}else{
 						mvprintw(max_row-3,max_col-sizeof("error recieving file"),
 								"error recieving file");

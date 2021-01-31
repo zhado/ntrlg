@@ -227,3 +227,24 @@ void print_weeks(t_log* log_p,int max_row,int max_col,int cell_minutes,time_t cu
 		}
 	}
 }
+
+void draw_status(u_int32_t* state){
+	int max_row,max_col;
+	getmaxyx(stdscr,max_row,max_col);
+	int row=max_row/2,col=max_col/2;
+	//for(int i=-5;i<5;i++)
+		//hline(' ',row+i);
+	mvprintw(row+5,col,"plase vait... ");
+
+	if(*state%4==0){
+		mvprintw(row+5,col+15,"|");
+	}else if(*state%4==1){
+		mvprintw(row+5,col+15,"/");
+	}else if(*state%4==2){
+		mvprintw(row+5,col+15,"-");
+	}else if(*state%4==3){
+		mvprintw(row+5,col+15,"\\");
+	}
+	*state=*state+1;
+	refresh();
+}

@@ -1,5 +1,6 @@
 #ifndef DRAW_H 
 #define DRAW_H
+#include <sys/types.h>
 #include <time.h>
 
 // 00000000
@@ -21,4 +22,5 @@ void print_duration(int duration);
 void print_normal_time(time_t tim);
 void print_normal_date_time(time_t tim);
 tm get_tm(time_t time_stamp);
+void draw_status(u_int32_t* state);
 #endif

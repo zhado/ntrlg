@@ -7,7 +7,9 @@
 #include <cstdlib>
 #include <errno.h>
 #include <pthread.h>
+
 #include "trlg_common.h"
+#include "draw.h"
 
 int int_char_size(int a){
 	int count=0;
@@ -18,7 +20,7 @@ int int_char_size(int a){
 	return count;
 }
 
-bool match_end(char* start, char* match){
+int match_end(char* start, char* match){
 	int match_len=strlen(match);
 	int start_len=strlen(start);
 	char temp_ch[match_len];
@@ -29,7 +31,7 @@ bool match_end(char* start, char* match){
 	int comp_res=strcmp(temp_ch, match);
 
 	if(comp_res==0)
-		return true;
+		return 1;
 	else 	
 		return false;
 }
@@ -64,12 +66,19 @@ void handle_con(int connfd){
 
 	if(send_dtbs){
 		char file_contents[MAX_NAME_SIZE];
+		//char temp_chr[100];
+		//memset(temp_chr, 0, 100);
+		//fseek(fp, 0L, SEEK_END);
+		//int f_size=ftell(fp);
+		//rewind(fp);
+		//sprintf(temp_chr, "%d",f_size);
+		//write(connfd,temp_chr,7);
+
 		FILE* fp=fopen(database_file,"r");
 		printf("sending dtbs\n");
 		while((n = fread(file_contents,1,MAX_NAME_SIZE,fp ))>0){
 			write(connfd,file_contents,n);
 		}
-		write(connfd,"MSG_END",7);
 		send_dtbs=false;
 		fclose(fp);
 	}
@@ -81,7 +90,6 @@ void* listen_server(void* argv){
 	int port=*(int*)argv;
 	int listenfd,connfd,n;
 	struct sockaddr_in address;
-	struct sockaddr_in oth_serv_adr;
 	int opt=1;
 	listenfd=socket(AF_INET,SOCK_STREAM,0);
 	if (setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, 
@@ -100,12 +108,6 @@ void* listen_server(void* argv){
 	address.sin_addr.s_addr=INADDR_ANY;
 	address.sin_port=htons(port);
 
-	oth_serv_adr.sin_family = AF_INET;
-
-	char ip[]="127.0.0.1";
-	if(inet_pton(AF_INET, ip, &oth_serv_adr.sin_addr)<=0){
-		printf("outer ip error\n");
-	}
 
 	if(bind(listenfd,(struct sockaddr *)&address,sizeof(address))<0){
 		printf("bind error");
@@ -180,15 +182,11 @@ int get_from_server(int port, char* ip){
 
 	FILE* fp=fopen(net_recieved_database,"w");
 	int n=0;
+	uint32_t state=0;
 	while((n=read(sockad,rec_buff,MAX_NAME_SIZE-1))>0){
-
-		bool end=match_end(rec_buff, "MSG_END");
-		for(int i=0;i<n-7*end;i++){
-			putc(rec_buff[i],fp);
-		}
-		if(end){
-			//printf("\n");
-			break;
+		draw_status(&state);
+		for(int i=0;i<n;i++){
+			fputc(rec_buff[i],fp);
 		}
 		memset (rec_buff,0,n);
 	}
