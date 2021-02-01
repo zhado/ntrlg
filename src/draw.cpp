@@ -286,6 +286,28 @@ void draw_status(u_int32_t* state){
 	*state=*state+1;
 	refresh();
 }
+
+void draw_error(char* msg){
+	erase();
+	int max_row,max_col;
+	getmaxyx(stdscr,max_row,max_col);
+	size_t msg_len=strlen(msg);
+	for(int i=max_col/2-msg_len-1;i<=max_col/2+msg_len;i++){
+		mvprintw(max_row/2-1, i, "*");
+	}
+
+	mvprintw(max_row/2, max_col/2-msg_len/2, msg);
+
+	for(int i=max_col/2-msg_len-1;i<=max_col/2+msg_len;i++){
+		mvprintw(max_row/2+1, i, "*");
+	}
+	refresh();
+
+	while (getch() == ERR){
+	}
+	erase();
+}
+
 void draw_server_status(u_int32_t state){
 	int max_row,max_col;
 	getmaxyx(stdscr,max_row,max_col);

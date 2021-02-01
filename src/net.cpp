@@ -6,7 +6,6 @@
 #include <unistd.h>
 #include <cstdlib>
 #include <errno.h>
-#include <pthread.h>
 
 #include "trlg_common.h"
 #include "draw.h"
@@ -94,11 +93,11 @@ int setup_server(int port){
 				&opt, sizeof(opt))) 
 	{ 
 		perror("setsockopt"); 
-		exit(EXIT_FAILURE); 
+		exit(1); 
 	} 
 
 	if(listenfd<0){
-		printf("socket error");
+		draw_error("socket error");
 		exit(1);
 	}
 
@@ -108,12 +107,12 @@ int setup_server(int port){
 
 
 	if(bind(listenfd,(struct sockaddr *)&address,sizeof(address))<0){
-		printf("bind error");
-		printf("%s",strerror(errno));
+		draw_error("bind error");
+		draw_error(strerror(errno));
 		exit(1);
 	}
 	if(listen(listenfd, 10)<0){
-		printf("listen error");
+		draw_error("listen error");
 		exit(1);
 	}
 	return listenfd;
@@ -131,7 +130,7 @@ int handle_connections(int server_fd){
 
 	ready_sockets=current_sockets;
 	if(select(FD_SETSIZE, &ready_sockets, NULL, NULL, &tm)<0){
-		printf("seleect error"); 
+		draw_error("seleect error"); 
 		return 1;
 	}
 	//printf("select initied\n");
@@ -142,7 +141,7 @@ int handle_connections(int server_fd){
 				//printf("new conection\n");
 				if ((connfd = accept(server_fd, 0,0))<0) 
 				{ 
-					printf("accept error"); 
+					draw_error("accept error"); 
 					return 1;
 				} 
 				//FD_SET(connfd, &current_sockets);
@@ -170,22 +169,22 @@ int get_from_server(int port, char* ip){
 				&opt, sizeof(opt))) 
 	{ 
 		perror("setsockopt"); 
-		exit(EXIT_FAILURE); 
+		return 1;
 	} 
 	if(sockad<0){
-		printf("socket error");
+		draw_error("socket error");
 		return 1;
 	}
 	serveraddr.sin_family = AF_INET;
 	serveraddr.sin_port=htons(port);
 
 	if(inet_pton(AF_INET, ip, &serveraddr.sin_addr)<=0){
-		printf("outer ip error\n");
+		draw_error("outer ip error\n");
 		return 1;
 	}
 
 	if(connect(sockad, (struct sockaddr *) &serveraddr, sizeof(serveraddr)) <0 ){
-		printf("connect error\n");
+		draw_error("connect error\n");
 		return 1;
 	}
 

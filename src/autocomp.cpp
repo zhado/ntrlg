@@ -167,31 +167,10 @@ void remove_duplicate_and_empty_sni(size_n_index* sni, int* tag_count){
 	}
 }
 
-void match_names(t_log* log_p, char* search_string_p, bool remove_dups, size_n_index* output, int* matched_count){
-	//extract last mdzime
-	search_string_p=get_after_last_comma(search_string_p);
-	char search_string[MAX_NAME_SIZE];
-	strcpy(search_string, search_string_p);
-	remove_spaces(search_string);
-	
-	//extract all mdzimeebi into array
-	int count=log_p->index;
-	int tag_count=count;
-	int rev=0;
-	match_result res;
+int generate_sni_s(t_log* log_p, int entry_count,int tag_count,char * search_string, size_n_index* evaled_names_ar){
 
-	for(int i=0;i<count;i++){
-		log_entry* entry=&log_p->entries[i];
-		for(int j=0;j<strlen(entry->sub_name);j++){
-			if(entry->sub_name[j]==','){
-				tag_count++;
-			}
-		}
-	}
-	size_n_index evaled_names_ar[tag_count];
-
-	for(int i=0,j=0;i<count;i++,j++){
-		int reverse_index=count-i-1;
+	for(int i=0,j=0;i<entry_count;i++,j++){
+		int reverse_index=entry_count-i-1;
 		char* entry_char=log_p->entries[reverse_index].sub_name;
 		int len=strlen(entry_char);
 		char* start_at=entry_char;
@@ -216,6 +195,7 @@ void match_names(t_log* log_p, char* search_string_p, bool remove_dups, size_n_i
 			memcpy(tempchar, start_at, entry_char+len-start_at);
 			tempchar[entry_char-start_at+len]=0;
 		}
+
 		evaled_names_ar[j].score=match_score(tempchar,search_string,false);
 		evaled_names_ar[j].index=reverse_index;
 		evaled_names_ar[j].offset=start_at;
@@ -223,15 +203,45 @@ void match_names(t_log* log_p, char* search_string_p, bool remove_dups, size_n_i
 		evaled_names_ar[j].root_entry=&log_p->entries[reverse_index];
 	}
 
+	return 0;
+}
+
+void match_names(t_log* log_p, char* search_string, bool remove_dups, size_n_index* output, int* matched_count){
+	//extract last mdzime
+	char search_string_no_space[MAX_NAME_SIZE];
+	int count=log_p->index;
+	int tag_count=count;
+	int rev=0;
+	match_result res;
+
+	search_string=get_after_last_comma(search_string);
+	strcpy(search_string_no_space, search_string);
+	remove_spaces(search_string_no_space);
+	
+
+	for(int i=0;i<count;i++){
+		log_entry* entry=&log_p->entries[i];
+		for(int j=0;j<strlen(entry->sub_name);j++){
+			if(entry->sub_name[j]==','){
+				tag_count++;
+			}
+		}
+	}
+
+	size_n_index evaled_names_ar[tag_count];
+
+
+	generate_sni_s(log_p,count,tag_count,search_string_no_space,evaled_names_ar);
 	sort_sni_s(evaled_names_ar, tag_count);
 	remove_duplicate_and_empty_sni(evaled_names_ar,&tag_count);
+
 	memcpy(output, evaled_names_ar, sizeof(size_n_index)*AUTOCOM_WIN_MAX_SIZE);
+
 	int i=0;
 	for(;i<AUTOCOM_WIN_MAX_SIZE;i++){
 		size_n_index cur_sni=evaled_names_ar[i];
 		//if( i > AUTOCOM_WIN_MAX_SIZE|| i>= tag_count){
 		if( cur_sni.score!=0|| i > AUTOCOM_WIN_MAX_SIZE|| i>= tag_count){
-			*matched_count=i;
 			break;
 		}
 	}

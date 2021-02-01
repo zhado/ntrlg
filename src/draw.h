@@ -23,4 +23,5 @@ void print_normal_time(time_t tim);
 void print_normal_date_time(time_t tim);
 tm get_tm(time_t time_stamp);
 void draw_status(u_int32_t* state);
+void draw_error(char *msg);
 #endif

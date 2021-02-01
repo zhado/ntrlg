@@ -484,6 +484,9 @@ int main(int argc,char** argv){
 				if(server_fd==0)
 					server_fd=setup_server(srv_conf->my_port);
 				state=server_mode;
+			}else if(chr =='m'){
+				draw_error("sandro");
+				draw_error("araragi");
 			}else if(chr =='L'){
 				load_log(&app, database_file);
 			}else if(chr =='N'){
