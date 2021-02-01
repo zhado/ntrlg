@@ -93,7 +93,7 @@ int log_edit(log_edit_buffer* buffer, int chr){
 	}else if (chr == 10){
 		if(last_char(name)!=10 && !only_tag_str){
 			name[strlen(name)]=10;
-			buffer->local_curs_pos=0;
+			buffer->local_curs_pos=strlen(buffer->sub_name);
 		}else{
 			if(*autocomp_selection==-1){
 				if(!only_tag_str)
