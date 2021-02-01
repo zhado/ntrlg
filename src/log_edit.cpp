@@ -42,12 +42,12 @@ int log_edit(log_edit_buffer* buffer, int chr){
 			if( last_char(name)!=10 && strlen(name) < MAX_NAME_SIZE -2){
 				add_chr_in_str(chr, name, buffer->local_curs_pos, MAX_NAME_SIZE);
 				buffer->local_curs_pos++;
-			}else if ((last_char(name)==10 ) && strlen(tag_str) < MAX_NAME_SIZE-2){
+			}else if ((last_char(name)==10 ) && strlen(tag_str) < MAX_NAME_SIZE-2 && chr !=32){
 				add_chr_in_str(chr, tag_str, buffer->local_curs_pos, MAX_NAME_SIZE);
 				buffer->local_curs_pos++;
 			}
 		}else{
-			if (strlen(tag_str) < MAX_NAME_SIZE -2){
+			if (strlen(tag_str) < MAX_NAME_SIZE -2 && chr !=32){
 				add_chr_in_str(chr, tag_str, buffer->local_curs_pos, MAX_NAME_SIZE);
 				buffer->local_curs_pos++;
 			}
