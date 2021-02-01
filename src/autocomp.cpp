@@ -133,16 +133,16 @@ void null_sni(size_n_index* sni,int index){
 	sni[index].size=0;
 }
 
-bool cmp_sni(size_n_index sni1, size_n_index sni2){
-	char temp_str1[sni1.size+1];
-	memset(temp_str1, 0, sni1.size+1);
-	memcpy(temp_str1, sni1.offset, sni1.size);
+bool cmp_sni(size_n_index sni_1, size_n_index sni_2){
+	char temp_str_1[sni_1.size+1];
+	memcpy(temp_str_1, sni_1.offset, sni_1.size);
+	temp_str_1[sni_1.size]=0;
 
-	char temp_str2[sni2.size+1];
-	memset(temp_str2, 0, sni2.size+1);
-	memcpy(temp_str2, sni2.offset, sni2.size);
+	char temp_str_2[sni_2.size+1];
+	memcpy(temp_str_2, sni_2.offset, sni_2.size);
+	temp_str_2[sni_2.size]=0;
 
-	int comp_result=strcmp(temp_str1, temp_str2);
+	int comp_result=strcmp(temp_str_1, temp_str_2);
 
 	if(comp_result==0)
 		return true;
@@ -159,7 +159,7 @@ void remove_duplicate_and_empty_sni(size_n_index* sni, int* tag_count){
 		for(int j=i+1;j<*tag_count-1;j++){
 			size_n_index sni1=sni[i];
 			size_n_index sni2=sni[j];
-			if(cmp_sni(sni[i], sni[j])){
+			if(cmp_sni(sni[i], sni[j]) || sni2.offset[0]==0){
 				remove_sni(sni, tag_count,j);
 				j--;
 			}
@@ -258,7 +258,7 @@ void draw_sni(int row, int col,size_n_index sni[AUTOCOM_WIN_MAX_SIZE], int choic
 			print_str_n_times(row-i, col-10, "- ", 55);
 		}
 		memcpy(tempchar, cur_sni.offset,cur_sni.size);
-		tempchar[cur_sni.size+1]=0;
+		tempchar[cur_sni.size]=0;
 		//mvprintw(row-i,col,"| %s %d",tempchar,cur_sni.score);
 		mvprintw(row-i,col,"| %s",tempchar);
 		//mvprintw(row-i,col,"| %s",tempchar);
