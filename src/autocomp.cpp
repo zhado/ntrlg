@@ -134,13 +134,13 @@ void null_sni(size_n_index* sni,int index){
 }
 
 bool cmp_sni(size_n_index sni1, size_n_index sni2){
-	char temp_str1[sni1.size];
+	char temp_str1[sni1.size+1];
+	memset(temp_str1, 0, sni1.size+1);
 	memcpy(temp_str1, sni1.offset, sni1.size);
-	temp_str1[sni1.size]=0;
 
-	char temp_str2[sni2.size];
+	char temp_str2[sni2.size+1];
+	memset(temp_str2, 0, sni2.size+1);
 	memcpy(temp_str2, sni2.offset, sni2.size);
-	temp_str2[sni2.size]=0;
 
 	int comp_result=strcmp(temp_str1, temp_str2);
 
@@ -251,14 +251,14 @@ void match_names(t_log* log_p, char* search_string, bool remove_dups, size_n_ind
 void draw_sni(int row, int col,size_n_index sni[AUTOCOM_WIN_MAX_SIZE], int choice,int matched_count){
 	for(int i=0;i<matched_count;i++){
 		size_n_index cur_sni=sni[i];
-		char tempchar[cur_sni.size];
+		char tempchar[cur_sni.size+1];
 		print_str_n_times(row-i, col-10, " ", 55);
 		if(choice == i){
 			attron(COLOR_PAIR(2));
 			print_str_n_times(row-i, col-10, "- ", 55);
 		}
 		memcpy(tempchar, cur_sni.offset,cur_sni.size);
-		tempchar[cur_sni.size]=0;
+		tempchar[cur_sni.size+1]=0;
 		//mvprintw(row-i,col,"| %s %d",tempchar,cur_sni.score);
 		mvprintw(row-i,col,"| %s",tempchar);
 		//mvprintw(row-i,col,"| %s",tempchar);
