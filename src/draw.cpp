@@ -172,8 +172,8 @@ void draw_time_boxes(t_log* logp,int cur_row,int col_p,time_t cell_tm, int cell_
 			//get
 			int row=0,col=0;
 			getyx(stdscr, row, col);
-			//print_warp_str(row,col, longest_entry->name,width-13);
-			printw("%s",longest_entry->name);
+			print_warp_str(row,col, longest_entry->name,width-13);
+			//printw("%s",longest_entry->name);
 			printw(" ");
 			attron(COLOR_PAIR(1));
 			print_duration(longest_entry->end_time-longest_entry->start_time);

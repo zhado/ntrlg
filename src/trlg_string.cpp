@@ -46,18 +46,17 @@ char char_at(int row,int col){
 }
 
 void print_warp_str(int row, int col,char* str, int len){
-	int strl_len=strlen(str);
-	char tmp_str[strl_len];
-	char rest_str[strl_len];
-	memset(tmp_str, 0, strl_len);
-	memset(rest_str, 0, strl_len);
-	memcpy(tmp_str,str,len);
-	tmp_str[len-1]=0;
-	int tmp_str_len=len;
-	if(strl_len>=len){
+	int str_len=strlen(str);
+	char tmp_str[str_len];
+	char rest_str[str_len];
+	memset(tmp_str, 0, str_len);
+	memset(rest_str, 0, str_len);
+	memcpy(tmp_str,str,str_len);
+	tmp_str[str_len]=0;
+	if(str_len>=len){
 		mvprintw(row,col,"%s",tmp_str);
 		printw("-");
-		memcpy(rest_str,str+tmp_str_len,strl_len-tmp_str_len);
+		memcpy(rest_str,str+len,str_len-len);
 		if(char_at(row+1, col+1)==' ' || char_at(row+1, col+1)=='_'){
 			print_warp_str(row+1, col, rest_str, len);
 		}else{
