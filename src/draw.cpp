@@ -122,7 +122,6 @@ void print_week_day(int row,int col,time_t tm,int cell_minutes){
 
 void draw_time_boxes(t_log* logp,int cur_row,int col_p,time_t cell_tm, int cell_minutes, time_t mask_start_tm,time_t mask_end_tm,int width){
 	time_t next_cell_tm=cell_tm+(cell_minutes*60);
-	time_t next_cell_tm_2=cell_tm-(cell_minutes*60);
 	time_t current_time=(unsigned long)time(0);
 	time_t last_duration=0;
 	bool find_longest_entry=false;
@@ -161,11 +160,9 @@ void draw_time_boxes(t_log* logp,int cur_row,int col_p,time_t cell_tm, int cell_
 				attroff(COLOR_PAIR(1));
 				break;
 			}else if(((next_cell_tm<end_time || end_time==0 )&& cell_tm < current_time) && cell_tm>start_tm){
-				log_entry* entry=&logp->entries[i];
 				mvprintw(cur_row, col_p, "|    |");
 				break;
 			}else if(start_tm>cell_tm && start_tm<next_cell_tm){
-				log_entry* entry=&logp->entries[i];
 				mvprintw(cur_row, col_p, "------");
 			}
 		}
@@ -175,7 +172,7 @@ void draw_time_boxes(t_log* logp,int cur_row,int col_p,time_t cell_tm, int cell_
 			//get
 			int row=0,col=0;
 			getyx(stdscr, row, col);
-			print_warp_str(row,col, longest_entry->name,width-13);
+			print_warp_str(row,col, longest_entry->name,width-17);
 			//printw("%s",longest_entry->name);
 			printw(" ");
 			attron(COLOR_PAIR(1));
@@ -188,7 +185,6 @@ void draw_time_boxes(t_log* logp,int cur_row,int col_p,time_t cell_tm, int cell_
 void print_logs(t_log* log_p,int row,int col,int cell_minutes,time_t cursor_pos_tm){
 	int max_row,max_col;
 	getmaxyx(stdscr,max_row,max_col);
-	log_entry* current_entry=0;
 
 	time_t quantized_cursor_pos_tm=cursor_pos_tm-(cursor_pos_tm%(cell_minutes*60));
 	time_t cursor_offset=cell_minutes*60*(int(max_row/2));
@@ -207,8 +203,6 @@ void print_weeks(t_log* log_p,int cell_minutes,time_t cursor_pos_tm){
 	int max_row,max_col;
 	getmaxyx(stdscr,max_row,max_col);
 
-	log_entry* current_entry=0;
-
 	int offset=9;
 
 	int width=25;
@@ -222,20 +216,17 @@ void print_weeks(t_log* log_p,int cell_minutes,time_t cursor_pos_tm){
 
 	for(int j=0;j<=days_to_fit;j++){
 		int day=days_to_fit-j;
-		time_t local_time=(unsigned long)time(NULL);
 		time_t secs_in_day=24*60*60;
-		tm broken_down_time=get_tm(local_time);
 		time_t quantized_cursor_pos_tm=cursor_pos_tm-(cursor_pos_tm%(cell_minutes*60));
 		time_t cursor_offset=cell_minutes*60*(int(max_row/2)+1);
 		quantized_cursor_pos_tm+=cursor_offset- day*secs_in_day;
 		//time_t prefered_time_offset=-16*60*60;
 		time_t prefered_time_offset=0;
 
-		time_t last_midnight=cursor_pos_tm-(cursor_pos_tm%(24*60*60));
+		time_t last_midnight=cursor_pos_tm-(cursor_pos_tm%(24*60*60))-4*60*60;
 		int count=0;
 		for(int i=max_row-2;i>=0;i--){
 			time_t cell_tm=quantized_cursor_pos_tm-cell_minutes*60*count;
-			time_t cur_end_day=last_midnight-secs_in_day*(day);
 			if(j==0){
 				draw_time_decorations(i, 0, cell_tm-prefered_time_offset, cell_minutes, 
 						cursor_offset,

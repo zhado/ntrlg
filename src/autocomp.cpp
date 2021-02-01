@@ -11,7 +11,6 @@
 
 int match_score(char* st1, char* st2,bool exact_match){
 	int res=0,
-	    res_t=0,
 	    l1=strlen(st1),
 	    l2=strlen(st2),
 	    min=INT32_MAX;
@@ -48,10 +47,6 @@ int match_scores_by_comma(char* str, char* search_strin){
 	memset(&my_str,0,MAX_NAME_SIZE);
 	strcpy(my_str, str);
 	remove_spaces(my_str);
-
-	int last_days= 7;
-	time_t local_time=(unsigned long)time(NULL);
-	time_t secs_in_day=24*60*60;
 
 	char temp_str[MAX_NAME_SIZE];
 	char* ch_start_p=my_str;
@@ -211,8 +206,6 @@ void match_names(t_log* log_p, char* search_string, bool remove_dups, size_n_ind
 	char search_string_no_space[MAX_NAME_SIZE];
 	int count=log_p->index;
 	int tag_count=count;
-	int rev=0;
-	match_result res;
 
 	search_string=get_after_last_comma(search_string);
 	strcpy(search_string_no_space, search_string);

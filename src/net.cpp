@@ -40,10 +40,6 @@ void handle_accept(int connfd){
 	memset (rec_buff,0,MAX_NAME_SIZE);
 	bool writing_dtbs=false;
 	bool send_dtbs=false;
-	int count=0;
-	unsigned long l1,l2;
-	int num=0;
-	int buf_start=0;
 	char save_msg[]="sandro FILE_START";
 	char send_msg[]="sandro SEND";
 	int n;
@@ -85,7 +81,7 @@ void handle_accept(int connfd){
 }
 
 int setup_server(int port){
-	int listenfd,connfd,n;
+	int listenfd;
 	struct sockaddr_in address;
 	int opt=1;
 	listenfd=socket(AF_INET,SOCK_STREAM,0);
