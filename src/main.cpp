@@ -67,6 +67,24 @@ void add_entry(t_log* log_p, char* name, char* sub_name,time_t start_time,time_t
 	log_p->index++;
 }
 
+
+int get_log_entry_index(t_log* a_log,log_entry* entry){
+	int entry_size=sizeof(log_entry);
+	return (entry-a_log->entries);
+}
+
+void remove_entry(t_log* log_p,log_entry* entry){
+	int entry_index=get_log_entry_index(log_p, entry);
+	for(int i=entry_index;i<log_p->index-1;i++){
+		log_p->entries[i].end_time=log_p->entries[i+1].end_time;
+		log_p->entries[i].start_time=log_p->entries[i+1].start_time;
+		
+		strcpy(log_p->entries[i].name,log_p->entries[i+1].name);
+		strcpy(log_p->entries[i].sub_name,log_p->entries[i+1].sub_name);
+	}
+	log_p->index=log_p->index-1;
+}
+
 int load_log(app_state* app,const char* file_name){
 	FILE* fp=fopen(file_name,"r");
 	if(fp==0){
@@ -145,7 +163,7 @@ void save_log(app_state* app, const char* file_name){
 
 void free_app(app_state* app){
 	t_log* log_p=&app->logs;
-	for (int i=0;i<log_p->index;i++){
+	for (int i=0;i<log_p->allocated;i++){
 		log_entry* entry=&log_p->entries[i];
 		free(entry->name);
 		free(entry->sub_name);
@@ -170,11 +188,6 @@ uint32_t hash(t_log* log_p){
 			hash+=log_p->entries[i].sub_name[j];
 	}
 	return hash;
-}
-
-int get_log_entry_index(t_log* a_log,log_entry* entry){
-	int entry_size=sizeof(log_entry);
-	return (entry-a_log->entries);
 }
 
 bool crash_with_other_entry(t_log* a_log,log_entry* entry){
@@ -295,16 +308,16 @@ int main(int argc,char** argv){
 	app.logs.entries=0;
 	app.stat_input=0;
 	load_log(&app, database_file);
-
 	char* stat_input=app.stat_input;
 	a_log=&app.logs;
+
 	int server_fd=0;
+
 	if(argc==2){
+		server_fd=setup_server(srv_conf->my_port);
 		while(1)
 			handle_connections(server_fd);
 		exit (1);
-	}else{
-		//server_fd=setup_server(1902);
 	}
 
 	setlocale(LC_CTYPE, "");
@@ -336,6 +349,8 @@ int main(int argc,char** argv){
 	log_entry* entry_to_resize=0;
 	log_edit_buffer buffr;
 	uint32_t last_hash=hash(a_log);
+	bool are_you_sure_prompt=false;
+	int are_you_sure_result=-1;
 
 	//strcpy(sub_name, "x");
 	//state=logging;
@@ -374,7 +389,6 @@ int main(int argc,char** argv){
 			}
 
 		} else if(state==entry_start_resize || state==entry_body_resize || state==entry_end_resize){
-
 
 			time_t initial_cursor_pos_tm=cursor_pos_tm;
 			time_t local_time=(unsigned long)time(0);
@@ -424,12 +438,17 @@ int main(int argc,char** argv){
 			if(chr !=0){
 				state=view;
 			}else {
-				//draw_server_status(0);
 				if (handle_connections(server_fd)!=0){
-					char msg[]="connectio handling error";
-					mvprintw(max_row-4,max_col-sizeof(msg),msg);
+					draw_error("connectio handling error");
 				}
-				//draw_server_status(1);
+			}
+		} else if(state==delete_mode){
+			if(are_you_sure_result!=-1){
+				entry_under_cursor=entry_under_cursor_fun(a_log, cell_minutes, cursor_pos_tm,0);
+				remove_entry(a_log, entry_under_cursor);
+				are_you_sure_prompt=false;
+				are_you_sure_result=-1;
+				state=view;
 			}
 		} else if(state==log_editing){
 
@@ -472,10 +491,10 @@ int main(int argc,char** argv){
 				}
 			}else if(chr =='w'){
 				cell_minutes=30;
-				cursor_pos_tm=(unsigned long)time(0);
+				//cursor_pos_tm=(unsigned long)time(0);
 				state=week_view;
 			}else if(chr =='v'){
-				cursor_pos_tm=(unsigned long)time(0);
+				//cursor_pos_tm=(unsigned long)time(0);
 				state=view;
 			}else if(chr =='e'){
 				mvprintw(max_row-3,max_col-sizeof("ending last entry"),"ending last entry");
@@ -484,9 +503,6 @@ int main(int argc,char** argv){
 				if(server_fd==0)
 					server_fd=setup_server(srv_conf->my_port);
 				state=server_mode;
-			}else if(chr =='m'){
-				draw_error("sandro");
-				draw_error("araragi");
 			}else if(chr =='L'){
 				load_log(&app, database_file);
 			}else if(chr =='N'){
@@ -503,12 +519,10 @@ int main(int argc,char** argv){
 							mvprintw(max_row-4,max_col-sizeof("deleted net_recieved_database file"),
 									"deleted net_recieved_database file");
 						}else{
-							mvprintw(max_row-4,max_col-sizeof("error deleteing file"),
-									"error deleteing file");
+							draw_error("error deleting file");
 						}
 					}else{
-						mvprintw(max_row-3,max_col-sizeof("error recieving file"),
-								"error recieving file");
+						draw_error("error recieving file");
 					}
 				}
 			}else if(chr =='q'){
@@ -519,6 +533,9 @@ int main(int argc,char** argv){
 				}
 			}else if(chr =='x'){
 				cell_minutes=cell_minutes+5;
+			}else if(chr =='D'){
+				state=delete_mode;
+				are_you_sure_prompt=true;
 			}else if(chr =='c'){
 				entry_under_cursor=entry_under_cursor_fun(a_log, cell_minutes, cursor_pos_tm,0);
 				if(entry_under_cursor!=0){
@@ -588,10 +605,12 @@ int main(int argc,char** argv){
 			mvprintw(max_row-1, 0, "entry body resize mode");
 		}else if(state==entry_end_resize){
 			mvprintw(max_row-1, 0, "entry end resize mode");
+		}else if(state==delete_mode){
+			mvprintw(max_row-1, 0, "delete mode");
+			dr_text_box(0,0,0,0,"are you sure you want to delete (y/n)");
 		}
 		mvprintw(max_row-2,max_col-6,"%d=%d",max_row,max_col);
 		mvprintw(max_row-1,max_col-6,"%d=%chr",chr,chr);
-		move(buffr.cursor_row,buffr.cursor_col);
 
 		uint32_t new_hash=hash(a_log);
 		if(last_hash!=new_hash){
@@ -604,9 +623,16 @@ int main(int argc,char** argv){
 			mvprintw(max_row-1,max_col/2-strlen(msg)/2,"%s",msg);
 			attroff(COLOR_PAIR(3));
 		}
+		move(buffr.cursor_row,buffr.cursor_col);
 		refresh();
 		chr=getch();
-		if(chr==ERR){
+		if(are_you_sure_prompt){
+			while(chr != 'y' && chr != 'n' && chr != 'Y' && chr != 'N' ){
+				chr=getch();
+			}
+			are_you_sure_result = (chr == 'y' || chr == 'Y') ? 1 : 0;
+			are_you_sure_prompt=false;
+		} else if(chr==ERR){
 			chr=0;
 		}
 	}

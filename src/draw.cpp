@@ -223,12 +223,13 @@ void print_weeks(t_log* log_p,int cell_minutes,time_t cursor_pos_tm){
 		//time_t prefered_time_offset=-16*60*60;
 		time_t prefered_time_offset=0;
 
-		time_t last_midnight=cursor_pos_tm-(cursor_pos_tm%(24*60*60))-4*60*60;
+		//time_t last_midnight=cursor_pos_tm-(cursor_pos_tm%(24*60*60))-4*60*60;
+		time_t last_midnight=cursor_pos_tm-(cursor_pos_tm%(24*60*60));
 		int count=0;
 		for(int i=max_row-2;i>=0;i--){
 			time_t cell_tm=quantized_cursor_pos_tm-cell_minutes*60*count;
 			if(j==0){
-				draw_time_decorations(i, 0, cell_tm-prefered_time_offset, cell_minutes, 
+				draw_time_decorations(i, 0, cell_tm-prefered_time_offset-4*60*60, cell_minutes, 
 						cursor_offset,
 						quantized_cursor_pos_tm,
 						0  |DRAW_hm,
@@ -300,6 +301,38 @@ void draw_error(char* msg){
 	while (getch() == ERR){
 	}
 	erase();
+}
+
+void dr_box(int row, int col, int width, int height){
+	int max_row,max_col;
+	getmaxyx(stdscr,max_row,max_col);
+
+	if(row+height>=max_row) height=max_row-row-1;
+	if(col+width>=max_col) width=max_col-col-1;
+
+	for(int i=row;i<row+height;i++)
+		for(int j=col;j<col+width;j++){
+			if(i==row || i==row+height-1){
+				mvprintw(i, j, "*");
+			}else if(j==col || j == col+ width-1){
+				mvprintw(i, j, "|");
+			}else{
+				mvprintw(i, j, " ");
+			}
+		}
+}
+
+void dr_text_box(int row, int col, int width, int height, char* msg){
+	int max_row,max_col;
+	getmaxyx(stdscr,max_row,max_col);
+	size_t msg_len=strlen(msg);
+	if((row + col + width + height) == 0){
+		row=max_row/2-5;
+		col=max_col/2-msg_len/2;
+	}
+
+	dr_box(row, col-1, msg_len +4, 5);
+	mvprintw(row+2,col+1,"%s",msg);
 }
 
 void draw_server_status(u_int32_t state){

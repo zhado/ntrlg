@@ -19,7 +19,8 @@ enum window_state {
 	entry_start_resize,
 	entry_end_resize,
 	entry_body_resize,
-	server_mode
+	server_mode,
+	delete_mode
 };
 
 #endif
