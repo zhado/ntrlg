@@ -329,6 +329,7 @@ int main(int argc,char** argv){
 	init_pair(2, -1, COLOR_BLACK);
 	init_pair(3, -1, COLOR_MAGENTA);
 	init_pair(4, 15, 16);
+	init_pair(5, 208,-1);
 
 	cbreak();
 	raw();
