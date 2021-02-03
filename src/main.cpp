@@ -50,13 +50,15 @@ void add_entry(t_log* log_p, char* name, char* sub_name,time_t start_time,time_t
 	if(log_p->index!=0)
 		end_last_entry(log_p);
 	if(log_p->allocated < (log_p->index+1) ){
-		log_p->entries=(log_entry*)realloc(log_p->entries, sizeof(log_entry)*(log_p->allocated+REALLOC_INCREMENT));
 		log_p->allocated=log_p->allocated+REALLOC_INCREMENT;
+		log_p->entries=(log_entry*)realloc(log_p->entries, sizeof(log_entry)*(log_p->allocated));
+		for(int i=log_p->allocated-REALLOC_INCREMENT;i<log_p->allocated;i++){
+			log_p->entries[i].name=(char*)calloc(sizeof(char)*MAX_NAME_SIZE,1);
+			log_p->entries[i].sub_name=(char*)calloc(sizeof(char)*MAX_NAME_SIZE,1);
+		}
 	}
 	log_entry* entry=&log_p->entries[log_p->index];
 
-	entry->name=(char*)calloc(sizeof(char)*MAX_NAME_SIZE,1);
-	entry->sub_name=(char*)calloc(sizeof(char)*MAX_NAME_SIZE,1);
 	entry->end_time=end_time;
 
 	entry->start_time=start_time;
@@ -171,7 +173,6 @@ void free_app(app_state* app){
 
 	free(app->stat_input);
 	free(app->logs.entries);
-	log_p=0;
 	app->stat_input=0;
 }
 
@@ -443,13 +444,13 @@ int main(int argc,char** argv){
 				}
 			}
 		} else if(state==delete_mode){
-			if(are_you_sure_result!=-1){
+			if(are_you_sure_result==1){
 				entry_under_cursor=entry_under_cursor_fun(a_log, cell_minutes, cursor_pos_tm,0);
 				remove_entry(a_log, entry_under_cursor);
-				are_you_sure_prompt=false;
-				are_you_sure_result=-1;
-				state=view;
 			}
+			are_you_sure_prompt=false;
+			are_you_sure_result=-1;
+			state=view;
 		} else if(state==log_editing){
 
 			int res=log_edit(&buffr, chr);
@@ -503,8 +504,11 @@ int main(int argc,char** argv){
 				if(server_fd==0)
 					server_fd=setup_server(srv_conf->my_port);
 				state=server_mode;
-			}else if(chr =='L'){
-				load_log(&app, database_file);
+			}else if(chr =='u'){
+				free_app(&app);
+				load_log(&app,database_file);
+				stat_input=app.stat_input;
+				a_log=&app.logs;
 			}else if(chr =='N'){
 
 				if(srv_conf->ip!=0 && srv_conf->port!=0){
@@ -533,7 +537,7 @@ int main(int argc,char** argv){
 				}
 			}else if(chr =='x'){
 				cell_minutes=cell_minutes+5;
-			}else if(chr =='D'){
+			}else if(chr =='D' || chr == 330){
 				state=delete_mode;
 				are_you_sure_prompt=true;
 			}else if(chr =='c'){
@@ -601,6 +605,7 @@ int main(int argc,char** argv){
 			mvprintw(max_row-1, 0, "entry start resize mode");
 		}else if(state==server_mode){
 			mvprintw(max_row-1, 0, "server_mode");
+			dr_text_box(0,0,0,0,"listening for connections");
 		}else if(state==entry_body_resize){
 			mvprintw(max_row-1, 0, "entry body resize mode");
 		}else if(state==entry_end_resize){
