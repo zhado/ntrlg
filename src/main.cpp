@@ -296,7 +296,6 @@ server_conf* load_serv_conf(){
 int main(int argc,char** argv){
 	int cell_minutes=20;
 	time_t cursor_pos_tm=(unsigned long)time(0);
-	//t_log* a_log=(t_log*)malloc(sizeof(t_log));
 	t_log* a_log;
 
 	server_conf* srv_conf=load_serv_conf();
@@ -325,6 +324,13 @@ int main(int argc,char** argv){
 
 	setlocale(LC_CTYPE, "");
 	initscr();
+	cbreak();
+	keypad(stdscr, TRUE);
+	noecho();
+	raw();
+	set_escdelay(20);
+	halfdelay(20);
+
 	start_color();
 	use_default_colors();
 	init_pair(1, COLOR_GREEN, -1);
@@ -340,22 +346,9 @@ int main(int argc,char** argv){
 	//init_pair(5, 208,-1);
 	//init_pair(0, -1,-1);
 
-	cbreak();
-	raw();
-	set_escdelay(20);
-	keypad(stdscr, TRUE);
-	halfdelay(20);
-	noecho();
 
 	int chr=0;
 
-	char name[MAX_NAME_SIZE];
-	char sub_name[MAX_NAME_SIZE];
-	memset(name,0,MAX_NAME_SIZE);
-	memset(sub_name,0,MAX_NAME_SIZE);
-	//memset(stat_input,0,MAX_NAME_SIZE);
-	//2=subname 1=name
-	
 	log_entry* entry_under_cursor=0;
 	log_entry* entry_to_resize=0;
 	log_edit_buffer buffr;
@@ -373,8 +366,6 @@ int main(int argc,char** argv){
 
 		if (chr == 27){
 			mvprintw(max_row-3,max_col-11,"esc pressed");
-			memset(name,0,100);
-			memset(sub_name,0,100);
 			entry_to_resize=0;
 			state=view;
 		}
