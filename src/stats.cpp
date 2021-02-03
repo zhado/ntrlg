@@ -27,7 +27,7 @@ int get_tag_color_pair(char* str, statConfig* stat_conf){
 		temp_str[stat_conf->stat_colors[i].part.length]=0;
 
 		if(str[0]==0)
-			return -1;
+			return 0;
 		char* nxt_comma;
 		char* prv_comma=str;
 
@@ -95,7 +95,6 @@ statConfig generate_stat_colors(char* str){
 	if(str[0]==0)
 		return conf;
 	char* nxt_comma;
-	char* orig_p=str;
 	char* prv_comma=str;
 
 	int count=0;
@@ -126,7 +125,6 @@ statConfig generate_stat_colors(char* str){
 	}
 	conf.count=count;
 
-	str=orig_p;
 	return conf;
 }
 

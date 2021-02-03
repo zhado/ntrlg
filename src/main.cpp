@@ -593,7 +593,7 @@ int main(int argc,char** argv){
 			curs_set(0);
 			mvprintw(max_row-1, 0, "view mode, scale=%d minutes",cell_minutes);
 		}else if(state==week_view){
-			print_weeks(a_log, cell_minutes, cursor_pos_tm);
+			print_weeks(a_log, cell_minutes, cursor_pos_tm,&stat_conf);
 			curs_set(0);
 			mvprintw(max_row-1, 0, "week view mode, scale=%d minutes",cell_minutes);
 		}else if(state==logging){
@@ -627,8 +627,6 @@ int main(int argc,char** argv){
 		}
 		mvprintw(max_row-2,max_col-6,"%d=%d",max_row,max_col);
 		mvprintw(max_row-1,max_col-6,"%d=%chr",chr,chr);
-
-		mvprintw(max_row-10,max_col-9,"%d",stat_conf.count);
 
 		uint32_t new_hash=hash(a_log);
 		if(last_hash!=new_hash){
