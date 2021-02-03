@@ -327,7 +327,7 @@ int main(int argc,char** argv){
 
 	setlocale(LC_CTYPE, "");
 	initscr();
-	cbreak();
+	nocbreak();
 	keypad(stdscr, TRUE);
 	noecho();
 	raw();
@@ -358,6 +358,7 @@ int main(int argc,char** argv){
 	uint32_t last_hash=hash(&app);
 	bool are_you_sure_prompt=false;
 	int are_you_sure_result=-1;
+	int week_view_width=25;
 
 	//strcpy(sub_name, "x");
 	//state=logging;
@@ -420,9 +421,7 @@ int main(int argc,char** argv){
 				}
 			}else if(chr =='x'){
 				cell_minutes=cell_minutes+5;
-			}
-
-			if(state==entry_end_resize){
+			}else if(state==entry_end_resize){
 				entry_to_resize->end_time=cursor_pos_tm;
 			}else if(state==entry_start_resize) {
 				entry_to_resize->start_time=cursor_pos_tm;
@@ -494,6 +493,12 @@ int main(int argc,char** argv){
 				}else if(match_type==3){
 					entry_to_resize=entry_under_cursor;
 					state=entry_end_resize;
+				}
+			}else if(chr =='Z'){
+				week_view_width++;
+			}else if(chr =='X'){
+				if(week_view_width>0){
+					week_view_width--;
 				}
 			}else if(chr =='w'){
 				cell_minutes=30;
@@ -585,11 +590,11 @@ int main(int argc,char** argv){
 		if(state==view){
 			//print_logs(a_log,-5,0,max_row,max_col,cell_minutes,cursor_pos_tm);
 			curs_set(0);
-			mvprintw(max_row-1, 0, "view mode, scale=%d minutes",cell_minutes);
+			mvprintw(max_row-1, 0, "view mode, scale %d minutes",cell_minutes);
 		}else if(state==week_view){
-			print_weeks(a_log, cell_minutes, cursor_pos_tm,&stat_conf);
+			print_weeks(a_log, cell_minutes, cursor_pos_tm,&stat_conf,week_view_width);
 			curs_set(0);
-			mvprintw(max_row-1, 0, "week view mode, scale=%d minutes",cell_minutes);
+			mvprintw(max_row-1, 0, "week view mode, vert_scale %d minutes, hor target scale = %d char",cell_minutes,week_view_width);
 		}else if(state==logging){
 			curs_set(1);
 			draw_log_edit(&buffr, max_row-3, 0);
