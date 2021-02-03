@@ -221,6 +221,10 @@ bool crash_with_other_entry(t_log* a_log,log_entry* entry){
 		if(entry->start_time<prev_entry->end_time){
 			return true;
 		}
+		if(entry->start_time >= entry->end_time){
+			return true;
+		}
+
 	}else{
 		if(entry->start_time<prev_entry->end_time){
 			return true;
@@ -332,7 +336,7 @@ int main(int argc,char** argv){
 	noecho();
 	raw();
 	set_escdelay(20);
-	halfdelay(20);
+	//halfdelay(20);
 
 	start_color();
 	use_default_colors();
@@ -406,6 +410,8 @@ int main(int argc,char** argv){
 				cursor_pos_tm-=cell_minutes*60;
 			}else if(chr ==10){
 				state=view;
+			}else if(chr =='q'){
+				state=view;
 			}else if(chr ==258){
 				//downarrow
 				cursor_pos_tm+=cell_minutes*60;
@@ -419,9 +425,9 @@ int main(int argc,char** argv){
 				if(cell_minutes!=5){
 					cell_minutes=cell_minutes-5;
 				}
-			}else if(chr =='x'){
+			}else if(chr =='x')
 				cell_minutes=cell_minutes+5;
-			}else if(state==entry_end_resize){
+			if(state==entry_end_resize){
 				entry_to_resize->end_time=cursor_pos_tm;
 			}else if(state==entry_start_resize) {
 				entry_to_resize->start_time=cursor_pos_tm;
