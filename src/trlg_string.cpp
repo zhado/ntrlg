@@ -94,7 +94,6 @@ int add_chr_in_str(char chr, char* str,int index,int max_size){
 	return 0;
 }
 
-
 bool exact_match_comma(char* str,char* str2){
 	char my_str[MAX_NAME_SIZE];
 	memset(&my_str,0,MAX_NAME_SIZE);

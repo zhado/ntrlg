@@ -136,6 +136,7 @@ int load_log(app_state* app,const char* file_name){
 				return 1;
 			}
 			memcpy(app->stat_input, line,strlen(line)-1);
+			app->stat_input[strlen(line)]=0;
 		}
 		line_index++;
 	}
@@ -309,8 +310,8 @@ int main(int argc,char** argv){
 	app.logs.entries=0;
 	app.stat_input=0;
 	load_log(&app, database_file);
-	char* stat_input=app.stat_input;
 	a_log=&app.logs;
+
 
 	int server_fd=0;
 
@@ -321,6 +322,7 @@ int main(int argc,char** argv){
 		exit (1);
 	}
 
+
 	setlocale(LC_CTYPE, "");
 	initscr();
 	start_color();
@@ -328,8 +330,15 @@ int main(int argc,char** argv){
 	init_pair(1, COLOR_GREEN, -1);
 	init_pair(2, -1, COLOR_BLACK);
 	init_pair(3, -1, COLOR_MAGENTA);
-	init_pair(4, 15, 16);
-	init_pair(5, 208,-1);
+	init_pair(4, -1, -1);
+
+	statConfig stat_conf;
+	remove_spaces(app.stat_input);
+	stat_conf=generate_stat_colors(app.stat_input);
+	
+  
+	//init_pair(5, 208,-1);
+	//init_pair(0, -1,-1);
 
 	cbreak();
 	raw();
@@ -359,7 +368,6 @@ int main(int argc,char** argv){
 	while(true){
 
 		a_log=&app.logs;
-		stat_input=app.stat_input;
 		erase();
 		getmaxyx(stdscr,max_row,max_col);
 
@@ -379,7 +387,8 @@ int main(int argc,char** argv){
 			}
 		} else if(state==stat_editing){
 			int res=log_edit(&buffr,   chr);
-			strcpy(stat_input, buffr.sub_name);
+			strcpy(app.stat_input, buffr.sub_name);
+			stat_conf=generate_stat_colors(app.stat_input);
 			if(res==0){
 				state=view;
 			}
@@ -475,7 +484,8 @@ int main(int argc,char** argv){
 				state=append_log;
 				chr=0;
 			}else if(chr =='t'){
-				buffr=init_log_edit(a_log, true,0,stat_input);
+				buffr=init_log_edit(a_log, true,0,app.stat_input);
+				stat_conf=generate_stat_colors(app.stat_input);
 				chr=0;
 				state=stat_editing;
 			}else if(chr =='d'){
@@ -508,7 +518,7 @@ int main(int argc,char** argv){
 			}else if(chr =='u'){
 				free_app(&app);
 				load_log(&app,database_file);
-				stat_input=app.stat_input;
+				stat_conf=generate_stat_colors(app.stat_input);
 				a_log=&app.logs;
 			}else if(chr =='N'){
 
@@ -519,7 +529,7 @@ int main(int argc,char** argv){
 						free_app(&app);
 						load_log(&app, net_recieved_database);
 						a_log=&app.logs;
-						stat_input=app.stat_input;
+						stat_conf=generate_stat_colors(app.stat_input);
 						if(remove(net_recieved_database)==0){
 							mvprintw(max_row-4,max_col-sizeof("deleted net_recieved_database file"),
 									"deleted net_recieved_database file");
@@ -573,9 +583,9 @@ int main(int argc,char** argv){
 		//drawing happens here
 		print_str_n_times(max_row-1, 0,"-", max_col);
 		if(state != week_view){
-			print_logs(a_log,-5,0,cell_minutes,cursor_pos_tm);
+			print_logs(a_log,-5,0,cell_minutes,cursor_pos_tm,&stat_conf);
 			if(max_col>172)
-				draw_durations(23, 90, a_log, stat_input);
+				draw_durations(23, 90, a_log, &stat_conf);
 		}
 
 		if(state==view){
@@ -617,6 +627,8 @@ int main(int argc,char** argv){
 		}
 		mvprintw(max_row-2,max_col-6,"%d=%d",max_row,max_col);
 		mvprintw(max_row-1,max_col-6,"%d=%chr",chr,chr);
+
+		mvprintw(max_row-10,max_col-9,"%d",stat_conf.count);
 
 		uint32_t new_hash=hash(a_log);
 		if(last_hash!=new_hash){

@@ -1,9 +1,10 @@
 #ifndef TRLG_STRING_H 
 #define TRLG_STRING_H
 
-struct str_part{
+struct strPart{
 	char* start;
-	int size;
+	int length;
+	// not including null pointer if avialable
 };
 
 char* get_after_last_comma (char* str);

@@ -5,6 +5,7 @@
 #include "logs.h"
 #include "autocomp.h"
 #include "draw.h"
+#include "stats.h"
 #include "trlg_string.h"
 
 void print_str_n_times(int row,int col, char* str,int n){
@@ -140,7 +141,7 @@ void print_week_day(int row,int col,time_t tm,int cell_minutes){
 	}
 }
 
-void draw_time_boxes(t_log* logp,int cur_row,int col_p,time_t cell_tm, int cell_minutes, time_t mask_start_tm,time_t mask_end_tm,int width){
+void draw_time_boxes(t_log* logp,int cur_row,int col_p,time_t cell_tm, int cell_minutes, time_t mask_start_tm,time_t mask_end_tm,int width,statConfig* stat_conf){
 	time_t next_cell_tm=cell_tm+(cell_minutes*60);
 	time_t current_time=(unsigned long)time(0);
 	time_t last_duration=0;
@@ -187,15 +188,20 @@ void draw_time_boxes(t_log* logp,int cur_row,int col_p,time_t cell_tm, int cell_
 		}
 
 		if(find_longest_entry){
-			if(match_score(longest_entry->sub_name, (char*)"programin", false)==0){
-				attron(COLOR_PAIR(5));
-			}
+			int col=0;
+			if(stat_conf!=0)
+				col=get_tag_color_pair(longest_entry->sub_name, stat_conf);
+			attron(COLOR_PAIR(col));
+			short fg=0,bg=0;
+			pair_content(col, &fg, &bg);
 			mvprintw(cur_row, col_p, "=> ");
 			print_warp_str(cur_row,col_p+3, longest_entry->name,width-17);
-			attroff(COLOR_PAIR(5));
+			attroff(COLOR_PAIR(col));
+
 			printw(" ");
 
 			attron(COLOR_PAIR(1));
+			
 			//print_duration(longest_entry->end_time-longest_entry->start_time);
 			align_right_duration(cur_row,col_p+width,longest_entry->end_time-longest_entry->start_time);
 			attroff(COLOR_PAIR(1));
@@ -203,7 +209,7 @@ void draw_time_boxes(t_log* logp,int cur_row,int col_p,time_t cell_tm, int cell_
 	}
 }
 
-void print_logs(t_log* log_p,int row,int col,int cell_minutes,time_t cursor_pos_tm){
+void print_logs(t_log* log_p,int row,int col,int cell_minutes,time_t cursor_pos_tm,statConfig* stat_conf){
 	int max_row,max_col;
 	getmaxyx(stdscr,max_row,max_col);
 
@@ -216,7 +222,7 @@ void print_logs(t_log* log_p,int row,int col,int cell_minutes,time_t cursor_pos_
 		int width=65;
 		time_t cell_tm=quantized_cursor_pos_tm-cell_minutes*60*count;
 		int dec_width=draw_time_decorations(i, 0, cell_tm, cell_minutes, cursor_offset, quantized_cursor_pos_tm, INT32_MAX , width);
-		draw_time_boxes(log_p,i,dec_width,cell_tm,cell_minutes,0,0,width-dec_width);
+		draw_time_boxes(log_p,i,dec_width,cell_tm,cell_minutes,0,0,width-dec_width,stat_conf);
 		count++;
 	}
 }
@@ -264,7 +270,7 @@ void print_weeks(t_log* log_p,int cell_minutes,time_t cursor_pos_tm){
 				draw_time_boxes(log_p,i,offset,cell_tm-prefered_time_offset,cell_minutes,	
 						last_midnight-secs_in_day*(day),
 						last_midnight-secs_in_day*(day-1),
-						width);
+						width,0);
 			}else{
 				draw_time_decorations(i, j*(width+space_between)+offset, cell_tm,
 						cell_minutes,
@@ -276,7 +282,7 @@ void print_weeks(t_log* log_p,int cell_minutes,time_t cursor_pos_tm){
 						,cell_minutes,	
 						last_midnight-secs_in_day*(day),
 						last_midnight-secs_in_day*(day-1),
-						width);
+						width,0);
 			}
 			count++;
 		}
