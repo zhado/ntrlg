@@ -177,7 +177,8 @@ void free_app(app_state* app){
 	app->stat_input=0;
 }
 
-uint32_t hash(t_log* log_p){
+uint32_t hash(app_state* app){
+	t_log* log_p=&app->logs;
 	uint32_t hash=0;
 	for(int i=0;i<log_p->index;i++){
 		hash+=log_p->index;
@@ -189,6 +190,8 @@ uint32_t hash(t_log* log_p){
 		for(int j=0;j<strlen(log_p->entries[i].sub_name);j++)
 			hash+=log_p->entries[i].sub_name[j];
 	}
+	for(int i=0;i<strlen(app->stat_input);i++)
+		hash+=app->stat_input[i];
 	return hash;
 }
 
@@ -352,7 +355,7 @@ int main(int argc,char** argv){
 	log_entry* entry_under_cursor=0;
 	log_entry* entry_to_resize=0;
 	log_edit_buffer buffr;
-	uint32_t last_hash=hash(a_log);
+	uint32_t last_hash=hash(&app);
 	bool are_you_sure_prompt=false;
 	int are_you_sure_result=-1;
 
@@ -619,7 +622,7 @@ int main(int argc,char** argv){
 		mvprintw(max_row-2,max_col-6,"%d=%d",max_row,max_col);
 		mvprintw(max_row-1,max_col-6,"%d=%chr",chr,chr);
 
-		uint32_t new_hash=hash(a_log);
+		uint32_t new_hash=hash(&app);
 		if(last_hash!=new_hash){
 			last_hash=new_hash;
 			UNSAVED_CHANGES=true;

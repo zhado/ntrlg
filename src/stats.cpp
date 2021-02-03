@@ -22,6 +22,7 @@ time_t tm_clamp(time_t in, time_t min, time_t max){
 
 int get_tag_color_pair(char* str, statConfig* stat_conf){
 	char temp_str[MAX_NAME_SIZE];
+	// tracked tags loop.
 	for(int i=0;i<stat_conf->count;i++){
 		memcpy(temp_str, stat_conf->stat_colors[i].part.start, stat_conf->stat_colors[i].part.length);
 		temp_str[stat_conf->stat_colors[i].part.length]=0;
@@ -32,6 +33,8 @@ int get_tag_color_pair(char* str, statConfig* stat_conf){
 		char* prv_comma=str;
 
 		bool found=false;
+
+		// extract entry-tags to test track-tags to.
 		while(1){
 			nxt_comma = next_comma(prv_comma);
 			strPart str_part={prv_comma,(int)(nxt_comma-prv_comma)};
@@ -109,12 +112,13 @@ statConfig generate_stat_colors(char* str){
 
 		conf.stat_colors[count]=get_statcolor(str_part);
 
-		short fg_o=conf.stat_colors[count].fg;
-		short bg_o=conf.stat_colors[count].bg;
-		if (init_pair(count+10,fg_o ,bg_o)!= OK ){
-			//printf("notok\n");
-		}
-		conf.stat_colors[count].pair_id=count+10;
+		short fg=conf.stat_colors[count].fg;
+		short bg=conf.stat_colors[count].bg;
+		init_pair(count+10,fg ,bg);
+		if(fg==-1 && bg==-1)
+			conf.stat_colors[count].pair_id=0;
+		else
+			conf.stat_colors[count].pair_id=count+10;
 
 
 		count++;
@@ -143,17 +147,22 @@ time_t get_duration_in_range(t_log* a_log, char* str,time_t start_tm,time_t end_
 	return duration;
 }
 
-void draw_durations(int row, int col,t_log* a_log, statConfig* conf){
+void draw_durations(int row, int col,t_log* a_log, statConfig* stat_conf){
 	int last_days= 7;
 	time_t local_time=(unsigned long)time(NULL);
 	time_t secs_in_day=24*60*60;
 	char temp_str[MAX_NAME_SIZE];
 
 	int start_row=row;
-	for(int i=0;i<conf->count;i++){
-		memcpy(temp_str, conf->stat_colors[i].part.start, conf->stat_colors[i].part.length);
-		temp_str[conf->stat_colors[i].part.length]=0;
+	for(int i=0;i<stat_conf->count;i++){
+		memcpy(temp_str, stat_conf->stat_colors[i].part.start, stat_conf->stat_colors[i].part.length);
+		temp_str[stat_conf->stat_colors[i].part.length]=0;
 
+		int color=0;
+		if(stat_conf!=0)
+			color=get_tag_color_pair(temp_str, stat_conf);
+		attron(COLOR_PAIR(color));
+		print_str_n_times(row, col, " ", 82);
 		move(row++,col);
 		if(temp_str[0]!=0)
 			printw("%s: ",temp_str);
@@ -165,17 +174,17 @@ void draw_durations(int row, int col,t_log* a_log, statConfig* conf){
 				time_t start_time=last_midnight - secs_in_day*j;
 				time_t end_time=last_midnight - secs_in_day*(j-1);
 				if(row==start_row+1){
+					attroff(COLOR_PAIR(color));
 					mvprintw(start_row-2,col+12+9*j+1,"%02d",get_tm(start_time).tm_mday);
-					//move(start_row-3,col+12+9*j+1);
-					//print_normal_date_time(start_time);
-					//move(start_row-4,col+12+9*j+1);
-					//print_normal_date_time(end_time);
+					attron(COLOR_PAIR(color));
 				}
 				move(row-1,col+12+9*j);
-				printw("│");
+				printw("|");
 				
 				print_duration(get_duration_in_range(a_log, temp_str,start_time,end_time));
+
 		}
+		attroff(COLOR_PAIR(color));
 	}
 }
 

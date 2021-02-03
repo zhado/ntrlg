@@ -177,13 +177,11 @@ void draw_time_boxes(t_log* logp,int cur_row,int col_p,time_t cell_tm, int cell_
 				if(stat_conf!=0)
 					col=get_tag_color_pair(entry->sub_name, stat_conf);
 				attron(COLOR_PAIR(col));
+				print_str_n_times(cur_row, col_p, " ", width);
 				mvprintw(cur_row, col_p, "++");
-				printw("%s ",entry->name);
-				attroff(COLOR_PAIR(col));
-
-				attron(COLOR_PAIR(1));
+				printw(" %s",entry->name);
 				align_right_duration(cur_row,col_p+width,(unsigned long)time(0)-entry->start_time);
-				attroff(COLOR_PAIR(1));
+				attroff(COLOR_PAIR(col));
 				break;
 			}else if(((next_cell_tm<=end_time || end_time==0 )&& cell_tm <= current_time) && cell_tm>=start_tm){
 
@@ -192,7 +190,12 @@ void draw_time_boxes(t_log* logp,int cur_row,int col_p,time_t cell_tm, int cell_
 				if(stat_conf!=0)
 					col=get_tag_color_pair(entry->sub_name, stat_conf);
 				attron(COLOR_PAIR(col));
-				mvprintw(cur_row, col_p, "|");
+				print_str_n_times(cur_row, col_p, " ", width);
+				if(col==0)
+					mvprintw(cur_row, col_p, "|");
+				else
+					mvprintw(cur_row, col_p, " ");
+
 				attroff(COLOR_PAIR(col));
 				break;
 			}else if(start_tm>=cell_tm && start_tm<=next_cell_tm){
@@ -205,17 +208,14 @@ void draw_time_boxes(t_log* logp,int cur_row,int col_p,time_t cell_tm, int cell_
 			if(stat_conf!=0)
 				col=get_tag_color_pair(longest_entry->sub_name, stat_conf);
 			attron(COLOR_PAIR(col));
+			print_str_n_times(cur_row, col_p, " ", width);
 
 			mvprintw(cur_row, col_p, "=>");
 			printw(" ");
-			print_warp_str(cur_row,col_p+3, longest_entry->name,width-17);
-			attroff(COLOR_PAIR(col));
-
-			attron(COLOR_PAIR(1));
-			
-			//print_duration(longest_entry->end_time-longest_entry->start_time);
+			print_warp_str(cur_row,col_p+3, longest_entry->name,117);
+			//print_warp_str(cur_row,col_p+width/2-strlen(longest_entry->name)/2, longest_entry->name,117);
 			align_right_duration(cur_row,col_p+width,longest_entry->end_time-longest_entry->start_time);
-			attroff(COLOR_PAIR(1));
+			attroff(COLOR_PAIR(col));
 		}
 	}
 }
