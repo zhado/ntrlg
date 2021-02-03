@@ -162,7 +162,7 @@ void draw_time_boxes(t_log* logp,int cur_row,int col_p,time_t cell_tm, int cell_
 		for(int i=logp->index-1;i>=0;i--){
 			time_t start_tm=logp->entries[i].start_time;
 			time_t end_time=logp->entries[i].end_time;
-			if(end_time < next_cell_tm && end_time > cell_tm){
+			if(end_time <= next_cell_tm && end_time >= cell_tm){
 				find_longest_entry=true;
 				log_entry* entry=&logp->entries[i];
 				if((entry->end_time-entry->start_time) > last_duration){
@@ -170,7 +170,7 @@ void draw_time_boxes(t_log* logp,int cur_row,int col_p,time_t cell_tm, int cell_
 					longest_entry=entry;
 					continue;
 				}
-			}else if(end_time==0 &&  next_cell_tm >= current_time && cell_tm < current_time ){
+			}else if(end_time==0 &&  next_cell_tm >= current_time && cell_tm <= current_time ){
 				log_entry* entry=&logp->entries[logp->index-1];
 				printw(" ");
 				int col=0;
@@ -185,7 +185,7 @@ void draw_time_boxes(t_log* logp,int cur_row,int col_p,time_t cell_tm, int cell_
 				align_right_duration(cur_row,col_p+width,(unsigned long)time(0)-entry->start_time);
 				attroff(COLOR_PAIR(1));
 				break;
-			}else if(((next_cell_tm<end_time || end_time==0 )&& cell_tm < current_time) && cell_tm>start_tm){
+			}else if(((next_cell_tm<=end_time || end_time==0 )&& cell_tm <= current_time) && cell_tm>=start_tm){
 
 				log_entry* entry=&logp->entries[i];
 				int col=0;
@@ -195,7 +195,7 @@ void draw_time_boxes(t_log* logp,int cur_row,int col_p,time_t cell_tm, int cell_
 				mvprintw(cur_row, col_p, "|");
 				attroff(COLOR_PAIR(col));
 				break;
-			}else if(start_tm>cell_tm && start_tm<next_cell_tm){
+			}else if(start_tm>=cell_tm && start_tm<=next_cell_tm){
 				mvprintw(cur_row, col_p, "--");
 			}
 		}
@@ -210,8 +210,6 @@ void draw_time_boxes(t_log* logp,int cur_row,int col_p,time_t cell_tm, int cell_
 			printw(" ");
 			print_warp_str(cur_row,col_p+3, longest_entry->name,width-17);
 			attroff(COLOR_PAIR(col));
-
-			printw(" ");
 
 			attron(COLOR_PAIR(1));
 			
