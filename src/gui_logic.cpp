@@ -25,10 +25,9 @@ bool crash_with_other_entry(t_log* a_log,log_entry* entry){
 			return true;
 		}
 	}else if(next_entry==0){
-		if(entry->start_time <= prev_entry->end_time){
+		if(entry->start_time < prev_entry->end_time){
 			return true;
-		}
-		if(entry->end_time!=0){
+		}else if(entry->end_time!=0){
 			if(entry->start_time >= entry->end_time){
 				return true;
 			}

@@ -333,6 +333,14 @@ int main(int argc,char** argv){
 				case 'x':{
 					cell_minutes=cell_minutes+5;
 				}break;
+				case 567:{
+					if(cell_minutes!=5){
+						cell_minutes=cell_minutes-5;
+					}
+				}break;
+				case 526:{
+					cell_minutes=cell_minutes+5;
+				}break;
 				case 'h':{
 					week_view_hide_text=!week_view_hide_text;
 				}break;
@@ -343,6 +351,20 @@ int main(int argc,char** argv){
 					if(week_view_width>0){
 						week_view_width--;
 					}
+				}break;
+				case 565:{
+					week_view_width++;
+				}break;
+				case 524:{
+					if(week_view_width>0){
+						week_view_width--;
+					}
+				}break;
+				case 337:{
+					cursor_pos_tm-=60*60*24;
+				}break;
+				case 336:{
+					cursor_pos_tm+=60*60*24;
 				}break;
 				case 'D':{
 					state=delete_mode;
@@ -380,7 +402,12 @@ int main(int argc,char** argv){
 				}break;
 				case KEY_HOME:{
 					cursor_pos_tm=(unsigned long)time(0);
+				}break;
+				case 55:{
+					cursor_pos_tm=(unsigned long)time(0);
+					week_view_width=25;
 					cell_minutes=20;
+					week_view_hide_text=false;
 				}break;
 			}
 		} else if(state==logging){
