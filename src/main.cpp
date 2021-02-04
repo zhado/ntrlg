@@ -166,6 +166,12 @@ server_conf* load_serv_conf(){
 	return conf;
 }
 
+long get_nano_time(){
+	timespec timee;
+	clock_gettime(CLOCK_PROCESS_CPUTIME_ID,&timee);
+	return timee.tv_nsec;
+}
+
 int main(int argc,char** argv){
 	int cell_minutes=20;
 	time_t cursor_pos_tm=(unsigned long)time(0);
@@ -222,12 +228,11 @@ int main(int argc,char** argv){
 	bool are_you_sure_prompt=false;
 	int are_you_sure_result=-1;
 	bool running=true;
-	timespec start_time;
-	timespec end_time;
+	long start_time,end_time;
 
 	while(running){
-		clock_gettime(CLOCK_REALTIME,&start_time);
 
+		start_time=get_nano_time();
 		erase();
 		getmaxyx(stdscr,max_row,max_col);
 
@@ -488,10 +493,12 @@ int main(int argc,char** argv){
 			mvprintw(max_row-1,max_col/2-strlen(msg)/2,"%s",msg);
 			attroff(COLOR_PAIR(3));
 		}
-		move(buffr.cursor_row,buffr.cursor_col);
+
 		refresh();
-		clock_gettime(CLOCK_REALTIME,&end_time);
-		mvprintw(max_row-1,max_col-20,"time %f",(end_time.tv_nsec-start_time.tv_nsec)/1000000.0);
+
+		mvprintw(max_row-1,max_col-20,"time %f",(get_nano_time()-start_time)/1000000.0);
+
+		move(buffr.cursor_row,buffr.cursor_col);
 		chr=getch();
 		if(are_you_sure_prompt){
 			while(chr != 'y' && chr != 'n' && chr != 'Y' && chr != 'N' ){

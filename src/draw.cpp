@@ -260,7 +260,6 @@ void print_weeks(t_log* log_p,int cell_minutes,time_t cursor_pos_tm,statConfig* 
 		time_t cursor_offset=cell_minutes*60*(int(max_row/2)+1);
 		quantized_cursor_pos_tm+=cursor_offset- day*secs_in_day;
 		//time_t prefered_time_offset=-16*60*60;
-		time_t prefered_time_offset=0;
 
 		time_t last_midnight=cursor_pos_tm-(cursor_pos_tm%(24*60*60))-4*60*60;
 		//time_t last_midnight=cursor_pos_tm-(cursor_pos_tm%(24*60*60));
@@ -268,7 +267,7 @@ void print_weeks(t_log* log_p,int cell_minutes,time_t cursor_pos_tm,statConfig* 
 		for(int i=max_row-2;i>=0;i--){
 			time_t cell_tm=quantized_cursor_pos_tm-cell_minutes*60*count;
 			if(j==0){
-				draw_time_decorations(i, 0, cell_tm-prefered_time_offset, cell_minutes, 
+				draw_time_decorations(i, 0, cell_tm, cell_minutes, 
 						cursor_offset,
 						quantized_cursor_pos_tm,
 						0  |DRAW_hm,
@@ -278,7 +277,7 @@ void print_weeks(t_log* log_p,int cell_minutes,time_t cursor_pos_tm,statConfig* 
 						quantized_cursor_pos_tm,
 						DRAW_cursor,
 						width);
-				draw_time_boxes(log_p,i,offset,cell_tm-prefered_time_offset,cell_minutes,	
+				draw_time_boxes(log_p,i,offset,cell_tm,cell_minutes,	
 						last_midnight-secs_in_day*(day),
 						last_midnight-secs_in_day*(day-1),
 						width,stat_conf);
@@ -289,7 +288,7 @@ void print_weeks(t_log* log_p,int cell_minutes,time_t cursor_pos_tm,statConfig* 
 						quantized_cursor_pos_tm,
 						DRAW_cursor,
 						width);
-				draw_time_boxes(log_p,i,j*(width+space_between)+offset,cell_tm-prefered_time_offset
+				draw_time_boxes(log_p,i,j*(width+space_between)+offset,cell_tm
 						,cell_minutes,	
 						last_midnight-secs_in_day*(day),
 						last_midnight-secs_in_day*(day-1),
