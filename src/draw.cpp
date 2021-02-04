@@ -145,6 +145,7 @@ void print_week_day(int row,int col,time_t tm){
 
 calcCellResult calc_cell(t_log* logp,time_t cell_tm, int cell_minutes, time_t mask_start_tm,time_t mask_end_tm){
 	time_t next_cell_tm=cell_tm+(cell_minutes*60);
+	time_t prev_cell_tm=cell_tm-(cell_minutes*60);
 	time_t current_time=(unsigned long)time(0);
 	time_t last_duration=0;
 	bool find_longest_entry=false;
@@ -154,47 +155,48 @@ calcCellResult calc_cell(t_log* logp,time_t cell_tm, int cell_minutes, time_t ma
 
 	bool draw_this_cell= (mask_end_tm==0) || (cell_tm > mask_start_tm && cell_tm < mask_end_tm);
 
-	if(!draw_this_cell && (cell_tm+cell_minutes*60) > mask_start_tm && (cell_tm+cell_minutes*60) < mask_end_tm){
+	if(!draw_this_cell && next_cell_tm > mask_start_tm && next_cell_tm < mask_end_tm){
 		result.entry_part=5;
-		result.next_cell_tm=cell_tm+cell_minutes*60;
+		result.next_cell_tm=next_cell_tm;
 		return result;
-	}else if (!draw_this_cell && (cell_tm-cell_minutes*60) > mask_start_tm && (cell_tm-cell_minutes*60) < mask_end_tm){
+	}else if (!draw_this_cell && prev_cell_tm > mask_start_tm && prev_cell_tm < mask_end_tm){
 		result.entry_part=6;
 		return result;
 	}
 
-	if(draw_this_cell){
-		for(int i=logp->index-1;i>=0;i--){
-			time_t start_tm=logp->entries[i].start_time;
-			time_t end_time=logp->entries[i].end_time;
-			if(end_time <= next_cell_tm && end_time >= cell_tm){
-				find_longest_entry=true;
-				log_entry* entry=&logp->entries[i];
-				if((entry->end_time-entry->start_time) > last_duration){
-					last_duration=entry->end_time-entry->start_time;
-					longest_entry=entry;
-					continue;
-				}
-			}else if(end_time==0 &&  next_cell_tm >= current_time && cell_tm <= current_time ){
-				result.entry_part=4;
-				result.entry=&logp->entries[logp->index-1];
-				return result;
-			}else if(((next_cell_tm<=end_time || end_time==0 )&& cell_tm <= current_time) && cell_tm>=start_tm){
-				result.entry_part=2;
-				result.entry=&logp->entries[i];
-				return result;
-			}else if(start_tm>=cell_tm && start_tm<=next_cell_tm){
-				result.entry_part=1;
-			}
-		}
+	if(!draw_this_cell){
+		result.entry_part=0;
+		return result;
+	}
 
-		if(find_longest_entry){
-			result.entry_part=3;
-			result.entry=longest_entry;
+	for(int i=logp->index-1;i>=0;i--){
+		time_t start_tm=logp->entries[i].start_time;
+		time_t end_time=logp->entries[i].end_time;
+		if(end_time <= next_cell_tm && end_time >= cell_tm){
+			find_longest_entry=true;
+			log_entry* entry=&logp->entries[i];
+			if((entry->end_time-entry->start_time) > last_duration){
+				last_duration=entry->end_time-entry->start_time;
+				longest_entry=entry;
+				continue;
+			}
+		}else if(end_time==0 &&  next_cell_tm >= current_time && cell_tm <= current_time ){
+			result.entry_part=4;
+			result.entry=&logp->entries[logp->index-1];
 			return result;
+		}else if(((next_cell_tm<=end_time || end_time==0 )&& cell_tm <= current_time) && cell_tm>=start_tm){
+			result.entry_part=2;
+			result.entry=&logp->entries[i];
+			return result;
+		}else if(start_tm>=cell_tm && start_tm<=next_cell_tm){
+			result.entry_part=1;
 		}
 	}
-	result.entry_part=0;
+
+	if(find_longest_entry){
+		result.entry_part=3;
+		result.entry=longest_entry;
+	}
 	return result;
 }
 
