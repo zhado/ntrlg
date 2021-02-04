@@ -1,6 +1,52 @@
 #include <time.h>
 #include "trlg_common.h"
 #include "logs.h"
+
+bool crash_with_other_entry(t_log* a_log,log_entry* entry){
+	log_entry* next_entry=0;
+	log_entry* prev_entry=0;
+	time_t local_time=(unsigned long)time(NULL);
+
+	int res_entry_index=get_log_entry_index(a_log, entry);
+
+	if(res_entry_index!=a_log->index-1)
+		next_entry=&a_log->entries[res_entry_index+1];
+	if(res_entry_index!=0)
+		prev_entry=&a_log->entries[res_entry_index-1];
+
+	if(prev_entry ==0 && next_entry==0){
+		if(entry->start_time >= entry->end_time){
+			return true;
+		}
+	}else if(prev_entry ==0){
+		if(entry->end_time >next_entry->start_time && next_entry!=0){
+			return true;
+		}else if(entry->start_time >= entry->end_time){
+			return true;
+		}
+	}else if(next_entry==0){
+		if(entry->start_time<prev_entry->end_time){
+			return true;
+		}
+		if(entry->start_time >= entry->end_time){
+			return true;
+		}
+
+	}else{
+		if(entry->start_time<prev_entry->end_time){
+			return true;
+		}else if(entry->end_time >next_entry->start_time && next_entry!=0){
+			return true;
+		}else if(entry->start_time >= entry->end_time){
+			return true;
+		}
+	}
+	if(entry->end_time>local_time || entry->start_time > local_time)
+		return	true;
+
+	return false;
+}
+
 void resize_logic(time_t* cursor_pos_tm, int cell_minutes,  log_entry* entry_to_resize,t_log* log_p, int chr, window_state* win_state){
 
 	time_t initial_cursor_pos_tm=*cursor_pos_tm;

@@ -23,6 +23,12 @@ char* remove_spaces(char* str){
 	return str;
 }
 
+void remove_commas_from_end(char* str){
+	while(str[strlen(str)-1]==','){
+		str[strlen(str)-1]=0;
+	}
+}
+
 char last_char(char* str){
 	int len=strlen(str);
 	if(len==0) 

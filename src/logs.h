@@ -17,5 +17,6 @@ struct t_log {
 };
 
 bool crash_with_other_entry(t_log* a_log,log_entry* entry);
+int get_log_entry_index(t_log* a_log,log_entry* entry);
 
 #endif
