@@ -278,7 +278,7 @@ int main(int argc,char** argv){
 				}break;
 
 				case 'w':{
-					cell_minutes=30;
+					//cell_minutes=30;
 					//cursor_pos_tm=(unsigned long)time(0);
 					state=week_view;
 				}break;

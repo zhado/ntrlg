@@ -53,13 +53,13 @@ char char_at(int row,int col){
 
 void print_warp_str(int row, int col,char* str, int len){
 	int str_len=strlen(str);
-	char tmp_str[str_len];
-	char rest_str[str_len];
-	memset(tmp_str, 0, str_len);
-	memset(rest_str, 0, str_len);
-	memcpy(tmp_str,str,str_len);
-	tmp_str[str_len]=0;
 	if(str_len>=len){
+		char tmp_str[len];
+		char rest_str[str_len];
+		memset(tmp_str, 0, str_len);
+		memset(rest_str, 0, str_len);
+		memcpy(tmp_str,str,str_len);
+		tmp_str[len]=0;
 		mvprintw(row,col,"%s",tmp_str);
 		printw("-");
 		memcpy(rest_str,str+len,str_len-len);
@@ -74,6 +74,20 @@ void print_warp_str(int row, int col,char* str, int len){
 	}
 }
 
+void print_chopoff(int row, int col,char* str, int len){
+	if (len<0) return;
+	int str_len=strlen(str);
+	if(str_len>=len){
+		char tmp_str[len];
+		memcpy(tmp_str,str,len);
+		tmp_str[len]=0;
+		mvprintw(row,col,"%s",tmp_str);
+		printw("-");
+		return;
+	}else{
+		mvprintw(row,col,"%s",str);
+	}
+}
 int add_chr_in_str(char chr, char* str,int index,int max_size){
 	int strln=strlen(str);
 

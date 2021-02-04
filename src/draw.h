@@ -26,9 +26,6 @@ struct calcCellResult{
 	time_t next_cell_tm;
 };
 
-
-
-
 void print_str_n_times(int row,int col, char* ch,int n);
 void print_duration(int duration);
 void print_normal_time(time_t tim);

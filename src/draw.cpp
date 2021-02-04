@@ -190,13 +190,13 @@ calcCellResult calc_cell(t_log* logp,time_t cell_tm, int cell_minutes, time_t ma
 			return result;
 		}else if(start_tm>=cell_tm && start_tm<=next_cell_tm){
 			result.entry_part=1;
+		}else if(find_longest_entry){
+			result.entry_part=3;
+			result.entry=longest_entry;
+			return result;
 		}
 	}
 
-	if(find_longest_entry){
-		result.entry_part=3;
-		result.entry=longest_entry;
-	}
 	return result;
 }
 
@@ -213,11 +213,12 @@ void draw_cell(int row, int col,calcCellResult result, int width, statConfig* st
 		print_str_n_times(row, col, " ", width);
 
 		if(!hide_text){
-			mvprintw(row, col, "=>");
-			printw(" ");
-			print_warp_str(row,col+3, entry_p->name,117);
-			//print_warp_str(row,col+width/2-strlen(entry_p->name)/2, entry_p->name,117);
-			align_right_duration(row,col+width,entry_p->end_time-entry_p->start_time);
+			if(width > 2 )
+				mvprintw(row, col, "=> ");
+			//print_warp_str(row,col+3, entry_p->name,117);
+			print_chopoff(row,col+3, entry_p->name,width-10);
+			if(width > 7 )
+				align_right_duration(row,col+width,entry_p->end_time-entry_p->start_time);
 		}
 		attroff(COLOR_PAIR(color));
 	}else if(entry_part==4){
@@ -228,8 +229,10 @@ void draw_cell(int row, int col,calcCellResult result, int width, statConfig* st
 		attron(COLOR_PAIR(color));
 		print_str_n_times(row, col, " ", width);
 		if(!hide_text){
-			mvprintw(row, col, "++");
-			printw(" %s",entry_p->name);
+			if(width > 2 )
+				mvprintw(row, col, "++");
+			print_chopoff(row,col+3, entry_p->name,width-10);
+			if(width > 7 )
 			align_right_duration(row,col+width,(unsigned long)time(0)-entry_p->start_time);
 		}
 		attroff(COLOR_PAIR(color));
@@ -332,7 +335,7 @@ void print_weeks(t_log* log_p,int cell_minutes,time_t cursor_pos_tm,statConfig* 
 						DRAW_cursor,
 						width);
 			}
-			draw_cell(i, j*(width+space_between)+offset,C_res,width, stat_conf, false);
+			draw_cell(i, j*(width+space_between)+offset,C_res,width, stat_conf, hide_text);
 			count++;
 		}
 	}
