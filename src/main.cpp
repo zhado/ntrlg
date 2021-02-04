@@ -30,6 +30,11 @@ struct server_conf{
 	char* ip;
 };
 
+struct viewState{
+	int cell_minutes=20;
+	time_t cursor_pos_tm=(unsigned long)time(0);
+	int week_view_width=25;
+};
 bool UNSAVED_CHANGES=false;
 
 int load_log(app_state* app,const char* file_name){
@@ -164,6 +169,7 @@ server_conf* load_serv_conf(){
 int main(int argc,char** argv){
 	int cell_minutes=20;
 	time_t cursor_pos_tm=(unsigned long)time(0);
+	int week_view_width=25;
 
 	server_conf* srv_conf=load_serv_conf();
 
@@ -177,7 +183,6 @@ int main(int argc,char** argv){
 	app.stat_input=0;
 	load_log(&app, database_file);
 
-
 	int server_fd=0;
 
 	if(argc==2){
@@ -186,7 +191,6 @@ int main(int argc,char** argv){
 			handle_connections(server_fd);
 		exit (1);
 	}
-
 
 	setlocale(LC_CTYPE, "");
 	initscr();
@@ -213,13 +217,16 @@ int main(int argc,char** argv){
 	log_entry* entry_under_cursor=0;
 	log_entry* entry_to_resize=0;
 	log_edit_buffer buffr;
+
 	uint32_t last_hash=hash(&app);
 	bool are_you_sure_prompt=false;
 	int are_you_sure_result=-1;
-	int week_view_width=25;
 	bool running=true;
+	timespec start_time;
+	timespec end_time;
 
 	while(running){
+		clock_gettime(CLOCK_REALTIME,&start_time);
 
 		erase();
 		getmaxyx(stdscr,max_row,max_col);
@@ -483,6 +490,8 @@ int main(int argc,char** argv){
 		}
 		move(buffr.cursor_row,buffr.cursor_col);
 		refresh();
+		clock_gettime(CLOCK_REALTIME,&end_time);
+		mvprintw(max_row-1,max_col-20,"time %f",(end_time.tv_nsec-start_time.tv_nsec)/1000000.0);
 		chr=getch();
 		if(are_you_sure_prompt){
 			while(chr != 'y' && chr != 'n' && chr != 'Y' && chr != 'N' ){

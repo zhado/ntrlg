@@ -135,9 +135,11 @@ statConfig generate_stat_colors(char* str){
 time_t get_duration_in_range(t_log* a_log, char* str,time_t start_tm,time_t end_tm){
 	time_t duration=0;
 	if(strlen(str)==0)return duration;
-	for(int i=0;i<a_log->index;i++){
+	for(int i=a_log->index-1;i>=0;i--){
 		log_entry cur_entry=a_log->entries[i];
 		if(cur_entry.end_time==0)cur_entry.end_time=(unsigned long)time(0);
+		if(cur_entry.end_time < start_tm)
+			break;
 		if(match_scores_by_comma(cur_entry.sub_name, str)==0){
 			time_t temp_start_tm=tm_clamp(start_tm, cur_entry.start_time, cur_entry.end_time);
 			time_t temp_end_tm=tm_clamp(end_tm, cur_entry.start_time, cur_entry.end_time);
