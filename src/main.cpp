@@ -263,15 +263,15 @@ int main(int argc,char** argv){
 					state=stat_editing;
 				}break;
 				case 'd':{
-					int match_type=0;
-					entry_under_cursor=entry_under_cursor_fun(&app.logs, cell_minutes, cursor_pos_tm,&match_type);
-					if(match_type==1){
+					int entry_part=0;
+					entry_under_cursor=entry_under_cursor_fun(&app.logs, cell_minutes, cursor_pos_tm,&entry_part);
+					if(entry_part==1){
 						entry_to_resize=entry_under_cursor;
 						state=entry_start_resize;
-					}else if(match_type==2){
+					}else if(entry_part==2){
 						entry_to_resize=entry_under_cursor;
 						state=entry_body_resize;
-					}else if(match_type==3){
+					}else if(entry_part==3){
 						entry_to_resize=entry_under_cursor;
 						state=entry_end_resize;
 					}

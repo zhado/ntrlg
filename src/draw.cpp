@@ -1,7 +1,9 @@
 #include <cstring>
 #include <math.h>
 #include <ncurses.h>
+#include <assert.h>
 #include <sys/types.h>
+
 #include "logs.h"
 #include "autocomp.h"
 #include "draw.h"
@@ -114,8 +116,8 @@ int draw_time_decorations(int cur_row,int col_p,time_t cell_tm, int cell_minutes
 	return col;
 }
 
-void print_week_day(int row,int col,time_t tm,int cell_minutes){
-	int weekday=get_tm(tm+cell_minutes*60).tm_wday;
+void print_week_day(int row,int col,time_t tm){
+	int weekday=get_tm(tm).tm_wday;
 	switch(weekday){
 		case 0:
 			mvprintw(row-1,col,"Sun");
@@ -141,23 +143,24 @@ void print_week_day(int row,int col,time_t tm,int cell_minutes){
 	}
 }
 
-void draw_time_boxes(t_log* logp,int cur_row,int col_p,time_t cell_tm, int cell_minutes, time_t mask_start_tm,time_t mask_end_tm,int width,statConfig* stat_conf, bool hide_text){
+calcCellResult calc_cell(t_log* logp,time_t cell_tm, int cell_minutes, time_t mask_start_tm,time_t mask_end_tm){
 	time_t next_cell_tm=cell_tm+(cell_minutes*60);
 	time_t current_time=(unsigned long)time(0);
 	time_t last_duration=0;
 	bool find_longest_entry=false;
 
+	calcCellResult result={0,0,0};
 	log_entry* longest_entry;
 
 	bool draw_this_cell= (mask_end_tm==0) || (cell_tm > mask_start_tm && cell_tm < mask_end_tm);
+
 	if(!draw_this_cell && (cell_tm+cell_minutes*60) > mask_start_tm && (cell_tm+cell_minutes*60) < mask_end_tm){
-		print_str_n_times(cur_row, col_p, "-", width);
-		if(width>5){
-			print_week_day(cur_row,col_p,cell_tm+cell_minutes*60,cell_minutes);
-			printw(" %d",get_tm(cell_tm+cell_minutes*60).tm_mday);
-		}
+		result.entry_part=5;
+		result.next_cell_tm=cell_tm+cell_minutes*60;
+		return result;
 	}else if (!draw_this_cell && (cell_tm-cell_minutes*60) > mask_start_tm && (cell_tm-cell_minutes*60) < mask_end_tm){
-		print_str_n_times(cur_row, col_p, "-", width);
+		result.entry_part=6;
+		return result;
 	}
 
 	if(draw_this_cell){
@@ -173,57 +176,85 @@ void draw_time_boxes(t_log* logp,int cur_row,int col_p,time_t cell_tm, int cell_
 					continue;
 				}
 			}else if(end_time==0 &&  next_cell_tm >= current_time && cell_tm <= current_time ){
-				log_entry* entry=&logp->entries[logp->index-1];
-				printw(" ");
-				int col=0;
-				if(stat_conf!=0)
-					col=get_tag_color_pair(entry->sub_name, stat_conf);
-				attron(COLOR_PAIR(col));
-				print_str_n_times(cur_row, col_p, " ", width);
-				if(!hide_text){
-					mvprintw(cur_row, col_p, "++");
-					printw(" %s",entry->name);
-					align_right_duration(cur_row,col_p+width,(unsigned long)time(0)-entry->start_time);
-				}
-				attroff(COLOR_PAIR(col));
-				break;
+				result.entry_part=4;
+				result.entry=&logp->entries[logp->index-1];
+				return result;
 			}else if(((next_cell_tm<=end_time || end_time==0 )&& cell_tm <= current_time) && cell_tm>=start_tm){
-
-				log_entry* entry=&logp->entries[i];
-				int col=0;
-				if(stat_conf!=0)
-					col=get_tag_color_pair(entry->sub_name, stat_conf);
-				attron(COLOR_PAIR(col));
-				print_str_n_times(cur_row, col_p, " ", width);
-				if(col==0)
-					mvprintw(cur_row, col_p, "|");
-				else
-					mvprintw(cur_row, col_p, " ");
-
-				attroff(COLOR_PAIR(col));
-				break;
+				result.entry_part=2;
+				result.entry=&logp->entries[i];
+				return result;
 			}else if(start_tm>=cell_tm && start_tm<=next_cell_tm){
-				mvprintw(cur_row, col_p, "--");
+				result.entry_part=1;
 			}
 		}
 
 		if(find_longest_entry){
-			int col=0;
-			if(stat_conf!=0)
-				col=get_tag_color_pair(longest_entry->sub_name, stat_conf);
-			attron(COLOR_PAIR(col));
-			print_str_n_times(cur_row, col_p, " ", width);
-
-			if(!hide_text){
-				mvprintw(cur_row, col_p, "=>");
-				printw(" ");
-				print_warp_str(cur_row,col_p+3, longest_entry->name,117);
-				//print_warp_str(cur_row,col_p+width/2-strlen(longest_entry->name)/2, longest_entry->name,117);
-				align_right_duration(cur_row,col_p+width,longest_entry->end_time-longest_entry->start_time);
-			}
-			attroff(COLOR_PAIR(col));
+			result.entry_part=3;
+			result.entry=longest_entry;
+			return result;
 		}
 	}
+	result.entry_part=0;
+	return result;
+}
+
+void draw_cell(int row, int col,calcCellResult result, int width, statConfig* stat_conf, bool hide_text){
+	int entry_part=result.entry_part;
+	log_entry* entry_p=result.entry;
+	time_t next_cell_tm=result.next_cell_tm;
+
+	if(entry_part==3){
+		int color=0;
+		if(stat_conf!=0)
+			color=get_tag_color_pair(entry_p->sub_name, stat_conf);
+		attron(COLOR_PAIR(color));
+		print_str_n_times(row, col, " ", width);
+
+		if(!hide_text){
+			mvprintw(row, col, "=>");
+			printw(" ");
+			print_warp_str(row,col+3, entry_p->name,117);
+			//print_warp_str(row,col+width/2-strlen(entry_p->name)/2, entry_p->name,117);
+			align_right_duration(row,col+width,entry_p->end_time-entry_p->start_time);
+		}
+		attroff(COLOR_PAIR(color));
+	}else if(entry_part==4){
+		printw(" ");
+		int color=0;
+		if(stat_conf!=0)
+			color=get_tag_color_pair(entry_p->sub_name, stat_conf);
+		attron(COLOR_PAIR(color));
+		print_str_n_times(row, col, " ", width);
+		if(!hide_text){
+			mvprintw(row, col, "++");
+			printw(" %s",entry_p->name);
+			align_right_duration(row,col+width,(unsigned long)time(0)-entry_p->start_time);
+		}
+		attroff(COLOR_PAIR(color));
+	}else if(entry_part==2){
+		int color=0;
+		if(stat_conf!=0)
+			color=get_tag_color_pair(entry_p->sub_name, stat_conf);
+		attron(COLOR_PAIR(color));
+		print_str_n_times(row, col, " ", width);
+		if(color==0)
+			mvprintw(row, col, "|");
+		else
+			mvprintw(row, col, " ");
+
+		attroff(COLOR_PAIR(color));
+	}else if(entry_part==1){
+		mvprintw(row, col, "--");
+	}else if(entry_part==5){
+		print_str_n_times(row, col, "-", width);
+		if(width>5){
+			print_week_day(row,col,next_cell_tm);
+			printw(" %d",get_tm(next_cell_tm).tm_mday);
+		}
+	}else if(entry_part==6){
+		print_str_n_times(row, col, "-", width);
+	}
+
 }
 
 void print_logs(t_log* log_p,int row,int col,int cell_minutes,time_t cursor_pos_tm,statConfig* stat_conf){
@@ -239,7 +270,10 @@ void print_logs(t_log* log_p,int row,int col,int cell_minutes,time_t cursor_pos_
 		int width=65;
 		time_t cell_tm=quantized_cursor_pos_tm-cell_minutes*60*count;
 		int dec_width=draw_time_decorations(i, 0, cell_tm, cell_minutes, cursor_offset, quantized_cursor_pos_tm, INT32_MAX , width);
-		draw_time_boxes(log_p,i,dec_width,cell_tm,cell_minutes,0,0,width-dec_width,stat_conf,false);
+
+		int entry_part=0;
+		calcCellResult C_res=calc_cell(log_p, cell_tm, cell_minutes, 0, 0);
+		draw_cell(i, dec_width,C_res, width-dec_width, stat_conf, false);
 		count++;
 	}
 }
@@ -273,6 +307,10 @@ void print_weeks(t_log* log_p,int cell_minutes,time_t cursor_pos_tm,statConfig* 
 		int count=0;
 		for(int i=max_row-2;i>=0;i--){
 			time_t cell_tm=quantized_cursor_pos_tm-cell_minutes*60*count;
+			int entry_part=0;
+			calcCellResult C_res=calc_cell(log_p, cell_tm, cell_minutes,
+					last_midnight-secs_in_day*(day),
+					last_midnight-secs_in_day*(day-1));
 			if(j==0){
 				draw_time_decorations(i, 0, cell_tm, cell_minutes, 
 						cursor_offset,
@@ -284,10 +322,6 @@ void print_weeks(t_log* log_p,int cell_minutes,time_t cursor_pos_tm,statConfig* 
 						quantized_cursor_pos_tm,
 						DRAW_cursor,
 						width);
-				draw_time_boxes(log_p,i,offset,cell_tm,cell_minutes,	
-						last_midnight-secs_in_day*(day),
-						last_midnight-secs_in_day*(day-1),
-						width,stat_conf,hide_text);
 			}else{
 				draw_time_decorations(i, j*(width+space_between)+offset, cell_tm,
 						cell_minutes,
@@ -295,12 +329,8 @@ void print_weeks(t_log* log_p,int cell_minutes,time_t cursor_pos_tm,statConfig* 
 						quantized_cursor_pos_tm,
 						DRAW_cursor,
 						width);
-				draw_time_boxes(log_p,i,j*(width+space_between)+offset,cell_tm
-						,cell_minutes,	
-						last_midnight-secs_in_day*(day),
-						last_midnight-secs_in_day*(day-1),
-						width,stat_conf,hide_text);
 			}
+			draw_cell(i, j*(width+space_between)+offset,C_res,width, stat_conf, false);
 			count++;
 		}
 	}

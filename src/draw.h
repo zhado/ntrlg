@@ -2,6 +2,7 @@
 #define DRAW_H
 #include <sys/types.h>
 #include <time.h>
+#include "logs.h"
 
 // 00000000
 //   ||||||-- saati da wuti
@@ -17,6 +18,17 @@
 #define DRAW_DATE 8
 #define DRAW_h 2
 #define DRAW_hm 1
+
+struct calcCellResult{
+	//entry_part = 0 empty, 1 start, 2 body, 3 ended entry end, 4 ongoing entry end, 5 day start, 6 day end
+	int entry_part;
+	log_entry* entry;
+	time_t next_cell_tm;
+};
+
+
+
+
 void print_str_n_times(int row,int col, char* ch,int n);
 void print_duration(int duration);
 void print_normal_time(time_t tim);
