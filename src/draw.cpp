@@ -141,7 +141,7 @@ void print_week_day(int row,int col,time_t tm,int cell_minutes){
 	}
 }
 
-void draw_time_boxes(t_log* logp,int cur_row,int col_p,time_t cell_tm, int cell_minutes, time_t mask_start_tm,time_t mask_end_tm,int width,statConfig* stat_conf){
+void draw_time_boxes(t_log* logp,int cur_row,int col_p,time_t cell_tm, int cell_minutes, time_t mask_start_tm,time_t mask_end_tm,int width,statConfig* stat_conf, bool hide_text){
 	time_t next_cell_tm=cell_tm+(cell_minutes*60);
 	time_t current_time=(unsigned long)time(0);
 	time_t last_duration=0;
@@ -172,31 +172,33 @@ void draw_time_boxes(t_log* logp,int cur_row,int col_p,time_t cell_tm, int cell_
 				}
 			}else if(end_time==0 &&  next_cell_tm >= current_time && cell_tm <= current_time ){
 				log_entry* entry=&logp->entries[logp->index-1];
-				printw(" ");
-				int col=0;
-				if(stat_conf!=0)
-					col=get_tag_color_pair(entry->sub_name, stat_conf);
-				attron(COLOR_PAIR(col));
-				print_str_n_times(cur_row, col_p, " ", width);
-				mvprintw(cur_row, col_p, "++");
-				printw(" %s",entry->name);
-				align_right_duration(cur_row,col_p+width,(unsigned long)time(0)-entry->start_time);
-				attroff(COLOR_PAIR(col));
+					printw(" ");
+					int col=0;
+					if(stat_conf!=0)
+						col=get_tag_color_pair(entry->sub_name, stat_conf);
+					attron(COLOR_PAIR(col));
+					print_str_n_times(cur_row, col_p, " ", width);
+					mvprintw(cur_row, col_p, "++");
+				if(!hide_text){
+					printw(" %s",entry->name);
+					align_right_duration(cur_row,col_p+width,(unsigned long)time(0)-entry->start_time);
+				}
+					attroff(COLOR_PAIR(col));
 				break;
 			}else if(((next_cell_tm<=end_time || end_time==0 )&& cell_tm <= current_time) && cell_tm>=start_tm){
 
-				log_entry* entry=&logp->entries[i];
-				int col=0;
-				if(stat_conf!=0)
-					col=get_tag_color_pair(entry->sub_name, stat_conf);
-				attron(COLOR_PAIR(col));
-				print_str_n_times(cur_row, col_p, " ", width);
-				if(col==0)
-					mvprintw(cur_row, col_p, "|");
-				else
-					mvprintw(cur_row, col_p, " ");
+					log_entry* entry=&logp->entries[i];
+					int col=0;
+					if(stat_conf!=0)
+						col=get_tag_color_pair(entry->sub_name, stat_conf);
+					attron(COLOR_PAIR(col));
+					print_str_n_times(cur_row, col_p, " ", width);
+					if(col==0)
+						mvprintw(cur_row, col_p, "|");
+					else
+						mvprintw(cur_row, col_p, " ");
 
-				attroff(COLOR_PAIR(col));
+					attroff(COLOR_PAIR(col));
 				break;
 			}else if(start_tm>=cell_tm && start_tm<=next_cell_tm){
 				mvprintw(cur_row, col_p, "--");
@@ -210,11 +212,13 @@ void draw_time_boxes(t_log* logp,int cur_row,int col_p,time_t cell_tm, int cell_
 			attron(COLOR_PAIR(col));
 			print_str_n_times(cur_row, col_p, " ", width);
 
+			if(!hide_text){
 			mvprintw(cur_row, col_p, "=>");
 			printw(" ");
 			print_warp_str(cur_row,col_p+3, longest_entry->name,117);
 			//print_warp_str(cur_row,col_p+width/2-strlen(longest_entry->name)/2, longest_entry->name,117);
 			align_right_duration(cur_row,col_p+width,longest_entry->end_time-longest_entry->start_time);
+			}
 			attroff(COLOR_PAIR(col));
 		}
 	}
@@ -233,12 +237,12 @@ void print_logs(t_log* log_p,int row,int col,int cell_minutes,time_t cursor_pos_
 		int width=65;
 		time_t cell_tm=quantized_cursor_pos_tm-cell_minutes*60*count;
 		int dec_width=draw_time_decorations(i, 0, cell_tm, cell_minutes, cursor_offset, quantized_cursor_pos_tm, INT32_MAX , width);
-		draw_time_boxes(log_p,i,dec_width,cell_tm,cell_minutes,0,0,width-dec_width,stat_conf);
+		draw_time_boxes(log_p,i,dec_width,cell_tm,cell_minutes,0,0,width-dec_width,stat_conf,false);
 		count++;
 	}
 }
 
-void print_weeks(t_log* log_p,int cell_minutes,time_t cursor_pos_tm,statConfig* stat_conf,int width){
+void print_weeks(t_log* log_p,int cell_minutes,time_t cursor_pos_tm,statConfig* stat_conf,int width,bool hide_text){
 	int max_row,max_col;
 	getmaxyx(stdscr,max_row,max_col);
 
@@ -258,11 +262,10 @@ void print_weeks(t_log* log_p,int cell_minutes,time_t cursor_pos_tm,statConfig* 
 		time_t secs_in_day=24*60*60;
 		time_t quantized_cursor_pos_tm=cursor_pos_tm-(cursor_pos_tm%(cell_minutes*60));
 		time_t cursor_offset=cell_minutes*60*(int(max_row/2)+1);
-		quantized_cursor_pos_tm+=cursor_offset- day*secs_in_day;
-		//time_t prefered_time_offset=-16*60*60;
+		quantized_cursor_pos_tm+=cursor_offset- (day)*secs_in_day;
+		time_t time_zone_offset=4*60*60;
 
-		time_t last_midnight=cursor_pos_tm-(cursor_pos_tm%(24*60*60))-4*60*60;
-		//time_t last_midnight=cursor_pos_tm-(cursor_pos_tm%(24*60*60));
+		time_t last_midnight=cursor_pos_tm-((cursor_pos_tm+time_zone_offset)%(24*60*60));
 		int count=0;
 		for(int i=max_row-2;i>=0;i--){
 			time_t cell_tm=quantized_cursor_pos_tm-cell_minutes*60*count;
@@ -280,7 +283,7 @@ void print_weeks(t_log* log_p,int cell_minutes,time_t cursor_pos_tm,statConfig* 
 				draw_time_boxes(log_p,i,offset,cell_tm,cell_minutes,	
 						last_midnight-secs_in_day*(day),
 						last_midnight-secs_in_day*(day-1),
-						width,stat_conf);
+						width,stat_conf,hide_text);
 			}else{
 				draw_time_decorations(i, j*(width+space_between)+offset, cell_tm,
 						cell_minutes,
@@ -292,7 +295,7 @@ void print_weeks(t_log* log_p,int cell_minutes,time_t cursor_pos_tm,statConfig* 
 						,cell_minutes,	
 						last_midnight-secs_in_day*(day),
 						last_midnight-secs_in_day*(day-1),
-						width,stat_conf);
+						width,stat_conf,hide_text);
 			}
 			count++;
 		}

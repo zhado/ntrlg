@@ -166,12 +166,6 @@ server_conf* load_serv_conf(){
 	return conf;
 }
 
-long get_nano_time(){
-	timespec timee;
-	clock_gettime(CLOCK_PROCESS_CPUTIME_ID,&timee);
-	return timee.tv_nsec;
-}
-
 int main(int argc,char** argv){
 	int cell_minutes=20;
 	time_t cursor_pos_tm=(unsigned long)time(0);
@@ -225,14 +219,16 @@ int main(int argc,char** argv){
 	log_edit_buffer buffr;
 
 	uint32_t last_hash=hash(&app);
+	bool week_view_hide_text=false;
 	bool are_you_sure_prompt=false;
 	int are_you_sure_result=-1;
 	bool running=true;
-	long start_time,end_time;
+	timespec start_time;
+	timespec end_time;
 
 	while(running){
+		clock_gettime(CLOCK_REALTIME,&start_time);
 
-		start_time=get_nano_time();
 		erase();
 		getmaxyx(stdscr,max_row,max_col);
 
@@ -336,6 +332,9 @@ int main(int argc,char** argv){
 				}break;
 				case 'x':{
 					cell_minutes=cell_minutes+5;
+				}break;
+				case 'h':{
+					week_view_hide_text=!week_view_hide_text;
 				}break;
 				case 'Z':{
 					week_view_width++;
@@ -447,7 +446,7 @@ int main(int argc,char** argv){
 			curs_set(0);
 			mvprintw(max_row-1, 0, "view mode, scale %d minutes",cell_minutes);
 		}else if(state==week_view){
-			print_weeks(&app.logs, cell_minutes, cursor_pos_tm,&stat_conf,week_view_width);
+			print_weeks(&app.logs, cell_minutes, cursor_pos_tm,&stat_conf,week_view_width,week_view_hide_text);
 			curs_set(0);
 			mvprintw(max_row-1, 0, "week view mode, vert_scale %d minutes, hor target scale = %d char",cell_minutes,week_view_width);
 		}else if(state==logging){
@@ -496,7 +495,8 @@ int main(int argc,char** argv){
 
 		refresh();
 
-		mvprintw(max_row-1,max_col-20,"time %f",(get_nano_time()-start_time)/1000000.0);
+		clock_gettime(CLOCK_REALTIME,&end_time);
+		mvprintw(max_row-1,max_col-20,"time %f",(end_time.tv_nsec-start_time.tv_nsec)/1000000.0);
 
 		move(buffr.cursor_row,buffr.cursor_col);
 		chr=getch();
