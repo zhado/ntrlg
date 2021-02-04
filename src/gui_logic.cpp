@@ -1,0 +1,50 @@
+#include <time.h>
+#include "trlg_common.h"
+#include "logs.h"
+void resize_logic(time_t* cursor_pos_tm, int cell_minutes,  log_entry* entry_to_resize,t_log* log_p, int chr, window_state* win_state){
+
+	time_t initial_cursor_pos_tm=*cursor_pos_tm;
+	time_t local_time=(unsigned long)time(0);
+	time_t initial_start_time=entry_to_resize->start_time;
+	time_t initial_end_time=entry_to_resize->end_time;
+
+	if(chr ==259){
+		//uparrow
+		*cursor_pos_tm-=cell_minutes*60;
+	}else if(chr ==10){
+		*win_state=view;
+	}else if(chr =='q'){
+		*win_state=view;
+	}else if(chr ==258){
+		//downarrow
+		*cursor_pos_tm+=cell_minutes*60;
+	}else if(chr ==339){
+		//pgup
+		*cursor_pos_tm-=cell_minutes*60*4;
+	}else if(chr ==338){
+		//pgdown
+		*cursor_pos_tm+=cell_minutes*60*4;
+	}else if(chr =='z'){
+		if(cell_minutes!=5){
+			cell_minutes=cell_minutes-5;
+		}
+	}else if(chr =='x')
+		cell_minutes=cell_minutes+5;
+	if(*win_state==entry_end_resize){
+		entry_to_resize->end_time=*cursor_pos_tm;
+	}else if(*win_state==entry_start_resize) {
+		entry_to_resize->start_time=*cursor_pos_tm;
+	}else if(*win_state==entry_body_resize) {
+		if(entry_to_resize->end_time==0)
+			entry_to_resize->end_time=local_time;
+		entry_to_resize->start_time+=*cursor_pos_tm-initial_cursor_pos_tm;
+		entry_to_resize->end_time+=*cursor_pos_tm-initial_cursor_pos_tm;
+	}
+
+	if(crash_with_other_entry(log_p, entry_to_resize)){
+		entry_to_resize->start_time=initial_start_time;
+		entry_to_resize->end_time=initial_end_time;
+		*cursor_pos_tm=initial_cursor_pos_tm;
+	}
+
+}

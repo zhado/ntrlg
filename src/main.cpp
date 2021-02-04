@@ -16,6 +16,7 @@
 #include "stats.cpp"
 #include "trlg_string.cpp"
 #include "net.cpp"
+#include "gui_logic.cpp"
 
 struct app_state{
 	t_log logs;
@@ -316,7 +317,6 @@ int main(int argc,char** argv){
 	app.logs.entries=0;
 	app.stat_input=0;
 	load_log(&app, database_file);
-	a_log=&app.logs;
 
 
 	int server_fd=0;
@@ -336,7 +336,7 @@ int main(int argc,char** argv){
 	noecho();
 	raw();
 	set_escdelay(20);
-	//halfdelay(20);
+	halfdelay(20);
 
 	start_color();
 	use_default_colors();
@@ -349,11 +349,6 @@ int main(int argc,char** argv){
 	remove_spaces(app.stat_input);
 	stat_conf=generate_stat_colors(app.stat_input);
 	
-  
-	//init_pair(5, 208,-1);
-	//init_pair(0, -1,-1);
-
-
 	int chr=0;
 
 	log_entry* entry_under_cursor=0;
@@ -363,12 +358,10 @@ int main(int argc,char** argv){
 	bool are_you_sure_prompt=false;
 	int are_you_sure_result=-1;
 	int week_view_width=25;
+	bool running=true;
 
-	//strcpy(sub_name, "x");
-	//state=logging;
-	while(true){
+	while(running){
 
-		a_log=&app.logs;
 		erase();
 		getmaxyx(stdscr,max_row,max_col);
 
@@ -378,10 +371,152 @@ int main(int argc,char** argv){
 			state=view;
 		}
 
-		if(state==logging){
+		if(state==view || state==week_view){
+
+// view keyboard switch --------------------
+			switch(chr){
+				case 'l':{
+					buffr=init_log_edit(&app.logs, false,0,0);
+					state=logging;
+					chr=0;
+				}break;
+				case 's':{
+					mvprintw(max_row-3,max_col-sizeof("saved log")+1,"saved log");
+					save_log(&app, database_file);
+				}break;
+				case 'a':{
+					buffr=init_log_edit(&app.logs, false,0,0);
+					state=append_log;
+					chr=0;
+				}break;
+				case 't':{
+					buffr=init_log_edit(&app.logs, true,0,app.stat_input);
+					stat_conf=generate_stat_colors(app.stat_input);
+					chr=0;
+					state=stat_editing;
+				}break;
+				case 'd':{
+					int match_type=0;
+					entry_under_cursor=entry_under_cursor_fun(&app.logs, cell_minutes, cursor_pos_tm,&match_type);
+					if(match_type==1){
+						entry_to_resize=entry_under_cursor;
+						state=entry_start_resize;
+					}else if(match_type==2){
+						entry_to_resize=entry_under_cursor;
+						state=entry_body_resize;
+					}else if(match_type==3){
+						entry_to_resize=entry_under_cursor;
+						state=entry_end_resize;
+					}
+				}break;
+
+				case 'Z':{
+					week_view_width++;
+				}break;
+				case 'X':{
+					if(week_view_width>0){
+						week_view_width--;
+					}
+				}break;
+				case 'w':{
+					cell_minutes=30;
+					//cursor_pos_tm=(unsigned long)time(0);
+					state=week_view;
+				}break;
+				case 'v':{
+					//cursor_pos_tm=(unsigned long)time(0);
+					state=view;
+				}break;
+				case 'e':{
+					mvprintw(max_row-3,max_col-sizeof("ending last entry"),"ending last entry");
+					end_last_entry(&app.logs);
+				}break;
+				case 'H':{
+					if(server_fd==0)
+						server_fd=setup_server(srv_conf->my_port);
+					state=server_mode;
+				}break;
+				case 'u':{
+					free_app(&app);
+					load_log(&app,database_file);
+					stat_conf=generate_stat_colors(app.stat_input);
+				}break;
+				case 'q':{
+					running=false;
+					continue;
+				}break;
+
+				case 'N':{
+					if(srv_conf->ip!=0 && srv_conf->port!=0){
+						if(get_from_server(srv_conf->port, srv_conf->ip)==0){
+							mvprintw(max_row-3,max_col-sizeof("succsefully recieved dtbs from server"),
+									"succsefully recieved dtbs from server");
+							free_app(&app);
+							load_log(&app, net_recieved_database);
+							stat_conf=generate_stat_colors(app.stat_input);
+							if(remove(net_recieved_database)==0){
+								mvprintw(max_row-4,max_col-sizeof("deleted net_recieved_database file"),
+										"deleted net_recieved_database file");
+							}else{
+								draw_error("error deleting file");
+							}
+						}else{
+							draw_error("error recieving file");
+						}
+					}
+				}break;
+
+				case 'z':{
+					if(cell_minutes!=5){
+						cell_minutes=cell_minutes-5;
+					}
+				}break;
+				case 'x':{
+					cell_minutes=cell_minutes+5;
+				}break;
+				case 'D':{
+					state=delete_mode;
+					are_you_sure_prompt=true;
+				}break;
+				case 330:{
+					state=delete_mode;
+					are_you_sure_prompt=true;
+				}break;
+
+				case 'c':{
+					entry_under_cursor=entry_under_cursor_fun(&app.logs, cell_minutes, cursor_pos_tm,0);
+					if(entry_under_cursor!=0){
+						buffr=init_log_edit(&app.logs, false,entry_under_cursor->name,entry_under_cursor->sub_name);
+						state=log_editing;
+					}
+				}break;
+				case KEY_LEFT:{
+					cursor_pos_tm-=60*60*24;
+				}break;
+				case KEY_RIGHT:{
+					cursor_pos_tm+=60*60*24;
+				}break;
+				case KEY_UP:{
+					cursor_pos_tm-=cell_minutes*60;
+				}break;
+				case KEY_DOWN:{
+					cursor_pos_tm+=cell_minutes*60;
+				}break;
+				case KEY_NPAGE:{
+					cursor_pos_tm+=cell_minutes*60*4;
+				}break;
+				case KEY_PPAGE:{
+					cursor_pos_tm-=cell_minutes*60*4;
+				}break;
+				case KEY_HOME:{
+					cursor_pos_tm=(unsigned long)time(0);
+					cell_minutes=20;
+				}break;
+			}
+		} else if(state==logging){
 			int res=log_edit(&buffr,  chr);
 			if(res==0){
-				add_entry(a_log, buffr.name, buffr.sub_name,(unsigned long)time(0) , 0);
+				add_entry(&app.logs, buffr.name, buffr.sub_name,(unsigned long)time(0) , 0);
 				state=view;
 			}
 		} else if(state==stat_editing){
@@ -394,55 +529,12 @@ int main(int argc,char** argv){
 		} else if(state==append_log){
 			int res=log_edit(&buffr, chr);
 			if(res==0){
-				add_entry(a_log, buffr.name, buffr.sub_name,a_log->entries[a_log->index-1].end_time , 0);
+				add_entry(&app.logs, buffr.name, buffr.sub_name,app.logs.entries[app.logs.index-1].end_time , 0);
 				state=view;
 			}
 
 		} else if(state==entry_start_resize || state==entry_body_resize || state==entry_end_resize){
-
-			time_t initial_cursor_pos_tm=cursor_pos_tm;
-			time_t local_time=(unsigned long)time(0);
-			time_t initial_start_time=entry_to_resize->start_time;
-			time_t initial_end_time=entry_to_resize->end_time;
-
-			if(chr ==259){
-				//uparrow
-				cursor_pos_tm-=cell_minutes*60;
-			}else if(chr ==10){
-				state=view;
-			}else if(chr =='q'){
-				state=view;
-			}else if(chr ==258){
-				//downarrow
-				cursor_pos_tm+=cell_minutes*60;
-			}else if(chr ==339){
-				//pgup
-				cursor_pos_tm-=cell_minutes*60*4;
-			}else if(chr ==338){
-				//pgdown
-				cursor_pos_tm+=cell_minutes*60*4;
-			}else if(chr =='z'){
-				if(cell_minutes!=5){
-					cell_minutes=cell_minutes-5;
-				}
-			}else if(chr =='x')
-				cell_minutes=cell_minutes+5;
-			if(state==entry_end_resize){
-				entry_to_resize->end_time=cursor_pos_tm;
-			}else if(state==entry_start_resize) {
-				entry_to_resize->start_time=cursor_pos_tm;
-			}else if(state==entry_body_resize) {
-				if(entry_to_resize->end_time==0)
-					entry_to_resize->end_time=local_time;
-				entry_to_resize->start_time+=cursor_pos_tm-initial_cursor_pos_tm;
-				entry_to_resize->end_time+=cursor_pos_tm-initial_cursor_pos_tm;
-			}
-
-			if(crash_with_other_entry(a_log, entry_to_resize)){
-				entry_to_resize->start_time=initial_start_time;
-				entry_to_resize->end_time=initial_end_time;
-				cursor_pos_tm=initial_cursor_pos_tm;
-			}
+			resize_logic(&cursor_pos_tm, cell_minutes,  entry_to_resize,&app.logs, chr, &state);
 
 		} else if(state==server_mode){
 			if(chr !=0){
@@ -454,8 +546,8 @@ int main(int argc,char** argv){
 			}
 		} else if(state==delete_mode){
 			if(are_you_sure_result==1){
-				entry_under_cursor=entry_under_cursor_fun(a_log, cell_minutes, cursor_pos_tm,0);
-				remove_entry(a_log, entry_under_cursor);
+				entry_under_cursor=entry_under_cursor_fun(&app.logs, cell_minutes, cursor_pos_tm,0);
+				remove_entry(&app.logs, entry_under_cursor);
 			}
 			are_you_sure_prompt=false;
 			are_you_sure_result=-1;
@@ -469,136 +561,22 @@ int main(int argc,char** argv){
 				state=view;
 				entry_under_cursor=0;
 			}
-		} else if(state==view || state==week_view){
-
-			if(chr =='l'){
-				buffr=init_log_edit(a_log, false,0,0);
-				state=logging;
-				chr=0;
-			}else if(chr =='s'){
-				mvprintw(max_row-3,max_col-sizeof("saved log")+1,"saved log");
-				save_log(&app, database_file);
-			}else if(chr =='a'){
-				buffr=init_log_edit(a_log, false,0,0);
-				state=append_log;
-				chr=0;
-			}else if(chr =='t'){
-				buffr=init_log_edit(a_log, true,0,app.stat_input);
-				stat_conf=generate_stat_colors(app.stat_input);
-				chr=0;
-				state=stat_editing;
-			}else if(chr =='d'){
-				int match_type=0;
-				entry_under_cursor=entry_under_cursor_fun(a_log, cell_minutes, cursor_pos_tm,&match_type);
-				if(match_type==1){
-					entry_to_resize=entry_under_cursor;
-					state=entry_start_resize;
-				}else if(match_type==2){
-					entry_to_resize=entry_under_cursor;
-					state=entry_body_resize;
-				}else if(match_type==3){
-					entry_to_resize=entry_under_cursor;
-					state=entry_end_resize;
-				}
-			}else if(chr =='Z'){
-				week_view_width++;
-			}else if(chr =='X'){
-				if(week_view_width>0){
-					week_view_width--;
-				}
-			}else if(chr =='w'){
-				cell_minutes=30;
-				//cursor_pos_tm=(unsigned long)time(0);
-				state=week_view;
-			}else if(chr =='v'){
-				//cursor_pos_tm=(unsigned long)time(0);
-				state=view;
-			}else if(chr =='e'){
-				mvprintw(max_row-3,max_col-sizeof("ending last entry"),"ending last entry");
-				end_last_entry(a_log);
-			}else if(chr =='H'){
-				if(server_fd==0)
-					server_fd=setup_server(srv_conf->my_port);
-				state=server_mode;
-			}else if(chr =='u'){
-				free_app(&app);
-				load_log(&app,database_file);
-				stat_conf=generate_stat_colors(app.stat_input);
-				a_log=&app.logs;
-			}else if(chr =='N'){
-
-				if(srv_conf->ip!=0 && srv_conf->port!=0){
-					if(get_from_server(srv_conf->port, srv_conf->ip)==0){
-						mvprintw(max_row-3,max_col-sizeof("succsefully recieved dtbs from server"),
-								"succsefully recieved dtbs from server");
-						free_app(&app);
-						load_log(&app, net_recieved_database);
-						a_log=&app.logs;
-						stat_conf=generate_stat_colors(app.stat_input);
-						if(remove(net_recieved_database)==0){
-							mvprintw(max_row-4,max_col-sizeof("deleted net_recieved_database file"),
-									"deleted net_recieved_database file");
-						}else{
-							draw_error("error deleting file");
-						}
-					}else{
-						draw_error("error recieving file");
-					}
-				}
-			}else if(chr =='q'){
-				break;
-			}else if(chr =='z'){
-				if(cell_minutes!=5){
-					cell_minutes=cell_minutes-5;
-				}
-			}else if(chr =='x'){
-				cell_minutes=cell_minutes+5;
-			}else if(chr =='D' || chr == 330){
-				state=delete_mode;
-				are_you_sure_prompt=true;
-			}else if(chr =='c'){
-				entry_under_cursor=entry_under_cursor_fun(a_log, cell_minutes, cursor_pos_tm,0);
-				if(entry_under_cursor!=0){
-					buffr=init_log_edit(a_log, false,entry_under_cursor->name,entry_under_cursor->sub_name);
-					state=log_editing;
-				}
-			}else if(chr ==KEY_LEFT){
-				cursor_pos_tm-=60*60*24;
-			}else if(chr ==KEY_RIGHT){
-				cursor_pos_tm+=60*60*24;
-			}else if(chr ==259){
-				//uparrow
-				cursor_pos_tm-=cell_minutes*60;
-			}else if(chr ==258){
-				//downarrow
-				cursor_pos_tm+=cell_minutes*60;
-			}else if(chr ==339){
-				//pgup
-				cursor_pos_tm-=cell_minutes*60*4;
-			}else if(chr ==338){
-				//pgdown
-				cursor_pos_tm+=cell_minutes*60*4;
-			}else if(chr ==262){
-				//home
-				cursor_pos_tm=(unsigned long)time(0);
-				cell_minutes=20;
-			}
 		}
 
-		//drawing happens here
+//drawing happens here --------------------
 		print_str_n_times(max_row-1, 0,"-", max_col);
 		if(state != week_view){
-			print_logs(a_log,-5,0,cell_minutes,cursor_pos_tm,&stat_conf);
+			print_logs(&app.logs,-5,0,cell_minutes,cursor_pos_tm,&stat_conf);
 			if(max_col>172)
-				draw_durations(23, 90, a_log, &stat_conf);
+				draw_durations(23, 90, &app.logs, &stat_conf);
 		}
 
 		if(state==view){
-			//print_logs(a_log,-5,0,max_row,max_col,cell_minutes,cursor_pos_tm);
+			//print_logs(&app.logs,-5,0,max_row,max_col,cell_minutes,cursor_pos_tm);
 			curs_set(0);
 			mvprintw(max_row-1, 0, "view mode, scale %d minutes",cell_minutes);
 		}else if(state==week_view){
-			print_weeks(a_log, cell_minutes, cursor_pos_tm,&stat_conf,week_view_width);
+			print_weeks(&app.logs, cell_minutes, cursor_pos_tm,&stat_conf,week_view_width);
 			curs_set(0);
 			mvprintw(max_row-1, 0, "week view mode, vert_scale %d minutes, hor target scale = %d char",cell_minutes,week_view_width);
 		}else if(state==logging){
