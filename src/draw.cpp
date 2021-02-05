@@ -310,6 +310,7 @@ void print_weeks(t_log* log_p,int cell_minutes,time_t cursor_pos_tm,statConfig* 
 
 		time_t last_midnight=cursor_pos_tm-((cursor_pos_tm+time_zone_offset)%(24*60*60));
 		int count=0;
+		//mvprintw(0,j*(width+space_between)+offset,"%d %d",j,day);
 		for(int i=max_row-2;i>=0;i--){
 			time_t cell_tm=quantized_cursor_pos_tm-cell_minutes*60*count;
 			int entry_part=0;
@@ -335,8 +336,15 @@ void print_weeks(t_log* log_p,int cell_minutes,time_t cursor_pos_tm,statConfig* 
 						DRAW_cursor,
 						width);
 			}
+
 			draw_cell(i, j*(width+space_between)+offset,C_res,width, stat_conf, hide_text);
 			count++;
+		}
+		if(day==0){
+			move(0,j*(width+space_between)+offset-1);
+			vline('|',max_col);
+			move(0,j*(width+space_between)+offset+width-1);
+			vline('|',max_col);
 		}
 	}
 }
