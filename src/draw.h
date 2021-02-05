@@ -30,6 +30,8 @@ void print_str_n_times(int row,int col, char* ch,int n);
 void print_duration(int duration);
 void print_normal_time(time_t tim);
 void print_normal_date_time(time_t tim);
+void mvftime_print(int row, int col, char* format, time_t Time);
+void ftime_print(char* format, time_t Time);
 tm get_tm(time_t time_stamp);
 void draw_status(u_int32_t* state);
 void draw_error(char *msg);

@@ -16,30 +16,16 @@ void print_str_n_times(int row,int col, char* str,int n){
 	}
 }
 
+void print_str_n_timesw(char* str,int n){
+	for(int i=0;i<n/strlen(str);i++){
+		printw( "%s",str);
+	}
+}
+
 tm get_tm(time_t time_stamp){
 	tm result;
 	localtime_r(&time_stamp, &result);
 	return result;
-}
-
-void print_normal_time(time_t tim){
-	tm broken_down_time=get_tm(tim);
-	printw(" %02d:%02d",
-			broken_down_time.tm_hour,
-			broken_down_time.tm_min); 
-}
-void print_normal_date_time(time_t tim){
-	tm broken_down_time=get_tm(tim);
-	//printw("%02d/%02d/%02d %02d:%02d",
-			//broken_down_time.tm_mday,
-			//broken_down_time.tm_mon+1,
-			//broken_down_time.tm_year+1900,
-			//broken_down_time.tm_hour,
-			//broken_down_time.tm_min); 
-	printw("%02d %02d:%02d",
-			broken_down_time.tm_mday,
-			broken_down_time.tm_hour,
-			broken_down_time.tm_min); 
 }
 
 void print_duration(time_t duration){
@@ -116,31 +102,18 @@ int draw_time_decorations(int cur_row,int col_p,time_t cell_tm, int cell_minutes
 	return col;
 }
 
-void print_week_day(int row,int col,time_t tm){
-	int weekday=get_tm(tm).tm_wday;
-	switch(weekday){
-		case 0:
-			mvprintw(row-1,col,"Sun");
-			break;
-		case 1:
-			mvprintw(row-1,col,"Mon");
-			break;
-		case 2:
-			mvprintw(row-1,col,"Tue");
-			break;
-		case 3:
-			mvprintw(row-1,col,"Wen");
-			break;
-		case 4:
-			mvprintw(row-1,col,"Thu");
-			break;
-		case 5:
-			mvprintw(row-1,col,"Fri");
-			break;
-		case 6:
-			mvprintw(row-1,col,"Sat");
-			break;
-	}
+void mvftime_print(int row, int col, char* format, time_t Time){
+	tm timeinfo=get_tm(Time);
+	char week_str[MAX_NAME_SIZE];
+	strftime(week_str, MAX_NAME_SIZE,format, &timeinfo);
+	mvprintw(row, col, "%s", week_str);
+}
+
+void ftime_print(char* format, time_t Time){
+	tm timeinfo=get_tm(Time);
+	char week_str[MAX_NAME_SIZE];
+	strftime(week_str, MAX_NAME_SIZE,format, &timeinfo);
+	printw("%s", week_str);
 }
 
 calcCellResult calc_cell(t_log* logp,time_t cell_tm, int cell_minutes, time_t mask_start_tm,time_t mask_end_tm){
@@ -343,7 +316,7 @@ void print_weeks(t_log* log_p,int cell_minutes,time_t cursor_pos_tm,statConfig* 
 		if(day==0){
 			move(0,j*(width+space_between)+offset-1);
 			vline('|',max_col);
-			move(0,j*(width+space_between)+offset+width-1);
+			move(0,j*(width+space_between)+offset+width);
 			vline('|',max_col);
 		}
 	}
