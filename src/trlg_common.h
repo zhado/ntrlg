@@ -12,6 +12,7 @@
 enum window_state {
 	view,
 	week_view,
+	stat_view,
 	logging,
 	stat_editing,
 	append_log, 

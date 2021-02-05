@@ -149,11 +149,19 @@ time_t get_duration_in_range(t_log* a_log, char* str,time_t start_tm,time_t end_
 	return duration;
 }
 
-void draw_durations(int row, int col,t_log* a_log, statConfig* stat_conf){
-	int last_days= 7;
+void draw_durations(int row, int col,t_log* a_log, statConfig* stat_conf, int stat_pos){
+	int max_row,max_col;
+	getmaxyx(stdscr,max_row,max_col);
 	time_t local_time=(unsigned long)time(NULL);
 	time_t secs_in_day=24*60*60;
 	char temp_str[MAX_NAME_SIZE];
+	int cell_w=8;
+	int tag_w=12;
+	if(col+tag_w>=max_col)
+		return;
+	int day_count= (max_col-col-tag_w)/cell_w-1;
+	day_count= day_count > 7 ? 7 : day_count;
+
 
 	int start_row=row;
 	for(int i=0;i<stat_conf->count;i++){
@@ -164,29 +172,35 @@ void draw_durations(int row, int col,t_log* a_log, statConfig* stat_conf){
 		if(stat_conf!=0)
 			color=get_tag_color_pair(temp_str, stat_conf);
 		attron(COLOR_PAIR(color));
-		print_str_n_times(row, col, " ", 82);
-		move(row++,col);
-		if(temp_str[0]!=0)
-			printw("%s: ",temp_str);
-
-		tm broken_down_time=get_tm(local_time);
-		time_t last_midnight=local_time-broken_down_time.tm_hour*60*60-broken_down_time.tm_min*60-broken_down_time.tm_sec;
 		
-		for(int j=0;j<=last_days;j++){
-				time_t start_time=last_midnight - secs_in_day*j;
-				time_t end_time=last_midnight - secs_in_day*(j-1);
-				if(row==start_row+1){
-					attroff(COLOR_PAIR(color));
-					mvprintw(start_row-2,col+12+9*j+1,"%02d",get_tm(start_time).tm_mday);
-					attron(COLOR_PAIR(color));
-				}
-				move(row-1,col+12+9*j);
-				printw("|");
-				
-				print_duration(get_duration_in_range(a_log, temp_str,start_time,end_time));
+
+		time_t last_midnight=local_time-((local_time+4*60*60)%(24*60*60));
+		for(int j=0;j<=day_count;j++){
+			int stat_pos_div=stat_pos/cell_w;
+			time_t start_time=last_midnight - secs_in_day*j-stat_pos_div*secs_in_day;
+			time_t end_time=last_midnight - secs_in_day*(j-1)-stat_pos_div*secs_in_day;
+			if(row==start_row+1){
+				attroff(COLOR_PAIR(color));
+				//mvprintw(start_row-2,col+tag_w+cell_w*j+1-stat_pos%cell_w,"%02d",get_tm(start_time).tm_mday);
+				mvftime_print(start_row-2,col+tag_w+cell_w*j-stat_pos%cell_w, "%e %h", start_time);
+				print_str_n_times(start_row-2, col," ", tag_w);
+				//print_week_day(start_row-2,col+12+9*j+1, start_time);
+				//printw(" %d",get_tm(start_time).tm_mday);
+				attron(COLOR_PAIR(color));
+			}
+			move(row-1,col+tag_w+cell_w*j-stat_pos%cell_w);
+			printw("|");
+			hline(' ',cell_w);
+			print_duration(get_duration_in_range(a_log, temp_str,start_time,end_time));
 
 		}
+		move(row-1,col);
+		if(temp_str[0]!=0){
+			hline(' ',tag_w);
+			printw("%s: ",temp_str);
+		}
 		attroff(COLOR_PAIR(color));
+		row++;
 	}
 }
 

@@ -225,6 +225,8 @@ int main(int argc,char** argv){
 	bool running=true;
 	timespec start_time;
 	timespec end_time;
+	int stat_pos=1;
+
 
 	while(running){
 		clock_gettime(CLOCK_REALTIME,&start_time);
@@ -285,6 +287,9 @@ int main(int argc,char** argv){
 				case 'v':{
 					//cursor_pos_tm=(unsigned long)time(0);
 					state=view;
+				}break;
+				case 'g':{
+					state=stat_view;
 				}break;
 				case 'e':{
 					mvprintw(max_row-3,max_col-sizeof("ending last entry"),"ending last entry");
@@ -410,6 +415,31 @@ int main(int argc,char** argv){
 					week_view_hide_text=false;
 				}break;
 			}
+		} else if(state==stat_view){
+			switch(chr){
+				case 'v':{
+					state=view;
+				}break;
+				case 'w':{
+					state=week_view;
+				}break;
+				case KEY_LEFT:{
+					if(stat_pos>1)
+						stat_pos=stat_pos-2;
+				}break;
+				case KEY_RIGHT:{
+					stat_pos=stat_pos+2;
+				}break;
+				case KEY_UP:{
+				}break;
+				case KEY_DOWN:{
+				}break;
+				case 'q':{
+					running=false;
+					continue;
+				}break;
+			}
+
 		} else if(state==logging){
 			int res=log_edit(&buffr,  chr);
 			if(res==0){
@@ -462,10 +492,9 @@ int main(int argc,char** argv){
 
 //drawing happens here --------------------
 		print_str_n_times(max_row-1, 0,"-", max_col);
-		if(state != week_view){
-			print_logs(&app.logs,-5,0,cell_minutes,cursor_pos_tm,&stat_conf);
-			if(max_col>172)
-				draw_durations(23, 90, &app.logs, &stat_conf);
+		if(state != week_view && state != stat_view){
+			print_logs(&app.logs,-5,0,cell_minutes,cursor_pos_tm,&stat_conf,state);
+			draw_durations(23, 90, &app.logs, &stat_conf,stat_pos);
 		}
 
 		if(state==view){
@@ -475,7 +504,10 @@ int main(int argc,char** argv){
 		}else if(state==week_view){
 			print_weeks(&app.logs, cell_minutes, cursor_pos_tm,&stat_conf,week_view_width,week_view_hide_text);
 			curs_set(0);
-			mvprintw(max_row-1, 0, "week view mode, vert_scale %d minutes, hor target scale = %d char",cell_minutes,week_view_width);
+			mvprintw(max_row-1, 0, "week view mode, vert_scale %d minutes, horz target scale = %d char",cell_minutes,week_view_width);
+		}else if(state==stat_view){
+			mvprintw(max_row-1, 0, "stats mode");
+			draw_durations(2,0, &app.logs, &stat_conf,stat_pos);
 		}else if(state==logging){
 			curs_set(1);
 			draw_log_edit(&buffr, max_row-3, 0);
