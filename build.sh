@@ -4,7 +4,7 @@ links='-lncurses -lstdc++ -pthread'
 flags="-Wno-write-strings"
 
 if [ "$1" = "buildrun" ]; then
-	gcc ./src/main.cpp $links $flags -o out && ./out $2
+	gcc ./src/main.cpp $links $flags -o out && ./out $2 2> ./errpipe
 elif [ "$1" = "debrun" ]; then
 	gcc ./src/main.cpp $links $flags -ggdb -O0 -o deb_out && gdb-tmux ./deb_out $2
 elif [ "$1" = "build" ]; then
