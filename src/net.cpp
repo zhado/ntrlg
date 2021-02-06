@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <cstdlib>
 #include <errno.h>
+#include <pthread.h>
 
 #include "trlg_common.h"
 #include "draw.h"
@@ -114,7 +115,7 @@ int setup_server(int port){
 	return listenfd;
 }
 
-int handle_connections(int server_fd){
+int handle_connections(int server_fd, int* handled_connections){
 	int connfd;
 
 	fd_set current_sockets,ready_sockets;
@@ -144,6 +145,7 @@ int handle_connections(int server_fd){
 				handle_accept(connfd);
 				close(connfd);
 				shutdown(connfd,2);
+				*handled_connections=*handled_connections+1;
 			}else{
 				//printf("handling connection\n");
 				//FD_CLR(i, &current_sockets);
@@ -153,7 +155,15 @@ int handle_connections(int server_fd){
 	return 0;
 }
 
-int get_from_server(int port, char* ip){
+struct read_f_s_args{
+	int port;
+	char* ip;
+	int* state;
+};
+
+void* read_from_server(void* args){
+
+	read_f_s_args argz=*(read_f_s_args*)args;
 	//printf("starting client\n");
 	int sockad;
 	struct sockaddr_in serveraddr;
@@ -164,24 +174,24 @@ int get_from_server(int port, char* ip){
 	if (setsockopt(sockad, SOL_SOCKET, SO_REUSEADDR, 
 				&opt, sizeof(opt))) 
 	{ 
-		perror("setsockopt"); 
-		return 1;
+		*argz.state=3;
+		return 0;
 	} 
 	if(sockad<0){
-		draw_error("socket error");
-		return 1;
+		*argz.state=4;
+		return 0;
 	}
 	serveraddr.sin_family = AF_INET;
-	serveraddr.sin_port=htons(port);
+	serveraddr.sin_port=htons(argz.port);
 
-	if(inet_pton(AF_INET, ip, &serveraddr.sin_addr)<=0){
-		draw_error("outer ip error\n");
-		return 1;
+	if(inet_pton(AF_INET, argz.ip, &serveraddr.sin_addr)<=0){
+		*argz.state=5;
+		return 0;
 	}
 
 	if(connect(sockad, (struct sockaddr *) &serveraddr, sizeof(serveraddr)) <0 ){
-		draw_error("connect error\n");
-		return 1;
+		*argz.state=6;
+		return 0;
 	}
 
 	memset (rec_buff,0,MAX_NAME_SIZE);
@@ -190,14 +200,54 @@ int get_from_server(int port, char* ip){
 
 	FILE* fp=fopen(net_recieved_database,"w");
 	int n=0;
-	uint32_t state=0;
+
 	while((n=read(sockad,rec_buff,MAX_NAME_SIZE-1))>0){
-		draw_status(&state);
+		//fprintf(stderr,"got pack\n");
 		for(int i=0;i<n;i++){
 			fputc(rec_buff[i],fp);
 		}
 		memset (rec_buff,0,n);
+		*argz.state=2;
 	}
+	*argz.state=3;
 	fclose(fp);
+	return 0;
+}
+
+int get_from_server(int port, char* ip){
+	
+	int state=0;
+	int status_counter=0;
+	int packet_counter=0;
+	read_f_s_args args={port, ip, &state};
+	pthread_t thr;
+	pthread_create(&thr,0, read_from_server,&args);
+
+	while(state!=3){
+		if(state==-1 || state > 2){
+			switch(state){
+				case 3: 
+					draw_error("sockop error\n");
+					break;
+				case 4: 
+					draw_error("socket error\n");
+					break;
+				case 5: 
+					draw_error("ip error\n");
+					break;
+				case 6: 
+					draw_error("connect error\n");
+					break;
+			}
+			return 1;
+		}else if(state==2){
+			packet_counter++;
+			state=1;
+		}
+		draw_status(&status_counter,packet_counter);
+		usleep(50000);
+	}
+
+	pthread_join(thr,NULL);
 	return 0;
 }

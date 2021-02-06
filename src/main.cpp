@@ -37,6 +37,12 @@ struct viewState{
 };
 bool UNSAVED_CHANGES=false;
 
+long get_nano_time(){
+	timespec Time;
+	clock_gettime(CLOCK_REALTIME,&Time);
+	return Time.tv_nsec;
+}
+
 int load_log(app_state* app,const char* file_name){
 	FILE* fp=fopen(file_name,"r");
 	if(fp==0){
@@ -184,11 +190,12 @@ int main(int argc,char** argv){
 	load_log(&app, database_file);
 
 	int server_fd=0;
+	int connection_counter=0;
 
 	if(argc==2){
 		server_fd=setup_server(srv_conf->my_port);
 		while(1)
-			handle_connections(server_fd);
+			handle_connections(server_fd,&connection_counter);
 		exit (1);
 	}
 
@@ -324,8 +331,6 @@ int main(int argc,char** argv){
 							}else{
 								draw_error("error deleting file");
 							}
-						}else{
-							draw_error("error recieving file");
 						}
 					}
 				}break;
@@ -467,7 +472,7 @@ int main(int argc,char** argv){
 			if(chr !=0){
 				state=view;
 			}else {
-				if (handle_connections(server_fd)!=0){
+				if (handle_connections(server_fd,&connection_counter)!=0){
 					draw_error("connectio handling error");
 				}
 			}
@@ -529,6 +534,7 @@ int main(int argc,char** argv){
 		}else if(state==server_mode){
 			mvprintw(max_row-1, 0, "server_mode");
 			dr_text_box(0,0,0,0,"listening for connections");
+			mvprintw(max_row/2-1, max_col/2-12, "handled connections %d",connection_counter);
 		}else if(state==entry_body_resize){
 			mvprintw(max_row-1, 0, "entry body resize mode");
 		}else if(state==entry_end_resize){

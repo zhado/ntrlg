@@ -3,6 +3,7 @@
 #include <ncurses.h>
 #include <assert.h>
 #include <sys/types.h>
+#include <unistd.h>
 
 #include "logs.h"
 #include "autocomp.h"
@@ -364,24 +365,24 @@ void print_weeks(t_log* log_p,int cell_minutes,time_t cursor_pos_tm,statConfig* 
 	}
 }
 
-void draw_status(u_int32_t* state){
+void draw_status(int* counter, int packet_counter){
+
 	int max_row,max_col;
 	getmaxyx(stdscr,max_row,max_col);
 	int row=max_row/2,col=max_col/2;
-	//for(int i=-5;i<5;i++)
-		//hline(' ',row+i);
+	mvprintw(row+6,col,"%d recieved",packet_counter);
 	mvprintw(row+5,col,"plase vait... ");
-
-	if(*state%4==0){
+	if(*counter%4==0){
 		mvprintw(row+5,col+15,"|");
-	}else if(*state%4==1){
+	}else if(*counter%4==1){
 		mvprintw(row+5,col+15,"/");
-	}else if(*state%4==2){
+	}else if(*counter%4==2){
 		mvprintw(row+5,col+15,"-");
-	}else if(*state%4==3){
+	}else if(*counter%4==3){
 		mvprintw(row+5,col+15,"\\");
 	}
-	*state=*state+1;
+	//fprintf(stderr,"-----------%d\n",counter);
+	*counter=*counter+1;
 	refresh();
 }
 

@@ -24,4 +24,6 @@ enum window_state {
 	delete_mode
 };
 
+long get_nano_time();
+
 #endif
