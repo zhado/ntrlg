@@ -228,6 +228,7 @@ int main(int argc,char** argv){
 	uint32_t last_hash=hash(&app);
 	bool week_view_hide_text=false;
 	bool are_you_sure_prompt=false;
+	bool fude_toggle=true;
 	int are_you_sure_result=-1;
 	bool running=true;
 	timespec start_time;
@@ -353,6 +354,9 @@ int main(int argc,char** argv){
 				}break;
 				case 'h':{
 					week_view_hide_text=!week_view_hide_text;
+				}break;
+				case 'f':{
+					fude_toggle=!fude_toggle;
 				}break;
 				case 'Z':{
 					week_view_width++;
@@ -507,7 +511,7 @@ int main(int argc,char** argv){
 			curs_set(0);
 			mvprintw(max_row-1, 0, "view mode, scale %d minutes",cell_minutes);
 		}else if(state==week_view){
-			print_weeks(&app.logs, cell_minutes, cursor_pos_tm,&stat_conf,week_view_width,week_view_hide_text);
+			print_weeks(&app.logs, cell_minutes, cursor_pos_tm,&stat_conf,week_view_width,week_view_hide_text,fude_toggle);
 			curs_set(0);
 			mvprintw(max_row-1, 0, "week view mode, vert_scale %d minutes, horz target scale = %d char",cell_minutes,week_view_width);
 		}else if(state==stat_view){

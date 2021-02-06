@@ -300,7 +300,7 @@ void print_logs(t_log* log_p,int row,int col,int cell_minutes,time_t cursor_pos_
 	}
 }
 
-void print_weeks(t_log* log_p,int cell_minutes,time_t cursor_pos_tm,statConfig* stat_conf,int width,bool hide_text){
+void print_weeks(t_log* log_p,int cell_minutes,time_t cursor_pos_tm,statConfig* stat_conf,int width,bool hide_text, bool fudge_toggle){
 	int max_row,max_col;
 	getmaxyx(stdscr,max_row,max_col);
 
@@ -310,10 +310,13 @@ void print_weeks(t_log* log_p,int cell_minutes,time_t cursor_pos_tm,statConfig* 
 	int space_between=2;
 	int days_to_fit=(int)(max_col-offset)/(width+space_between)-1;
 	int fudge_factor=0;
-	if(days_to_fit>=0)
-		fudge_factor=(int)(((max_col-offset-2)%((width+space_between)*(days_to_fit+1)))/(days_to_fit+1));
-	if(fudge_factor<width)
-		width+=fudge_factor;
+
+	if(fudge_toggle){
+		if(days_to_fit>=0)
+			fudge_factor=(int)(((max_col-offset-2)%((width+space_between)*(days_to_fit+1)))/(days_to_fit+1));
+		if(fudge_factor<width)
+			width+=fudge_factor;
+	}
 
 	time_t cursor_offset=get_cursor_offset(cell_minutes);
 	time_t secs_in_day=24*60*60;
