@@ -21,7 +21,8 @@ enum window_state {
 	entry_end_resize,
 	entry_body_resize,
 	server_mode,
-	delete_mode
+	delete_mode,
+	pause_mode
 };
 
 long get_nano_time();

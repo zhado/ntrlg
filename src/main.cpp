@@ -229,6 +229,7 @@ int main(int argc,char** argv){
 	bool week_view_hide_text=false;
 	bool are_you_sure_prompt=false;
 	bool fude_toggle=true;
+	bool pause=true;
 	int are_you_sure_result=-1;
 	bool running=true;
 	timespec start_time;
@@ -242,7 +243,7 @@ int main(int argc,char** argv){
 		erase();
 		getmaxyx(stdscr,max_row,max_col);
 
-		if (chr == 27){
+		if (chr == 27 && state!=pause_mode){
 			mvprintw(max_row-3,max_col-11,"esc pressed");
 			entry_to_resize=0;
 			state=view;
@@ -288,12 +289,9 @@ int main(int argc,char** argv){
 				}break;
 
 				case 'w':{
-					//cell_minutes=30;
-					//cursor_pos_tm=(unsigned long)time(0);
 					state=week_view;
 				}break;
 				case 'v':{
-					//cursor_pos_tm=(unsigned long)time(0);
 					state=view;
 				}break;
 				case 'g':{
@@ -302,6 +300,10 @@ int main(int argc,char** argv){
 				case 'e':{
 					mvprintw(max_row-3,max_col-sizeof("ending last entry"),"ending last entry");
 					end_last_entry(&app.logs);
+				}break;
+				case 'p':{
+					end_last_entry(&app.logs);
+					state=pause_mode;
 				}break;
 				case 'H':{
 					if(server_fd==0)
@@ -469,6 +471,28 @@ int main(int argc,char** argv){
 				state=view;
 			}
 
+		} else if(state==pause_mode){
+			switch(chr){
+				case 'p':{
+					char* last_entry_name= app.logs.entries[app.logs.index-1].name;
+					char* last_entry_subname= app.logs.entries[app.logs.index-1].sub_name;
+					add_entry(&app.logs,last_entry_name,last_entry_subname, (unsigned long)time(0), 0);
+					state=view;
+				}break;
+				default:{
+					if(are_you_sure_prompt==false && chr != 0)
+						are_you_sure_prompt=true;
+				}break;
+				
+			}
+			if(are_you_sure_result==1){
+				state=view;
+				are_you_sure_prompt=false;
+				are_you_sure_result=-1;
+			}else if(are_you_sure_result==0){
+				are_you_sure_prompt=false;
+				are_you_sure_result=-1;
+			}
 		} else if(state==entry_start_resize || state==entry_body_resize || state==entry_end_resize){
 			resize_logic(&cursor_pos_tm, cell_minutes,  entry_to_resize,&app.logs, chr, &state);
 
@@ -517,6 +541,11 @@ int main(int argc,char** argv){
 		}else if(state==stat_view){
 			mvprintw(max_row-1, 0, "stats mode");
 			draw_durations(2,0, &app.logs, &stat_conf,stat_pos);
+		}else if(state==pause_mode){
+			dr_text_box(0,0,0,0,"pause mode, press p to unpause");
+			if(are_you_sure_prompt){
+				dr_text_box(0,0,0,0,"are you sure (y/n)");
+			}
 		}else if(state==logging){
 			curs_set(1);
 			draw_log_edit(&buffr, max_row-3, 0);
@@ -574,7 +603,6 @@ int main(int argc,char** argv){
 				chr=getch();
 			}
 			are_you_sure_result = (chr == 'y' || chr == 'Y') ? 1 : 0;
-			are_you_sure_prompt=false;
 		} else if(chr==ERR){
 			chr=0;
 		}
