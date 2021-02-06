@@ -55,6 +55,12 @@ void align_right_duration(int row, int col,time_t duration){
 	}
 }
 
+time_t get_cursor_offset(int cell_minutes){
+		int max_row,max_col;
+		getmaxyx(stdscr,max_row,max_col);
+		return cell_minutes*60*(int(max_row/2)+1);
+}
+
 int draw_time_decorations(int cur_row,int col_p,time_t cell_tm, int cell_minutes,time_t cursor_offset, time_t quantized_cursor_pos_tm, u_int32_t draw_mask,int width){
 	time_t next_cell_tm=cell_tm+(cell_minutes*60);
 	time_t next_cell_tm_2=cell_tm-(cell_minutes*60);
@@ -163,6 +169,7 @@ calcCellResult calc_cell(t_log* logp,time_t cell_tm, int cell_minutes, time_t ma
 			return result;
 		}else if(start_tm>=cell_tm && start_tm<=next_cell_tm){
 			result.entry_part=1;
+			result.entry=&logp->entries[i];
 		}else if(find_longest_entry){
 			result.entry_part=3;
 			result.entry=longest_entry;
@@ -173,10 +180,14 @@ calcCellResult calc_cell(t_log* logp,time_t cell_tm, int cell_minutes, time_t ma
 	return result;
 }
 
-void draw_cell(int row, int col,calcCellResult result, int width, statConfig* stat_conf, bool hide_text){
+void draw_cell(int row, int col,calcCellResult result, int width, statConfig* stat_conf, bool hide_text,int drag_status, log_entry* entry_under_cursor){
 	int entry_part=result.entry_part;
 	log_entry* entry_p=result.entry;
 	time_t next_cell_tm=result.next_cell_tm;
+
+	if(drag_status!=0){
+		assert(entry_under_cursor!=0);
+	}
 
 	if(entry_part==3){
 		int color=0;
@@ -194,6 +205,12 @@ void draw_cell(int row, int col,calcCellResult result, int width, statConfig* st
 				align_right_duration(row,col+width,entry_p->end_time-entry_p->start_time);
 		}
 		attroff(COLOR_PAIR(color));
+
+		if(drag_status==3 && entry_under_cursor==result.entry){
+			mvprintw(row, col+width, "DD");
+			mvprintw(row, col-2, "DD");
+		}
+
 	}else if(entry_part==4){
 		printw(" ");
 		int color=0;
@@ -209,6 +226,10 @@ void draw_cell(int row, int col,calcCellResult result, int width, statConfig* st
 			align_right_duration(row,col+width,(unsigned long)time(0)-entry_p->start_time);
 		}
 		attroff(COLOR_PAIR(color));
+		if(drag_status==3 && entry_under_cursor==result.entry){
+			mvprintw(row, col+width, "DD");
+			mvprintw(row, col-2, "DD");
+		}
 	}else if(entry_part==2){
 		int color=0;
 		if(stat_conf!=0)
@@ -221,13 +242,21 @@ void draw_cell(int row, int col,calcCellResult result, int width, statConfig* st
 			mvprintw(row, col, " ");
 
 		attroff(COLOR_PAIR(color));
+		if(drag_status==2 && entry_under_cursor==result.entry){
+			mvprintw(row, col+width, "DD");
+			mvprintw(row, col-2, "DD");
+		}
 	}else if(entry_part==1){
 		mvprintw(row, col, "--");
+		if(drag_status==1 && entry_under_cursor==result.entry){
+			mvprintw(row, col+width, "DD");
+			mvprintw(row, col-2, "DD");
+		}
+
 	}else if(entry_part==5){
 		print_str_n_times(row, col, "-", width);
 		if(width>5){
-			print_week_day(row,col,next_cell_tm);
-			printw(" %d",get_tm(next_cell_tm).tm_mday);
+			mvftime_print(row-1, col, "%e %h",next_cell_tm);
 		}
 	}else if(entry_part==6){
 		print_str_n_times(row, col, "-", width);
@@ -235,9 +264,24 @@ void draw_cell(int row, int col,calcCellResult result, int width, statConfig* st
 
 }
 
-void print_logs(t_log* log_p,int row,int col,int cell_minutes,time_t cursor_pos_tm,statConfig* stat_conf){
+void print_logs(t_log* log_p,int row,int col,int cell_minutes,time_t cursor_pos_tm,statConfig* stat_conf,window_state win_state, log_entry* entry_under_cursor){
 	int max_row,max_col;
 	getmaxyx(stdscr,max_row,max_col);
+	int drag_status=0;
+	switch (win_state) {
+		case entry_start_resize:{
+			drag_status=1;
+		}break;
+		case entry_body_resize:{
+			drag_status=2;
+		}break;
+		case entry_end_resize:{
+			drag_status=3;
+		}break;
+		default:{
+			drag_status=0;
+		}
+	}
 
 	time_t quantized_cursor_pos_tm=cursor_pos_tm-(cursor_pos_tm%(cell_minutes*60));
 	time_t cursor_offset=cell_minutes*60*(int(max_row/2));
@@ -249,9 +293,8 @@ void print_logs(t_log* log_p,int row,int col,int cell_minutes,time_t cursor_pos_
 		time_t cell_tm=quantized_cursor_pos_tm-cell_minutes*60*count;
 		int dec_width=draw_time_decorations(i, 0, cell_tm, cell_minutes, cursor_offset, quantized_cursor_pos_tm, INT32_MAX , width);
 
-		int entry_part=0;
 		calcCellResult C_res=calc_cell(log_p, cell_tm, cell_minutes, 0, 0);
-		draw_cell(i, dec_width,C_res, width-dec_width, stat_conf, false);
+		draw_cell(i, dec_width,C_res, width-dec_width, stat_conf, false, drag_status, entry_under_cursor);
 		count++;
 	}
 }
@@ -271,6 +314,7 @@ void print_weeks(t_log* log_p,int cell_minutes,time_t cursor_pos_tm,statConfig* 
 	if(fudge_factor<width)
 		width+=fudge_factor;
 
+	time_t cursor_offset=get_cursor_offset(cell_minutes);
 	time_t secs_in_day=24*60*60;
 	time_t time_zone_offset=4*60*60;
 	//cursor_pos_tm+=secs_in_day;
@@ -278,7 +322,6 @@ void print_weeks(t_log* log_p,int cell_minutes,time_t cursor_pos_tm,statConfig* 
 		int day=days_to_fit-j;
 		day-=days_to_fit/2;
 		time_t quantized_cursor_pos_tm=cursor_pos_tm-(cursor_pos_tm%(cell_minutes*60));
-		time_t cursor_offset=cell_minutes*60*(int(max_row/2)+1);
 		quantized_cursor_pos_tm+=cursor_offset- (day)*secs_in_day;
 
 		time_t last_midnight=cursor_pos_tm-((cursor_pos_tm+time_zone_offset)%(24*60*60));
@@ -286,7 +329,6 @@ void print_weeks(t_log* log_p,int cell_minutes,time_t cursor_pos_tm,statConfig* 
 		//mvprintw(0,j*(width+space_between)+offset,"%d %d",j,day);
 		for(int i=max_row-2;i>=0;i--){
 			time_t cell_tm=quantized_cursor_pos_tm-cell_minutes*60*count;
-			int entry_part=0;
 			calcCellResult C_res=calc_cell(log_p, cell_tm, cell_minutes,
 					last_midnight-secs_in_day*(day),
 					last_midnight-secs_in_day*(day-1));
@@ -310,7 +352,7 @@ void print_weeks(t_log* log_p,int cell_minutes,time_t cursor_pos_tm,statConfig* 
 						width);
 			}
 
-			draw_cell(i, j*(width+space_between)+offset,C_res,width, stat_conf, hide_text);
+			draw_cell(i, j*(width+space_between)+offset,C_res,width, stat_conf, hide_text,0,0);
 			count++;
 		}
 		if(day==0){

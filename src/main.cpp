@@ -493,7 +493,7 @@ int main(int argc,char** argv){
 //drawing happens here --------------------
 		print_str_n_times(max_row-1, 0,"-", max_col);
 		if(state != week_view && state != stat_view){
-			print_logs(&app.logs,-5,0,cell_minutes,cursor_pos_tm,&stat_conf,state);
+			print_logs(&app.logs,-5,0,cell_minutes,cursor_pos_tm,&stat_conf,state,entry_under_cursor);
 			draw_durations(23, 90, &app.logs, &stat_conf,stat_pos);
 		}
 
