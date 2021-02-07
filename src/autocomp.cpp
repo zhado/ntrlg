@@ -154,7 +154,7 @@ void remove_dup_and_empty_scored_tags(scoredTag* sT, int* tag_count){
 	}
 }
 
-int generate_scored_tags(t_log* log_p, int entry_count,int tag_count,char * search_string, scoredTag* evaled_names_ar){
+int generate_scored_tags(t_log* log_p, int entry_count,int tag_count,char * search_string, scoredTag* scored_tags){
 
 	for(int i=0,j=0;i<entry_count;i++,j++){
 		int reverse_index=entry_count-i-1;
@@ -169,11 +169,11 @@ int generate_scored_tags(t_log* log_p, int entry_count,int tag_count,char * sear
 				memcpy(tempchar, start_at, entry_char-start_at+k);
 				tempchar[entry_char-start_at+k]=0;
 				int score=match_score(tempchar,search_string,false);
-				evaled_names_ar[j].score=score;
-				evaled_names_ar[j].index=reverse_index;
-				evaled_names_ar[j].offset=start_at;
-				evaled_names_ar[j].size=entry_char-start_at+k;
-				evaled_names_ar[j].root_entry=&log_p->entries[reverse_index];
+				scored_tags[j].score=score;
+				scored_tags[j].index=reverse_index;
+				scored_tags[j].offset=start_at;
+				scored_tags[j].size=entry_char-start_at+k;
+				scored_tags[j].root_entry=&log_p->entries[reverse_index];
 				start_at=&entry_char[k]+1;
 				j++;
 			}
@@ -185,11 +185,11 @@ int generate_scored_tags(t_log* log_p, int entry_count,int tag_count,char * sear
 		}
 
 		int score=match_score(tempchar,search_string,false);
-		evaled_names_ar[j].score=score;
-		evaled_names_ar[j].index=reverse_index;
-		evaled_names_ar[j].offset=start_at;
-		evaled_names_ar[j].size=entry_char+len-start_at;
-		evaled_names_ar[j].root_entry=&log_p->entries[reverse_index];
+		scored_tags[j].score=score;
+		scored_tags[j].index=reverse_index;
+		scored_tags[j].offset=start_at;
+		scored_tags[j].size=entry_char+len-start_at;
+		scored_tags[j].root_entry=&log_p->entries[reverse_index];
 	}
 
 	return 0;
@@ -215,18 +215,18 @@ void match_names(t_log* log_p, char* search_string, bool remove_dups, scoredTag*
 		}
 	}
 
-	scoredTag evaled_names_ar[tag_count];
+	scoredTag scored_tags[tag_count];
 
 
-	generate_scored_tags(log_p,count,tag_count,search_string_no_space,evaled_names_ar);
-	sort_scored_tags(evaled_names_ar, tag_count);
-	remove_dup_and_empty_scored_tags(evaled_names_ar,&tag_count);
+	generate_scored_tags(log_p,count,tag_count,search_string_no_space,scored_tags);
+	sort_scored_tags(scored_tags, tag_count);
+	remove_dup_and_empty_scored_tags(scored_tags,&tag_count);
 
-	memcpy(output, evaled_names_ar, sizeof(scoredTag)*AUTOCOM_WIN_MAX_SIZE);
+	memcpy(output, scored_tags, sizeof(scoredTag)*AUTOCOM_WIN_MAX_SIZE);
 
 	int i=0;
 	for(;i<AUTOCOM_WIN_MAX_SIZE;i++){
-		scoredTag cur_sT=evaled_names_ar[i];
+		scoredTag cur_sT=scored_tags[i];
 		//if( i > AUTOCOM_WIN_MAX_SIZE|| i>= tag_count){
 		if( cur_sT.score!=0|| i > AUTOCOM_WIN_MAX_SIZE|| i>= tag_count){
 			break;
