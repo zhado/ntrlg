@@ -12,7 +12,7 @@ struct log_edit_buffer{
 	int tag_autocomp_selection;
 	match_result result;
 	bool only_tag_str;
-	size_n_index sni[AUTOCOM_WIN_MAX_SIZE];
+	scoredTag sni[AUTOCOM_WIN_MAX_SIZE];
 	int matched_count;
 	int cursor_row;
 	int cursor_col;

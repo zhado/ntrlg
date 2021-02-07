@@ -544,7 +544,7 @@ int main(int argc,char** argv){
 		}else if(state==pause_mode){
 			dr_text_box(0,0,0,0,"pause mode, press p to unpause");
 			if(are_you_sure_prompt){
-				dr_text_box(0,0,0,0,"are you sure (y/n)");
+				dr_text_box(0,0,0,0,"are you sure you want to cancel pause mode? (y/n)");
 			}
 		}else if(state==logging){
 			curs_set(1);

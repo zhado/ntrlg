@@ -116,7 +116,7 @@ void draw_log_edit(log_edit_buffer* buffer,int row,int col){
 
 	if(last_char(name)==10 || only_tag_str){
 		match_names(a_log, tag_str, true,buffer->sni,&buffer->matched_count);
-		draw_sni(row-1,col+5,buffer->sni,*autocomp_selection,buffer->matched_count);
+		draw_autocomp(row-1,col+5,buffer->sni,*autocomp_selection,buffer->matched_count);
 	}
 	
 	if(!only_tag_str){

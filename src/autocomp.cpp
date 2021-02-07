@@ -71,7 +71,7 @@ int match_scores_by_comma(char* str, char* search_strin){
 	return min;
 }
 
-void swap_sni_s(size_n_index* a, size_n_index* b){
+void swap_scored_tags(scoredTag* a, scoredTag* b){
 	if(a!=b){
 		int temp_score=b->score;
 		int temp_index=b->index;
@@ -93,49 +93,41 @@ void swap_sni_s(size_n_index* a, size_n_index* b){
 	}
 }
 
-void sort_sni_s(size_n_index* sni,int count){
+void sort_scored_tags(scoredTag* sT,int count){
 	for(int i=0;i<count;i++){
-		int min=sni[i].score,
+		int min=sT[i].score,
 		    min_index=i;
 		for(int j=i;j<count;j++){
-			if(sni[j].score<min){
-				min=sni[j].score;
+			if(sT[j].score<min){
+				min=sT[j].score;
 				min_index=j;
 			}
 			
 		}
-		swap_sni_s(&sni[i], &sni[min_index]);
+		swap_scored_tags(&sT[i], &sT[min_index]);
 	}
 
 }
 
-void remove_sni(size_n_index* sni, int* tag_count,int index){
+void remove_scored_tag(scoredTag* sT, int* tag_count,int index){
 	for(int i=index;i<*tag_count-1;i++){
-		sni[i].index=sni[i+1].index;
-		sni[i].offset=sni[i+1].offset;
-		sni[i].root_entry=sni[i+1].root_entry;
-		sni[i].score=sni[i+1].score;
-		sni[i].size=sni[i+1].size;
+		sT[i].index=sT[i+1].index;
+		sT[i].offset=sT[i+1].offset;
+		sT[i].root_entry=sT[i+1].root_entry;
+		sT[i].score=sT[i+1].score;
+		sT[i].size=sT[i+1].size;
 	}
 	*tag_count=*tag_count-1;
 }
 
-void null_sni(size_n_index* sni,int index){
-	sni[index].index=0;
-	sni[index].offset=0;
-	sni[index].root_entry=0;
-	sni[index].score=INT32_MAX;
-	sni[index].size=0;
-}
+bool comp_scored_tags(scoredTag sT_1, scoredTag sT_2){
+	char temp_str_1[sT_1.size+1];
+	memcpy(temp_str_1, sT_1.offset, sT_1.size);
+	temp_str_1[sT_1.size]=0;
 
-bool cmp_sni(size_n_index sni_1, size_n_index sni_2){
-	char temp_str_1[sni_1.size+1];
-	memcpy(temp_str_1, sni_1.offset, sni_1.size);
-	temp_str_1[sni_1.size]=0;
-
-	char temp_str_2[sni_2.size+1];
-	memcpy(temp_str_2, sni_2.offset, sni_2.size);
-	temp_str_2[sni_2.size]=0;
+	char temp_str_2[sT_2.size+1];
+	memcpy(temp_str_2, sT_2.offset, sT_2.size);
+	temp_str_2[sT_2.size]=0;
 
 	int comp_result=strcmp(temp_str_1, temp_str_2);
 
@@ -145,24 +137,24 @@ bool cmp_sni(size_n_index sni_1, size_n_index sni_2){
 		return false;
 }
 
-void remove_duplicate_and_empty_sni(size_n_index* sni, int* tag_count){
+void remove_dup_and_empty_scored_tags(scoredTag* sT, int* tag_count){
 	if(*tag_count>0)
-		if(sni[0].offset[0]==0){
-			remove_sni(sni, tag_count,0);
+		if(sT[0].offset[0]==0){
+			remove_scored_tag(sT, tag_count,0);
 		}
 	for(int i=0;i<*tag_count;i++){
 		for(int j=i+1;j<*tag_count-1;j++){
-			size_n_index sni1=sni[i];
-			size_n_index sni2=sni[j];
-			if(cmp_sni(sni[i], sni[j]) || sni2.offset[0]==0){
-				remove_sni(sni, tag_count,j);
+			scoredTag sT_1=sT[i];
+			scoredTag sT_2=sT[j];
+			if(comp_scored_tags(sT[i], sT[j]) || sT_2.offset[0]==0){
+				remove_scored_tag(sT, tag_count,j);
 				j--;
 			}
 		}
 	}
 }
 
-int generate_sni_s(t_log* log_p, int entry_count,int tag_count,char * search_string, size_n_index* evaled_names_ar){
+int generate_scored_tags(t_log* log_p, int entry_count,int tag_count,char * search_string, scoredTag* evaled_names_ar){
 
 	for(int i=0,j=0;i<entry_count;i++,j++){
 		int reverse_index=entry_count-i-1;
@@ -176,7 +168,8 @@ int generate_sni_s(t_log* log_p, int entry_count,int tag_count,char * search_str
 				memset(tempchar, 0, len);
 				memcpy(tempchar, start_at, entry_char-start_at+k);
 				tempchar[entry_char-start_at+k]=0;
-				evaled_names_ar[j].score=match_score(tempchar,search_string,false);
+				int score=match_score(tempchar,search_string,false);
+				evaled_names_ar[j].score=score;
 				evaled_names_ar[j].index=reverse_index;
 				evaled_names_ar[j].offset=start_at;
 				evaled_names_ar[j].size=entry_char-start_at+k;
@@ -191,7 +184,8 @@ int generate_sni_s(t_log* log_p, int entry_count,int tag_count,char * search_str
 			tempchar[entry_char-start_at+len]=0;
 		}
 
-		evaled_names_ar[j].score=match_score(tempchar,search_string,false);
+		int score=match_score(tempchar,search_string,false);
+		evaled_names_ar[j].score=score;
 		evaled_names_ar[j].index=reverse_index;
 		evaled_names_ar[j].offset=start_at;
 		evaled_names_ar[j].size=entry_char+len-start_at;
@@ -201,7 +195,7 @@ int generate_sni_s(t_log* log_p, int entry_count,int tag_count,char * search_str
 	return 0;
 }
 
-void match_names(t_log* log_p, char* search_string, bool remove_dups, size_n_index* output, int* matched_count){
+void match_names(t_log* log_p, char* search_string, bool remove_dups, scoredTag* output, int* matched_count){
 	//extract last mdzime
 	char search_string_no_space[MAX_NAME_SIZE];
 	int count=log_p->index;
@@ -221,38 +215,38 @@ void match_names(t_log* log_p, char* search_string, bool remove_dups, size_n_ind
 		}
 	}
 
-	size_n_index evaled_names_ar[tag_count];
+	scoredTag evaled_names_ar[tag_count];
 
 
-	generate_sni_s(log_p,count,tag_count,search_string_no_space,evaled_names_ar);
-	sort_sni_s(evaled_names_ar, tag_count);
-	remove_duplicate_and_empty_sni(evaled_names_ar,&tag_count);
+	generate_scored_tags(log_p,count,tag_count,search_string_no_space,evaled_names_ar);
+	sort_scored_tags(evaled_names_ar, tag_count);
+	remove_dup_and_empty_scored_tags(evaled_names_ar,&tag_count);
 
-	memcpy(output, evaled_names_ar, sizeof(size_n_index)*AUTOCOM_WIN_MAX_SIZE);
+	memcpy(output, evaled_names_ar, sizeof(scoredTag)*AUTOCOM_WIN_MAX_SIZE);
 
 	int i=0;
 	for(;i<AUTOCOM_WIN_MAX_SIZE;i++){
-		size_n_index cur_sni=evaled_names_ar[i];
+		scoredTag cur_sT=evaled_names_ar[i];
 		//if( i > AUTOCOM_WIN_MAX_SIZE|| i>= tag_count){
-		if( cur_sni.score!=0|| i > AUTOCOM_WIN_MAX_SIZE|| i>= tag_count){
+		if( cur_sT.score!=0|| i > AUTOCOM_WIN_MAX_SIZE|| i>= tag_count){
 			break;
 		}
 	}
 	*matched_count=i;
 }
 
-void draw_sni(int row, int col,size_n_index sni[AUTOCOM_WIN_MAX_SIZE], int choice,int matched_count){
+void draw_autocomp(int row, int col,scoredTag sTs[AUTOCOM_WIN_MAX_SIZE], int choice,int matched_count){
 	for(int i=0;i<matched_count;i++){
-		size_n_index cur_sni=sni[i];
-		char tempchar[cur_sni.size+1];
+		scoredTag cur_sT=sTs[i];
+		char tempchar[cur_sT.size+1];
 		print_str_n_times(row-i, col-10, " ", 55);
 		if(choice == i){
 			attron(COLOR_PAIR(2));
 			print_str_n_times(row-i, col-10, "- ", 55);
 		}
-		memcpy(tempchar, cur_sni.offset,cur_sni.size);
-		tempchar[cur_sni.size]=0;
-		//mvprintw(row-i,col,"| %s %d",tempchar,cur_sni.score);
+		memcpy(tempchar, cur_sT.offset,cur_sT.size);
+		tempchar[cur_sT.size]=0;
+		//mvprintw(row-i,col,"| %s %d",tempchar,cur_sT.score);
 		mvprintw(row-i,col,"| %s",tempchar);
 		//mvprintw(row-i,col,"| %s",tempchar);
 		attroff(COLOR_PAIR(2));

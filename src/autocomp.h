@@ -4,7 +4,7 @@
 #include "logs.h"
 #include "trlg_common.h"
 
-struct size_n_index{
+struct scoredTag{
 	int score;
 	int index;
 	char* offset;
@@ -21,8 +21,8 @@ struct match_result{
 int match_score(char* st1, char* st2, bool exact_match);
 char* get_after_last_comma (char* str);
 char* remove_spaces(char* str);
-void match_names(t_log* log_p, char* search_string_p, bool remove_dups, size_n_index* output, int* matched_count);
-void draw_sni(int row, int col,size_n_index sni[AUTOCOM_WIN_MAX_SIZE], int choice,int matched_count);
+void match_names(t_log* log_p, char* search_string_p, bool remove_dups, scoredTag* output, int* matched_count);
+void draw_autocomp(int row, int col,scoredTag sni[AUTOCOM_WIN_MAX_SIZE], int choice,int matched_count);
 int match_scores_by_comma(char* str, char* search_strin);
 
 #endif
