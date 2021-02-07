@@ -71,44 +71,6 @@ int match_scores_by_comma(char* str, char* search_strin){
 	return min;
 }
 
-void swap_scored_tags(scoredTag* a, scoredTag* b){
-	if(a!=b){
-		int temp_score=b->score;
-		int temp_index=b->index;
-		char* temp_offset=b->offset;
-		int temp_size=b->size;
-		log_entry* temp_entry=a->root_entry;
-
-		b->score=a->score;
-		b->index=a->index;
-		b->offset=a->offset;
-		b->size=a->size;
-		b->root_entry=a->root_entry;
-
-		a->score=temp_score;
-		a->index=temp_index;
-		a->offset=temp_offset;
-		a->size=temp_size;
-		a->root_entry=temp_entry;
-	}
-}
-
-void sort_scored_tags(scoredTag* sT,int count){
-	for(int i=0;i<count;i++){
-		int min=sT[i].score,
-		    min_index=i;
-		for(int j=i;j<count;j++){
-			if(sT[j].score<min){
-				min=sT[j].score;
-				min_index=j;
-			}
-			
-		}
-		swap_scored_tags(&sT[i], &sT[min_index]);
-	}
-
-}
-
 void remove_scored_tag(scoredTag* sT, int* tag_count,int index){
 	for(int i=index;i<*tag_count-1;i++){
 		sT[i].index=sT[i+1].index;
@@ -143,7 +105,7 @@ void remove_dup_and_empty_scored_tags(scoredTag* sT, int* tag_count){
 			remove_scored_tag(sT, tag_count,0);
 		}
 	for(int i=0;i<*tag_count;i++){
-		for(int j=i+1;j<*tag_count-1;j++){
+		for(int j=i+1;j<*tag_count;j++){
 			scoredTag sT_1=sT[i];
 			scoredTag sT_2=sT[j];
 			if(comp_scored_tags(sT[i], sT[j]) || sT_2.offset[0]==0){
@@ -154,9 +116,10 @@ void remove_dup_and_empty_scored_tags(scoredTag* sT, int* tag_count){
 	}
 }
 
-int generate_scored_tags(t_log* log_p, int entry_count,int tag_count,char * search_string, scoredTag* scored_tags){
+int generate_scored_tags(t_log* log_p, int entry_count,char * search_string, scoredTag* scored_tags, int* tag_count){
 
-	for(int i=0,j=0;i<entry_count;i++,j++){
+	int j=0;
+	for(int i=0;i<entry_count;i++,j++){
 		int reverse_index=entry_count-i-1;
 		char* entry_char=log_p->entries[reverse_index].sub_name;
 		int len=strlen(entry_char);
@@ -169,6 +132,10 @@ int generate_scored_tags(t_log* log_p, int entry_count,int tag_count,char * sear
 				memcpy(tempchar, start_at, entry_char-start_at+k);
 				tempchar[entry_char-start_at+k]=0;
 				int score=match_score(tempchar,search_string,false);
+				if(score!=0){
+					start_at=&entry_char[k]+1;
+					continue;
+				}
 				scored_tags[j].score=score;
 				scored_tags[j].index=reverse_index;
 				scored_tags[j].offset=start_at;
@@ -185,12 +152,18 @@ int generate_scored_tags(t_log* log_p, int entry_count,int tag_count,char * sear
 		}
 
 		int score=match_score(tempchar,search_string,false);
+		if(score!=0){
+			j--;
+			continue;
+		}
 		scored_tags[j].score=score;
 		scored_tags[j].index=reverse_index;
 		scored_tags[j].offset=start_at;
 		scored_tags[j].size=entry_char+len-start_at;
 		scored_tags[j].root_entry=&log_p->entries[reverse_index];
 	}
+
+	*tag_count=j;
 
 	return 0;
 }
@@ -217,9 +190,7 @@ void match_names(t_log* log_p, char* search_string, bool remove_dups, scoredTag*
 
 	scoredTag scored_tags[tag_count];
 
-
-	generate_scored_tags(log_p,count,tag_count,search_string_no_space,scored_tags);
-	sort_scored_tags(scored_tags, tag_count);
+	generate_scored_tags(log_p,count,search_string_no_space,scored_tags,&tag_count);
 	remove_dup_and_empty_scored_tags(scored_tags,&tag_count);
 
 	memcpy(output, scored_tags, sizeof(scoredTag)*AUTOCOM_WIN_MAX_SIZE);
