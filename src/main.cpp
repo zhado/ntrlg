@@ -199,6 +199,12 @@ int main(int argc,char** argv){
 		exit (1);
 	}
 
+	//for(int i=0;;i++){
+		//strPart prt=get_nth_strpart("sandro, data, nata", ',', i);
+		//if(prt.start==0)break;
+		//printf("%s %d\n",prt.start,prt.length);
+	//}
+
 	setlocale(LC_CTYPE, "");
 	initscr();
 	nocbreak();

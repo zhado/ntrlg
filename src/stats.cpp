@@ -140,7 +140,7 @@ time_t get_duration_in_range(t_log* a_log, char* str,time_t start_tm,time_t end_
 		if(cur_entry.end_time==0)cur_entry.end_time=(unsigned long)time(0);
 		if(cur_entry.end_time < start_tm)
 			break;
-		if(match_scores_by_comma(cur_entry.sub_name, str)==0){
+		if(tag_has_str(cur_entry.sub_name, str)){
 			time_t temp_start_tm=tm_clamp(start_tm, cur_entry.start_time, cur_entry.end_time);
 			time_t temp_end_tm=tm_clamp(end_tm, cur_entry.start_time, cur_entry.end_time);
 			duration+=temp_end_tm-temp_start_tm;

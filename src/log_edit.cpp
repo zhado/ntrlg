@@ -101,7 +101,7 @@ int log_edit(log_edit_buffer* buffer, int chr){
 	}
 
 	if(last_char(name)==10 || only_tag_str){
-		match_names(a_log, tag_str, true,buffer->sni,&buffer->matched_count);
+		match_names(a_log, tag_str,buffer->sni,&buffer->matched_count);
 	}
 	
 	return 1;
@@ -115,7 +115,7 @@ void draw_log_edit(log_edit_buffer* buffer,int row,int col){
 	bool only_tag_str=buffer->only_tag_str;
 
 	if(last_char(name)==10 || only_tag_str){
-		match_names(a_log, tag_str, true,buffer->sni,&buffer->matched_count);
+		match_names(a_log, tag_str,buffer->sni,&buffer->matched_count);
 		draw_autocomp(row-1,col+5,buffer->sni,*autocomp_selection,buffer->matched_count);
 	}
 	

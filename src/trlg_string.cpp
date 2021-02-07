@@ -1,6 +1,7 @@
 #include <string.h>
 #include <ncurses.h>
 #include "trlg_common.h"
+#include "trlg_string.h"
 
 char* get_after_last_comma (char* str){
 	int last_comma_pos=0;
@@ -139,4 +140,32 @@ bool exact_match_comma(char* str,char* str2){
 		ch_start_p=n_comma+1;
 	}
 	return false;
+}
+
+strPart get_nth_strpart(char* str, char chr, int n){
+	strPart part;
+
+	int str_len=strlen(str);
+
+	int matched=-1;
+	char* last_start=str;
+
+	for(int i=0;i<str_len;i++){
+		if(str[i]==chr || i == str_len-1){
+			part.start=last_start;
+			part.length=&str[i]-last_start+ (i == str_len-1);
+			last_start=&str[i+1];
+			matched++;
+			if(matched==n){
+				return part;
+			}
+		}
+	}
+
+	if(matched!=n){
+		part.start=0;
+		part.length=0;
+	}
+
+	return part;
 }

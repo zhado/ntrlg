@@ -7,6 +7,7 @@ struct strPart{
 	// not including null pointer if avialable
 };
 
+strPart get_nth_strpart(char* str, char chr, int n);
 char* get_after_last_comma (char* str);
 char* remove_spaces(char* str);
 void remove_commas_from_end(char* str);
