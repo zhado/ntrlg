@@ -534,6 +534,7 @@ int main(int argc,char** argv){
 		if(state != week_view && state != stat_view){
 			print_logs(&app.logs,-5,0,cell_minutes,cursor_pos_tm,&stat_conf,state,entry_under_cursor);
 			draw_durations(23, 90, &app.logs, &stat_conf,stat_pos);
+			grahp(40, 90, &app.logs, &stat_conf, stat_pos);
 		}
 
 		if(state==view){
@@ -547,6 +548,7 @@ int main(int argc,char** argv){
 		}else if(state==stat_view){
 			mvprintw(max_row-1, 0, "stats mode");
 			draw_durations(2,0, &app.logs, &stat_conf,stat_pos);
+			grahp(40, 0, &app.logs, &stat_conf, stat_pos);
 		}else if(state==pause_mode){
 			dr_text_box(0,0,0,0,"pause mode, press p to unpause");
 			if(are_you_sure_prompt){

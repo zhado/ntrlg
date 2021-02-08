@@ -162,7 +162,6 @@ void draw_durations(int row, int col,t_log* a_log, statConfig* stat_conf, int st
 	int day_count= (max_col-col-tag_w)/cell_w-1;
 	day_count= day_count > 7 ? 7 : day_count;
 
-
 	int start_row=row;
 	for(int i=0;i<stat_conf->count;i++){
 		memcpy(temp_str, stat_conf->stat_colors[i].part.start, stat_conf->stat_colors[i].part.length);
@@ -181,11 +180,8 @@ void draw_durations(int row, int col,t_log* a_log, statConfig* stat_conf, int st
 			time_t end_time=last_midnight - secs_in_day*(j-1)-stat_pos_div*secs_in_day;
 			if(row==start_row+1){
 				attroff(COLOR_PAIR(color));
-				//mvprintw(start_row-2,col+tag_w+cell_w*j+1-stat_pos%cell_w,"%02d",get_tm(start_time).tm_mday);
 				mvftime_print(start_row-2,col+tag_w+cell_w*j-stat_pos%cell_w, "%e %h", start_time);
 				print_str_n_times(start_row-2, col," ", tag_w);
-				//print_week_day(start_row-2,col+12+9*j+1, start_time);
-				//printw(" %d",get_tm(start_time).tm_mday);
 				attron(COLOR_PAIR(color));
 			}
 			move(row-1,col+tag_w+cell_w*j-stat_pos%cell_w);
@@ -202,5 +198,55 @@ void draw_durations(int row, int col,t_log* a_log, statConfig* stat_conf, int st
 		attroff(COLOR_PAIR(color));
 		row++;
 	}
+}
+
+
+void grahp(int row, int col,t_log* a_log, statConfig* stat_conf, int stat_pos){
+	int max_row,max_col;
+	getmaxyx(stdscr,max_row,max_col);
+
+	time_t local_time=(unsigned long)time(NULL);
+	time_t secs_in_day=24*60*60;
+	char temp_str[MAX_NAME_SIZE];
+	int cell_w=8;
+	int tag_w=12;
+	if(col+tag_w>=max_col)
+		return;
+
+	int start_row=row;
+	//for(int i=0;i<stat_conf->count;i++){
+		memcpy(temp_str, stat_conf->stat_colors[0].part.start, stat_conf->stat_colors[0].part.length);
+		temp_str[stat_conf->stat_colors[0].part.length]=0;
+
+		int color=0;
+		if(stat_conf!=0)
+			color=get_tag_color_pair(temp_str, stat_conf);
+		attron(COLOR_PAIR(color));
+		
+		time_t last_midnight=local_time-((local_time+4*60*60)%(24*60*60));
+		time_t graph_start=last_midnight - secs_in_day*18;
+		time_t incr=secs_in_day;
+		int day_count=16;
+		for(int j=0;j<=day_count;j++){
+			int stat_pos_div=stat_pos/cell_w;
+			time_t start_time=last_midnight - secs_in_day*j-stat_pos_div*secs_in_day;
+			time_t end_time=last_midnight - secs_in_day*(j-1)-stat_pos_div*secs_in_day;
+			time_t dur=get_duration_in_range(a_log, temp_str,start_time,end_time);
+			for(int k=0;k<5;k++){
+				int y=start_row-(int)(dur/60/20);
+				while(y!=start_row){
+					mvprintw(y,col+j+k," ");
+					y++;
+				}
+				if(k==4)
+					col+=k;
+			}
+			//mvprintw(start_row-(int)(dur/incr))+1,col+j,"%d",dur/60);
+			if((col+j )>max_col)
+				break;
+		}
+		attroff(COLOR_PAIR(color));
+		row++;
+	//}
 }
 
