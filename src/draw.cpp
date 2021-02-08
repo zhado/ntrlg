@@ -410,6 +410,33 @@ void draw_error(char* msg){
 	erase();
 }
 
+bool draw_yn_prompt(char* msg){
+	int max_row,max_col;
+	getmaxyx(stdscr,max_row,max_col);
+
+	size_t msg_len=strlen(msg);
+	for(int i=max_col/2-msg_len-1;i<=max_col/2+msg_len;i++){
+		mvprintw(max_row/2-1, i, "*");
+	}
+
+	mvprintw(max_row/2, max_col/2-msg_len/2, msg);
+
+	for(int i=max_col/2-msg_len-1;i<=max_col/2+msg_len;i++){
+		mvprintw(max_row/2+1, i, "*");
+	}
+
+	refresh();
+	int chr=0;
+
+	while(chr != 'y' && chr != 'n' && chr != 'Y' && chr != 'N'){
+		chr=getch();
+	}
+	bool are_you_sure_result = (chr == 'y' || chr == 'Y') ? 1 : 0;
+	erase();
+
+	return are_you_sure_result;
+}
+
 void dr_box(int row, int col, int width, int height){
 	int max_row,max_col;
 	getmaxyx(stdscr,max_row,max_col);

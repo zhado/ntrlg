@@ -1,7 +1,7 @@
 #!/bin/sh
 cd $(dirname $0)
 links='-lncurses -lstdc++ -pthread'
-flags="-Wno-write-strings"
+flags="-Wno-write-strings -fno-omit-frame-pointer"
 
 if [ "$1" = "buildrun" ]; then
 	gcc ./src/main.cpp $links $flags -o out && ./out $2

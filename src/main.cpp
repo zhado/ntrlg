@@ -8,6 +8,10 @@
 #include <math.h>
 #include <string.h>
 
+#include <sys/stat.h>
+#include <unistd.h>
+#include <fcntl.h> 
+
 #include "trlg_common.h"
 #include "logs.h"
 #include "draw.cpp"
@@ -172,6 +176,13 @@ server_conf* load_serv_conf(){
 	return conf;
 }
 
+time_t get_file_modified_time(char* name){
+	struct stat buffer;
+	int fd=open(name,O_RDWR);
+	fstat(fd, &buffer);
+	return buffer.st_mtim.tv_sec;
+}
+
 int main(int argc,char** argv){
 	int cell_minutes=20;
 	time_t cursor_pos_tm=(unsigned long)time(0);
@@ -232,6 +243,7 @@ int main(int argc,char** argv){
 	log_edit_buffer buffr;
 
 	uint32_t last_hash=hash(&app);
+	time_t last_save_time=0;
 	bool week_view_hide_text=false;
 	bool are_you_sure_prompt=false;
 	bool fude_toggle=true;
@@ -265,8 +277,15 @@ int main(int argc,char** argv){
 					chr=0;
 				}break;
 				case 's':{
+					if(last_save_time !=get_file_modified_time(database_file) && last_save_time!=0){
+						if (!draw_yn_prompt("file has changed are you sure you want to overwrite? (y/n)"))
+							break;
+					}
+
 					mvprintw(max_row-3,max_col-sizeof("saved log")+1,"saved log");
 					save_log(&app, database_file);
+					last_save_time=(unsigned long)time(0);
+					last_save_time=get_file_modified_time(database_file);
 				}break;
 				case 'a':{
 					buffr=init_log_edit(&app.logs, false,0,0);
@@ -534,7 +553,6 @@ int main(int argc,char** argv){
 		if(state != week_view && state != stat_view){
 			print_logs(&app.logs,-5,0,cell_minutes,cursor_pos_tm,&stat_conf,state,entry_under_cursor);
 			draw_durations(23, 90, &app.logs, &stat_conf,stat_pos);
-			grahp(40, 90, &app.logs, &stat_conf, stat_pos);
 		}
 
 		if(state==view){
@@ -588,6 +606,7 @@ int main(int argc,char** argv){
 		mvprintw(max_row-1,max_col-6,"%d=%chr",chr,chr);
 
 		uint32_t new_hash=hash(&app);
+
 		if(last_hash!=new_hash){
 			last_hash=new_hash;
 			UNSAVED_CHANGES=true;
@@ -613,6 +632,7 @@ int main(int argc,char** argv){
 			are_you_sure_result = (chr == 'y' || chr == 'Y') ? 1 : 0;
 		} else if(chr==ERR){
 			chr=0;
+			
 		}
 	}
 
