@@ -4,7 +4,11 @@ links='-lncurses -lstdc++ -pthread'
 flags="-Wno-write-strings -fno-omit-frame-pointer"
 
 if [ "$1" = "buildrun" ]; then
-	gcc ./src/main.cpp $links $flags -o out && ./out $2
+	if [ "$(echo $ANDROID_DATA)" != "" ]; then
+		echo "on android"
+		sed -i '/my_port 1901/a ip 192.168.50.103' serv_conf 
+	fi
+		gcc ./src/main.cpp $links $flags -o out && ./out $2
 elif [ "$1" = "buildrunpipe" ]; then
 	gcc ./src/main.cpp $links $flags -o out && ./out $2 2> ./errpipe
 elif [ "$1" = "debrun" ]; then
