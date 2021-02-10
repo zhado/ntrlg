@@ -13,12 +13,13 @@
 #include <fcntl.h> 
 
 #include "trlg_common.h"
+#include "trlg_string.cpp"
+#include "trlg-unicode.cpp"
 #include "logs.h"
 #include "draw.cpp"
 #include "log_edit.cpp"
 #include "autocomp.cpp"
 #include "stats.cpp"
-#include "trlg_string.cpp"
 #include "net.cpp"
 #include "gui_logic.cpp"
 #include "logs.cpp"
@@ -182,7 +183,6 @@ time_t get_file_modified_time(char* name){
 	fstat(fd, &buffer);
 	return buffer.st_mtim.tv_sec;
 }
-
 int main(int argc,char** argv){
 	int cell_minutes=20;
 	time_t cursor_pos_tm=(unsigned long)time(0);
@@ -236,7 +236,8 @@ int main(int argc,char** argv){
 	remove_spaces(app.stat_input);
 	stat_conf=generate_stat_colors(app.stat_input);
 	
-	int chr=0;
+	wint_t wchr=0;
+	int switch_chr=0;
 
 	log_entry* entry_under_cursor=0;
 	log_entry* entry_to_resize=0;
@@ -261,20 +262,20 @@ int main(int argc,char** argv){
 		erase();
 		getmaxyx(stdscr,max_row,max_col);
 
-		if (chr == 27 && state!=pause_mode){
+		if (wchr == 27 && state!=pause_mode){
 			mvprintw(max_row-3,max_col-11,"esc pressed");
 			entry_to_resize=0;
 			state=view;
 		}
+		switch_chr=convert_wide_char(wchr);
 
 		if(state==view || state==week_view){
 
 // view keyboard switch --------------------
-			switch(chr){
+			switch(switch_chr){
 				case 'l':{
 					buffr=init_log_edit(&app.logs, false,0,0);
 					state=logging;
-					chr=0;
 				}break;
 				case 's':{
 					if(last_save_time !=get_file_modified_time(database_file) && last_save_time!=0){
@@ -290,12 +291,10 @@ int main(int argc,char** argv){
 				case 'a':{
 					buffr=init_log_edit(&app.logs, false,0,0);
 					state=append_log;
-					chr=0;
 				}break;
 				case 't':{
 					buffr=init_log_edit(&app.logs, true,0,app.stat_input);
 					stat_conf=generate_stat_colors(app.stat_input);
-					chr=0;
 					state=stat_editing;
 				}break;
 				case 'd':{
@@ -452,7 +451,7 @@ int main(int argc,char** argv){
 				}break;
 			}
 		} else if(state==stat_view){
-			switch(chr){
+			switch(switch_chr){
 				case 'v':{
 					state=view;
 				}break;
@@ -477,27 +476,27 @@ int main(int argc,char** argv){
 			}
 
 		} else if(state==logging){
-			int res=log_edit(&buffr,  chr);
+			int res=log_edit(&buffr,  wchr);
 			if(res==0){
 				add_entry(&app.logs, buffr.name, buffr.sub_name,(unsigned long)time(0) , 0);
 				state=view;
 			}
 		} else if(state==stat_editing){
-			int res=log_edit(&buffr,   chr);
+			int res=log_edit(&buffr,   wchr);
 			strcpy(app.stat_input, buffr.sub_name);
 			stat_conf=generate_stat_colors(app.stat_input);
 			if(res==0){
 				state=view;
 			}
 		} else if(state==append_log){
-			int res=log_edit(&buffr, chr);
+			int res=log_edit(&buffr, wchr);
 			if(res==0){
 				add_entry(&app.logs, buffr.name, buffr.sub_name,app.logs.entries[app.logs.index-1].end_time , 0);
 				state=view;
 			}
 
 		} else if(state==pause_mode){
-			switch(chr){
+			switch(switch_chr){
 				case 'p':{
 					char* last_entry_name= app.logs.entries[app.logs.index-1].name;
 					char* last_entry_subname= app.logs.entries[app.logs.index-1].sub_name;
@@ -505,7 +504,7 @@ int main(int argc,char** argv){
 					state=view;
 				}break;
 				default:{
-					if(are_you_sure_prompt==false && chr != 0)
+					if(are_you_sure_prompt==false && wchr != 0)
 						are_you_sure_prompt=true;
 				}break;
 				
@@ -519,10 +518,10 @@ int main(int argc,char** argv){
 				are_you_sure_result=-1;
 			}
 		} else if(state==entry_start_resize || state==entry_body_resize || state==entry_end_resize){
-			resize_logic(&cursor_pos_tm, cell_minutes,  entry_to_resize,&app.logs, chr, &state);
+			resize_logic(&cursor_pos_tm, cell_minutes,  entry_to_resize,&app.logs, wchr, &state);
 
 		} else if(state==server_mode){
-			if(chr !=0){
+			if(wchr !=0){
 				state=view;
 			}else {
 				if (handle_connections(server_fd,&connection_counter)!=0){
@@ -539,7 +538,7 @@ int main(int argc,char** argv){
 			state=view;
 		} else if(state==log_editing){
 
-			int res=log_edit(&buffr, chr);
+			int res=log_edit(&buffr, wchr);
 			if(res==0){
 				memcpy(entry_under_cursor->name, buffr.name, MAX_NAME_SIZE);
 				memcpy(entry_under_cursor->sub_name, buffr.sub_name, MAX_NAME_SIZE);
@@ -603,7 +602,7 @@ int main(int argc,char** argv){
 			dr_text_box(0,0,0,0,"are you sure you want to delete (y/n)");
 		}
 		mvprintw(max_row-2,max_col-6,"%d=%d",max_row,max_col);
-		mvprintw(max_row-1,max_col-6,"%d=%chr",chr,chr);
+		mvprintw(max_row-1,max_col-6,"%ld=%lc",wchr,wchr);
 
 		uint32_t new_hash=hash(&app);
 
@@ -624,14 +623,15 @@ int main(int argc,char** argv){
 		mvprintw(max_row-1,max_col-20,"time %f",(end_time.tv_nsec-start_time.tv_nsec)/1000000.0);
 
 		move(buffr.cursor_row,buffr.cursor_col);
-		chr=getch();
+		//wchr=getch();
+		get_wch(&wchr);
 		if(are_you_sure_prompt){
-			while(chr != 'y' && chr != 'n' && chr != 'Y' && chr != 'N' ){
-				chr=getch();
+			while(wchr != 'y' && wchr != 'n' && wchr != 'Y' && wchr != 'N' ){
+				wchr=getch();
 			}
-			are_you_sure_result = (chr == 'y' || chr == 'Y') ? 1 : 0;
-		} else if(chr==ERR){
-			chr=0;
+			are_you_sure_result = (wchr == 'y' || wchr == 'Y') ? 1 : 0;
+		} else if(wchr==ERR){
+			wchr=0;
 			
 		}
 	}
