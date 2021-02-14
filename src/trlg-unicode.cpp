@@ -1,6 +1,6 @@
-#include <wchar.h>
+#include <sys/types.h>
 
-int convert_wide_char(wint_t wchr){
+int convert_wide_char(u_int32_t wchr){
 	switch(wchr){
 		case 4314:{
 			return 'l';

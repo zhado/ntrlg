@@ -7,8 +7,10 @@ if [ "$1" = "buildrun" ]; then
 	if [ "$(echo $ANDROID_DATA)" != "" ]; then
 		echo "on android"
 		sed -i '/my_port 1901/a ip 192.168.50.103' serv_conf 
-	fi
+		gcc ./src/main.cpp $links $flags -D ANDROID -o out && ./out $2
+	else
 		gcc ./src/main.cpp $links $flags -o out && ./out $2
+	fi
 elif [ "$1" = "buildrunpipe" ]; then
 	gcc ./src/main.cpp $links $flags -o out && ./out $2 2> ./errpipe
 elif [ "$1" = "debrun" ]; then

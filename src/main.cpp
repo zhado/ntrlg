@@ -183,6 +183,7 @@ time_t get_file_modified_time(char* name){
 	fstat(fd, &buffer);
 	return buffer.st_mtim.tv_sec;
 }
+
 int main(int argc,char** argv){
 	int cell_minutes=20;
 	time_t cursor_pos_tm=(unsigned long)time(0);
@@ -236,7 +237,7 @@ int main(int argc,char** argv){
 	remove_spaces(app.stat_input);
 	stat_conf=generate_stat_colors(app.stat_input);
 	
-	wint_t wchr=0;
+	u_int32_t wchr=0;
 	int switch_chr=0;
 
 	log_entry* entry_under_cursor=0;
@@ -601,7 +602,7 @@ int main(int argc,char** argv){
 			mvprintw(max_row-1, 0, "delete mode");
 			dr_text_box(0,0,0,0,"are you sure you want to delete (y/n)");
 		}
-		mvprintw(max_row-2,max_col-6,"%d=%d",max_row,max_col);
+		mvprintw(max_row-2,max_col-6,"%d=%d %d",max_row,max_col);
 		mvprintw(max_row-1,max_col-6,"%ld=%lc",wchr,wchr);
 
 		uint32_t new_hash=hash(&app);
@@ -623,8 +624,13 @@ int main(int argc,char** argv){
 		mvprintw(max_row-1,max_col-20,"time %f",(end_time.tv_nsec-start_time.tv_nsec)/1000000.0);
 
 		move(buffr.cursor_row,buffr.cursor_col);
-		//wchr=getch();
+
+#ifdef ANDROID	
+		wchr=getch();
+#else
 		get_wch(&wchr);
+#endif
+
 		if(are_you_sure_prompt){
 			while(wchr != 'y' && wchr != 'n' && wchr != 'Y' && wchr != 'N' ){
 				wchr=getch();
