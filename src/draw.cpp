@@ -193,7 +193,7 @@ void draw_cell(int row, int col,calcCellResult result, int width, statConfig* st
 	if(entry_part==3){
 		int color=0;
 		if(stat_conf!=0)
-			color=get_tag_color_pair(entry_p->sub_name, stat_conf);
+			color=get_tag_color_pair(entry_p->tags, stat_conf);
 		attron(COLOR_PAIR(color));
 		print_str_n_times(row, col, " ", width);
 
@@ -216,7 +216,7 @@ void draw_cell(int row, int col,calcCellResult result, int width, statConfig* st
 		printw(" ");
 		int color=0;
 		if(stat_conf!=0)
-			color=get_tag_color_pair(entry_p->sub_name, stat_conf);
+			color=get_tag_color_pair(entry_p->tags, stat_conf);
 		attron(COLOR_PAIR(color));
 		print_str_n_times(row, col, " ", width);
 		if(!hide_text){
@@ -234,7 +234,7 @@ void draw_cell(int row, int col,calcCellResult result, int width, statConfig* st
 	}else if(entry_part==2){
 		int color=0;
 		if(stat_conf!=0)
-			color=get_tag_color_pair(entry_p->sub_name, stat_conf);
+			color=get_tag_color_pair(entry_p->tags, stat_conf);
 		attron(COLOR_PAIR(color));
 		print_str_n_times(row, col, " ", width);
 		if(color==0)

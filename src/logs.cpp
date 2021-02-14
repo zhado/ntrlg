@@ -6,12 +6,57 @@
 #include "trlg_common.h"
 #include "trlg_string.h"
 
+int get_tag_id(t_log* log_p, char* name){
+	for(int i=0;i<log_p->tg_count;i++){
+		char* tag_str=log_p->tg_enrtries[i].tag;
+		if(strcmp(tag_str, name)==0){
+			return i;
+		}
+	}
+	return -1;
+}
+
+char* get_name_from_id(t_log* log_p, int tag_id){
+	return log_p->tg_enrtries[tag_id].tag;
+}
+
+int add_tag(t_log* log_p, char* name){
+	int index=log_p->tg_count;
+	if(index>=log_p->tg_len)
+		return -1;
+
+	//if(find_tag_id(log_p, name)!=-1)
+		//return 0;
+
+	strncpy(log_p->tg_enrtries[index].tag, name, MAX_NAME_SIZE);
+	log_p->tg_count++;
+	return index;
+}
+
 void end_last_entry(t_log* log_p){
 	log_entry* entry=&log_p->entries[log_p->index-1];
 	if(entry->start_time==0){
 		fprintf(stderr, "entry not started.");
 	}else if(entry->end_time==0){
 		entry->end_time=(unsigned long)time(0);
+	}
+}
+
+void generate_entry_tags(t_log* log_p,log_entry* entry){
+	for(int i=0;;i++){
+		strPart prt=get_nth_strpart(entry->sub_name, ',', i);
+		if(prt.length==0){
+			break;
+		}
+		//TODO: add_tag ma jobia kopirebis gareshe qnas
+		char temp_tag_str[MAX_NAME_SIZE];
+		memcpy(temp_tag_str, prt.start, prt.length);
+		temp_tag_str[prt.length]=0;
+
+		int new_tag_id=get_tag_id(log_p, temp_tag_str);
+		if(new_tag_id==-1)
+			new_tag_id=add_tag(log_p,temp_tag_str);
+		entry->tags[i]=new_tag_id;
 	}
 }
 
@@ -35,6 +80,8 @@ void add_entry(t_log* log_p, char* name, char* sub_name,time_t start_time,time_t
 	remove_spaces(sub_name);
 	remove_commas_from_end(sub_name);
 	strcpy(entry->sub_name, sub_name);
+	generate_entry_tags(log_p, entry);
+
 	log_p->index++;
 }
 

@@ -4,7 +4,7 @@
 #include "trlg_string.h"
 
 struct statColor{
-	strPart part;
+	int tag;
 	int fg;
 	int bg;
 	int pair_id;
@@ -15,5 +15,5 @@ struct statConfig{
 	int count;
 };
 
-int get_tag_color_pair(char* str, statConfig* stat_conf);
+int get_tag_color_pair(int* tags, statConfig* stat_conf);
 #endif

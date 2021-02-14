@@ -60,6 +60,10 @@ int load_log(app_state* app,const char* file_name){
 	app->logs.entries=0;
 	app->stat_input=(char*)calloc(sizeof(char)*MAX_NAME_SIZE,1);
 
+	app->logs.tg_len=1000;
+	app->logs.tg_enrtries=(tgEntry*)calloc(sizeof(tgEntry)*app->logs.tg_len,1);
+	app->logs.tg_count=0;
+
 	char line[400];
 	int line_index=0;
 	while (fgets(line,400,fp)!=0){
@@ -235,7 +239,7 @@ int main(int argc,char** argv){
 
 	statConfig stat_conf;
 	remove_spaces(app.stat_input);
-	stat_conf=generate_stat_colors(app.stat_input);
+	stat_conf=generate_stat_colors(&app.logs,app.stat_input);
 	
 	u_int32_t wchr=0;
 	int switch_chr=0;
@@ -295,7 +299,7 @@ int main(int argc,char** argv){
 				}break;
 				case 't':{
 					buffr=init_log_edit(&app.logs, true,0,app.stat_input);
-					stat_conf=generate_stat_colors(app.stat_input);
+					stat_conf=generate_stat_colors(&app.logs,app.stat_input);
 					state=stat_editing;
 				}break;
 				case 'd':{
@@ -338,7 +342,7 @@ int main(int argc,char** argv){
 				case 'u':{
 					free_app(&app);
 					load_log(&app,database_file);
-					stat_conf=generate_stat_colors(app.stat_input);
+					stat_conf=generate_stat_colors(&app.logs,app.stat_input);
 				}break;
 				case 'q':{
 					running=false;
@@ -352,7 +356,7 @@ int main(int argc,char** argv){
 									"succsefully recieved dtbs from server");
 							free_app(&app);
 							load_log(&app, net_recieved_database);
-							stat_conf=generate_stat_colors(app.stat_input);
+							stat_conf=generate_stat_colors(&app.logs,app.stat_input);
 							if(remove(net_recieved_database)==0){
 								mvprintw(max_row-4,max_col-sizeof("deleted net_recieved_database file"),
 										"deleted net_recieved_database file");
@@ -485,7 +489,7 @@ int main(int argc,char** argv){
 		} else if(state==stat_editing){
 			int res=log_edit(&buffr,   wchr);
 			strcpy(app.stat_input, buffr.sub_name);
-			stat_conf=generate_stat_colors(app.stat_input);
+			stat_conf=generate_stat_colors(&app.logs,app.stat_input);
 			if(res==0){
 				state=view;
 			}

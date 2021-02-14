@@ -35,15 +35,11 @@ int match_score_prt(strPart ptr1, char* str2){
 	return min;
 }
 
-bool tag_has_str(char* str, char* search_str){
-	int score;
+bool entry_has_tag(log_entry* entry,int tag_id){
 	for(int i=0;;i++){
-		strPart prt=get_nth_strpart(str, ',', i);
-		if(prt.length==0){
+		if(entry->tags[i]==0)
 			break;
-		}
-
-		if(match_score_prt(prt,search_str)==0)
+		if(entry->tags[i]==tag_id)
 			return true;
 	}
 	return false;
