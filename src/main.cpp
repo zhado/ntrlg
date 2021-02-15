@@ -614,7 +614,7 @@ int main(int argc,char** argv){
 			mvprintw(max_row-1, 0, "delete mode");
 			dr_text_box(0,0,0,0,"are you sure you want to delete (y/n)");
 		}
-		mvprintw(max_row-2,max_col-6,"%d=%d %d",max_row,max_col);
+		mvprintw(max_row-2,max_col-6,"%d=%d",max_row,max_col);
 		mvprintw(max_row-1,max_col-6,"%ld=%lc",wchr,wchr);
 
 		uint32_t new_hash=hash(&app);
@@ -626,7 +626,7 @@ int main(int argc,char** argv){
 		if(UNSAVED_CHANGES){
 			const char* msg="unsaved changes";
 			attron(COLOR_PAIR(3));
-			mvprintw(max_row-1,max_col/2-strlen(msg)/2,"%s",msg);
+			//mvprintw(max_row-1,max_col/2-strlen(msg)/2,"%s",msg);
 			attroff(COLOR_PAIR(3));
 		}
 
