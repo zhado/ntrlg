@@ -108,13 +108,13 @@ statConfig generate_stat_colors(t_log* log_p,char* str){
 time_t get_duration_in_range(t_log* a_log, int tag_id,time_t start_tm,time_t end_tm){
 	time_t duration=0;
 	for(int i=a_log->index-1;i>=0;i--){
-		log_entry* cur_entry=&a_log->entries[i];
-		if(cur_entry->end_time==0)cur_entry->end_time=(unsigned long)time(0);
-		if(cur_entry->end_time < start_tm)
+		log_entry cur_entry=a_log->entries[i];
+		if(cur_entry.end_time==0)cur_entry.end_time=(unsigned long)time(0);
+		if(cur_entry.end_time < start_tm)
 			break;
-		if(entry_has_tag(cur_entry, tag_id)){
-			time_t temp_start_tm=tm_clamp(start_tm, cur_entry->start_time, cur_entry->end_time);
-			time_t temp_end_tm=tm_clamp(end_tm, cur_entry->start_time, cur_entry->end_time);
+		if(entry_has_tag(&cur_entry, tag_id)){
+			time_t temp_start_tm=tm_clamp(start_tm, cur_entry.start_time, cur_entry.end_time);
+			time_t temp_end_tm=tm_clamp(end_tm, cur_entry.start_time, cur_entry.end_time);
 			duration+=temp_end_tm-temp_start_tm;
 		}
 	}
@@ -158,7 +158,7 @@ void draw_durations(int row, int col,t_log* a_log, statConfig* stat_conf, int st
 			move(row-1,col+tag_w+cell_w*j-stat_pos%cell_w);
 			printw("|");
 			hline(' ',cell_w);
-			print_duration(get_duration_in_range(a_log,tag_id ,start_time,end_time));
+			print_duration(get_duration_in_range(a_log,tag_id,start_time,end_time));
 
 		}
 		move(row-1,col);

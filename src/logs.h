@@ -10,7 +10,6 @@ struct tgEntry{
 
 struct log_entry {
 	char* name;
-	char* sub_name;
 	int tags[20]={0};
 	time_t start_time;
 	time_t end_time;
@@ -31,5 +30,6 @@ bool crash_with_other_entry(t_log* a_log,log_entry* entry);
 int get_log_entry_index(t_log* a_log,log_entry* entry);
 int get_tag_id(t_log* log_p, char* name);
 char* get_name_from_id(t_log* log_p, int tag_id);
+void reconstruct_tags(t_log* log_p,log_entry* entry,char* str);
 
 #endif

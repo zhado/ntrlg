@@ -20,6 +20,17 @@ char* get_name_from_id(t_log* log_p, int tag_id){
 	return log_p->tg_enrtries[tag_id].tag;
 }
 
+void reconstruct_tags(t_log* log_p,log_entry* entry,char* str){
+	for(int i=0;;i++){
+		int cur_id=entry->tags[i];
+		if(cur_id==0)
+			break;
+		if(i!=0)
+			strncat(str,",",MAX_NAME_SIZE);
+		strncat(str,get_name_from_id(log_p,cur_id),MAX_NAME_SIZE);
+	}
+}
+
 int add_tag(t_log* log_p, char* name){
 	int index=log_p->tg_count;
 	if(index>=log_p->tg_len)
@@ -42,18 +53,20 @@ void end_last_entry(t_log* log_p){
 	}
 }
 
-void generate_entry_tags(t_log* log_p,log_entry* entry){
+void generate_entry_tags(t_log* log_p,log_entry* entry,char* sub_name){
 	for(int i=0;;i++){
-		strPart prt=get_nth_strpart(entry->sub_name, ',', i);
+		strPart prt=get_nth_strpart(sub_name, ',', i);
 		if(prt.length==0){
 			break;
 		}
+		
 		//TODO: add_tag ma jobia kopirebis gareshe qnas
 		char temp_tag_str[MAX_NAME_SIZE];
 		memcpy(temp_tag_str, prt.start, prt.length);
 		temp_tag_str[prt.length]=0;
 
 		int new_tag_id=get_tag_id(log_p, temp_tag_str);
+
 		if(new_tag_id==-1)
 			new_tag_id=add_tag(log_p,temp_tag_str);
 		entry->tags[i]=new_tag_id;
@@ -68,7 +81,6 @@ void add_entry(t_log* log_p, char* name, char* sub_name,time_t start_time,time_t
 		log_p->entries=(log_entry*)realloc(log_p->entries, sizeof(log_entry)*(log_p->allocated));
 		for(int i=log_p->allocated-REALLOC_INCREMENT;i<log_p->allocated;i++){
 			log_p->entries[i].name=(char*)calloc(sizeof(char)*MAX_NAME_SIZE,1);
-			log_p->entries[i].sub_name=(char*)calloc(sizeof(char)*MAX_NAME_SIZE,1);
 		}
 	}
 	log_entry* entry=&log_p->entries[log_p->index];
@@ -79,8 +91,7 @@ void add_entry(t_log* log_p, char* name, char* sub_name,time_t start_time,time_t
 	strcpy(entry->name, name);
 	remove_spaces(sub_name);
 	remove_commas_from_end(sub_name);
-	strcpy(entry->sub_name, sub_name);
-	generate_entry_tags(log_p, entry);
+	generate_entry_tags(log_p, entry, sub_name);
 
 	log_p->index++;
 }
@@ -98,7 +109,7 @@ void remove_entry(t_log* log_p,log_entry* entry){
 		log_p->entries[i].start_time=log_p->entries[i+1].start_time;
 		
 		strcpy(log_p->entries[i].name,log_p->entries[i+1].name);
-		strcpy(log_p->entries[i].sub_name,log_p->entries[i+1].sub_name);
+		//strcpy(log_p->entries[i].sub_name,log_p->entries[i+1].sub_name);
 	}
 	log_p->index=log_p->index-1;
 }

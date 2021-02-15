@@ -26,15 +26,16 @@ log_edit_buffer init_log_edit(t_log* a_log, bool only_tag_str, char* name, char*
 	return buffer;
 }
 
-int log_edit(log_edit_buffer* buffer, int chr){
+int log_edit(log_edit_buffer* buffer,t_log* log_p, int chr){
 	int* autocomp_selection=&buffer->tag_autocomp_selection;
 	char* name=buffer->name;
 	char* tag_str=buffer->sub_name;
 	t_log* a_log=buffer->a_log;
 	bool only_tag_str=buffer->only_tag_str;
+	int selected_id=buffer->sni[*autocomp_selection].tag_id;
 
-	char* requested_str=buffer->sni[*autocomp_selection].offset;
-	int requested_str_size=buffer->sni[*autocomp_selection].size;
+	char* requested_str=log_p->tg_enrtries[selected_id].tag;
+	int requested_str_size=strlen(log_p->tg_enrtries[selected_id].tag);
 
 
 	if(chr > 31 && chr <=126){
@@ -107,7 +108,7 @@ int log_edit(log_edit_buffer* buffer, int chr){
 	return 1;
 }
 
-void draw_log_edit(log_edit_buffer* buffer,int row,int col){
+void draw_log_edit(log_edit_buffer* buffer,t_log* log_p,int row,int col){
 	int* autocomp_selection=&buffer->tag_autocomp_selection;
 	char* name=buffer->name;
 	char* tag_str=buffer->sub_name;
@@ -116,7 +117,7 @@ void draw_log_edit(log_edit_buffer* buffer,int row,int col){
 
 	if(last_char(name)==10 || only_tag_str){
 		match_names(a_log, tag_str,buffer->sni,&buffer->matched_count);
-		draw_autocomp(row-1,col+5,buffer->sni,*autocomp_selection,buffer->matched_count);
+		draw_autocomp(row-1,col+5,log_p,buffer->sni,*autocomp_selection,buffer->matched_count);
 	}
 	
 	if(!only_tag_str){

@@ -62,7 +62,7 @@ int load_log(app_state* app,const char* file_name){
 
 	app->logs.tg_len=1000;
 	app->logs.tg_enrtries=(tgEntry*)calloc(sizeof(tgEntry)*app->logs.tg_len,1);
-	app->logs.tg_count=0;
+	app->logs.tg_count=1;
 
 	char line[400];
 	int line_index=0;
@@ -123,7 +123,9 @@ void save_log(app_state* app, const char* file_name){
 	fprintf(fp, "%s\n",app->stat_input);
 	for(int i=0;i<log_p->index;i++){
 		log_entry* entry=&log_p->entries[i];
-		fprintf(fp, "%lu %lu \"%s\" \"%s\"\n",entry->start_time,entry->end_time,entry->name,entry->sub_name);
+		char temp_tag_str[MAX_NAME_SIZE]={0};
+		reconstruct_tags(&app->logs, &app->logs.entries[i],temp_tag_str);
+		fprintf(fp, "%lu %lu \"%s\" \"%s\"\n",entry->start_time,entry->end_time,entry->name,temp_tag_str);
 	}
 
 	fclose(fp);
@@ -134,7 +136,6 @@ void free_app(app_state* app){
 	for (int i=0;i<log_p->allocated;i++){
 		log_entry* entry=&log_p->entries[i];
 		free(entry->name);
-		free(entry->sub_name);
 	}
 
 	free(app->stat_input);
@@ -152,8 +153,11 @@ uint32_t hash(app_state* app){
 		hash+=log_p->entries[i].start_time;
 		for(int j=0;j<strlen(log_p->entries[i].name);j++)
 			hash+=log_p->entries[i].name[j];
-		for(int j=0;j<strlen(log_p->entries[i].sub_name);j++)
-			hash+=log_p->entries[i].sub_name[j];
+		for(int j=0;;j++){
+			if(log_p->entries[i].tags[j]==0)
+				break;
+			hash+=log_p->entries[i].tags[j];
+		}
 	}
 	for(int i=0;i<strlen(app->stat_input);i++)
 		hash+=app->stat_input[i];
@@ -423,7 +427,9 @@ int main(int argc,char** argv){
 				case 'c':{
 					entry_under_cursor=entry_under_cursor_fun(&app.logs, cell_minutes, cursor_pos_tm,0);
 					if(entry_under_cursor!=0){
-						buffr=init_log_edit(&app.logs, false,entry_under_cursor->name,entry_under_cursor->sub_name);
+						char temp_tag_str[MAX_NAME_SIZE]={0};
+						reconstruct_tags(&app.logs, entry_under_cursor,temp_tag_str);
+						buffr=init_log_edit(&app.logs, false,entry_under_cursor->name,temp_tag_str);
 						state=log_editing;
 					}
 				}break;
@@ -481,20 +487,20 @@ int main(int argc,char** argv){
 			}
 
 		} else if(state==logging){
-			int res=log_edit(&buffr,  wchr);
+			int res=log_edit(&buffr,&app.logs,  wchr);
 			if(res==0){
 				add_entry(&app.logs, buffr.name, buffr.sub_name,(unsigned long)time(0) , 0);
 				state=view;
 			}
 		} else if(state==stat_editing){
-			int res=log_edit(&buffr,   wchr);
+			int res=log_edit(&buffr,&app.logs,   wchr);
 			strcpy(app.stat_input, buffr.sub_name);
 			stat_conf=generate_stat_colors(&app.logs,app.stat_input);
 			if(res==0){
 				state=view;
 			}
 		} else if(state==append_log){
-			int res=log_edit(&buffr, wchr);
+			int res=log_edit(&buffr,&app.logs, wchr);
 			if(res==0){
 				add_entry(&app.logs, buffr.name, buffr.sub_name,app.logs.entries[app.logs.index-1].end_time , 0);
 				state=view;
@@ -504,8 +510,9 @@ int main(int argc,char** argv){
 			switch(switch_chr){
 				case 'p':{
 					char* last_entry_name= app.logs.entries[app.logs.index-1].name;
-					char* last_entry_subname= app.logs.entries[app.logs.index-1].sub_name;
-					add_entry(&app.logs,last_entry_name,last_entry_subname, (unsigned long)time(0), 0);
+					char temp_tag_str[MAX_NAME_SIZE]={0};
+					reconstruct_tags(&app.logs, &app.logs.entries[app.logs.index-1],temp_tag_str);
+					add_entry(&app.logs,last_entry_name,temp_tag_str, (unsigned long)time(0), 0);
 					state=view;
 				}break;
 				default:{
@@ -543,10 +550,10 @@ int main(int argc,char** argv){
 			state=view;
 		} else if(state==log_editing){
 
-			int res=log_edit(&buffr, wchr);
+			int res=log_edit(&buffr,&app.logs, wchr);
 			if(res==0){
 				memcpy(entry_under_cursor->name, buffr.name, MAX_NAME_SIZE);
-				memcpy(entry_under_cursor->sub_name, buffr.sub_name, MAX_NAME_SIZE);
+				generate_entry_tags(&app.logs, entry_under_cursor, buffr.sub_name);
 				state=view;
 				entry_under_cursor=0;
 			}
@@ -578,19 +585,19 @@ int main(int argc,char** argv){
 			}
 		}else if(state==logging){
 			curs_set(1);
-			draw_log_edit(&buffr, max_row-3, 0);
+			draw_log_edit(&buffr,&app.logs, max_row-3, 0);
 			mvprintw(max_row-1, 0, "logging");
 		}else if(state==stat_editing){
 			curs_set(1);
 			mvprintw(max_row-1, 0, "stat editing");
-			draw_log_edit(&buffr, 20, 90);
+			draw_log_edit(&buffr, &app.logs,20, 90);
 		}else if(state==log_editing){
 			curs_set(1);
 			mvprintw(max_row-1, 0, "log editing");
-			draw_log_edit(&buffr, max_row-3, 0);
+			draw_log_edit(&buffr, &app.logs,max_row-3, 0);
 		}else if(state==append_log){
 			curs_set(1);
-			draw_log_edit(&buffr, max_row-3, 0);
+			draw_log_edit(&buffr, &app.logs,max_row-3, 0);
 			mvprintw(max_row-1, 0, "append logging");
 		}else if(state==entry_start_resize){
 			mvprintw(max_row-1, 0, "entry start resize mode");
