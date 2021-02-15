@@ -1,5 +1,6 @@
 #include <ncurses.h>
 #include <string.h>
+
 #include "trlg_common.h"
 #include "logs.h"
 #include "log_edit.h"

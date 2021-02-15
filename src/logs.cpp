@@ -27,7 +27,8 @@ void reconstruct_tags(t_log* log_p,log_entry* entry,char* str){
 			break;
 		if(i!=0)
 			strncat(str,",",MAX_NAME_SIZE);
-		strncat(str,get_name_from_id(log_p,cur_id),MAX_NAME_SIZE);
+		char* name=get_name_from_id(log_p,cur_id);
+		strncat(str,name,MAX_NAME_SIZE);
 	}
 }
 
@@ -91,6 +92,9 @@ void add_entry(t_log* log_p, char* name, char* sub_name,time_t start_time,time_t
 	strcpy(entry->name, name);
 	remove_spaces(sub_name);
 	remove_commas_from_end(sub_name);
+	for(int i=0;i<ENTRY_TAG_SIZE;i++){
+		entry->tags[i]=0;
+	}
 	generate_entry_tags(log_p, entry, sub_name);
 
 	log_p->index++;

@@ -136,6 +136,7 @@ void free_app(app_state* app){
 	for (int i=0;i<log_p->allocated;i++){
 		log_entry* entry=&log_p->entries[i];
 		free(entry->name);
+		//memset(entry->tags,0,sizeof(int)*ENTRY_TAG_SIZE);
 	}
 
 	free(app->stat_input);
