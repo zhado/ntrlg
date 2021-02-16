@@ -2,6 +2,7 @@
 #define STATS_H
 
 #include "trlg_string.h"
+#include "trlg_common.h"
 
 struct statColor{
 	int tag;
@@ -11,7 +12,8 @@ struct statColor{
 };
 
 struct statConfig{
-	statColor stat_colors[50];
+	statColor stat_colors[MAX_STAT_COUNT];
+	int stat_selection;
 	int count;
 };
 

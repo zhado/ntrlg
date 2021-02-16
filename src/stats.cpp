@@ -9,7 +9,6 @@
 #include "logs.h"
 #include "stats.h"
 
-
 time_t tm_clamp(time_t in, time_t min, time_t max){
 	if(in > min && in < max){
 		return in;
@@ -37,70 +36,90 @@ int get_tag_color_pair(int* tags, statConfig* stat_conf){
 	return 0;
 }
 
-statColor get_statcolor(t_log* log_p,strPart strprt){
+void reconstruct_color(statColor color, char* str){
+	short bg=color.bg;
+	short fg=color.fg;
+	if(bg!=-1){
+		strncat(str,"(",MAX_NAME_SIZE);
+		sprintf(str+strlen(str),"%d",bg);
+		if(fg!=-1){
+			strncat(str,",",MAX_NAME_SIZE);
+			sprintf(str+strlen(str),"%d",fg);
+		}
+		strncat(str,")",MAX_NAME_SIZE);
+	}
+}
+
+void add_statcolor(statConfig* stat_conf,t_log* log_p, strPart prt, int index){
+
+	if(prt.length==-1){
+		prt.length=strlen(prt.start);
+	}
+
 	statColor col={0,-1,-1,-1};
 	int first_p=-1;
 	int sec_p=-1;
-	char* str=strprt.start;
+	char* str=prt.start;
 
-	for(int i=0;i<strprt.length;i++){
+	int count=stat_conf->count;
+
+	for(int i=0;i<prt.length;i++){
 		if(str[i]=='(')
 			first_p=i;
 		else if(str[i]==')')
 			sec_p=i;
+
+		if(str[i]==',' && i < prt.length){
+			prt.length=i;
+		}
 	}
 
-
-	char* start=str;
 	int len=0;
 	if(first_p!=-1)
 		len=first_p;
 	else
-		len=strprt.length;
-	
-	//TODO: add_tag ma jobia kopirebis gareshe qnas
-	char temp_tag_str[MAX_NAME_SIZE];
-	memcpy(temp_tag_str,str,len);
-	temp_tag_str[len]=0;
-	col.tag=get_tag_id(log_p, temp_tag_str);
+		len=prt.length;
 
-	if(first_p ==-1 || sec_p ==-1){
-		return col;
+	col.tag=get_tag_id(log_p, (strPart){str,len});
+	if (col.tag==-1 && index != -1) return;
+	
+	if(index == -1)
+		for(int i=0;i<stat_conf->count;i++){
+			if(stat_conf->stat_colors[i].tag==col.tag)
+				return;
+		}
+
+	if(first_p !=-1 && sec_p !=-1){
+		sscanf(str+first_p+1,"%d %d",&col.bg,&col.fg);
+		init_pair(count+10,col.fg ,col.bg);
+		col.pair_id=count+10;
+	}else{
+		col.pair_id=0;
 	}
 
-	sscanf(str+first_p+1,"%d %d",&col.bg,&col.fg);
-	//printf("%d %d\n",col.bg,col.fg);
-	return col;
+	if(index==-1){
+		stat_conf->stat_colors[count]=col;
+		stat_conf->count++;
+	}else{
+		stat_conf->stat_colors[index]=col;
+	}
 }
 
 statConfig generate_stat_colors(t_log* log_p,char* str){
 	statConfig conf;
 	conf.count=0;
+	conf.stat_selection=0;
 
 	if(str[0]==0)
 		return conf;
-	char* nxt_comma;
-	char* prv_comma=str;
 
-	int count=0;
 	for(int i=0;;i++){
 		strPart prt=get_nth_strpart(str, ',', i);
 		if(prt.length==0){
 			break;
 		}
-		conf.stat_colors[count]=get_statcolor(log_p,prt);
-
-		short fg=conf.stat_colors[count].fg;
-		short bg=conf.stat_colors[count].bg;
-		init_pair(count+10,fg ,bg);
-		if(fg==-1 && bg==-1)
-			conf.stat_colors[count].pair_id=0;
-		else
-			conf.stat_colors[count].pair_id=count+10;
-		count++;
+		add_statcolor(&conf, log_p, prt,-1);
 	}
-
-	conf.count=count;
 
 	return conf;
 }
@@ -136,7 +155,7 @@ void draw_durations(int row, int col,t_log* a_log, statConfig* stat_conf, int st
 	int start_row=row;
 	for(int i=0;i<stat_conf->count;i++){
 		int tag_id=stat_conf->stat_colors[i].tag;
-		char* tag_str=get_name_from_id(a_log, tag_id);
+		char* tag_str=get_str_from_id(a_log, tag_id);
 
 		int color=0;
 		if(stat_conf!=0)
@@ -167,6 +186,9 @@ void draw_durations(int row, int col,t_log* a_log, statConfig* stat_conf, int st
 			printw("%s: ",tag_str);
 		}
 		attroff(COLOR_PAIR(color));
+		if(i==stat_conf->stat_selection){
+			mvprintw(row-1,col+cell_w*(day_count+1)+tag_w,"<---");
+		}
 		row++;
 	}
 }

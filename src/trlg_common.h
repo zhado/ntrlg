@@ -2,6 +2,8 @@
 #define MAIN_H
 
 #define MAX_NAME_SIZE 100
+#define MAX_STAT_COUNT 70
+#define MAX_SAT_CONF_SIZE 500
 #define COL_CUTOFF 100
 #define AUTOCOM_WIN_MAX_SIZE 20
 #define REALLOC_INCREMENT 100
@@ -14,8 +16,9 @@ enum window_state {
 	view,
 	week_view,
 	stat_view,
-	logging,
 	stat_editing,
+	stat_add,
+	logging,
 	append_log, 
 	log_editing,
 	entry_start_resize,

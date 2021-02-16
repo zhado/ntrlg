@@ -3,6 +3,7 @@
 
 #include <time.h>
 #include "trlg_common.h"
+#include "trlg_string.h"
 
 struct tgEntry{
 	char tag[MAX_NAME_SIZE] = {0};
@@ -28,8 +29,8 @@ struct t_log {
 
 bool crash_with_other_entry(t_log* a_log,log_entry* entry);
 int get_log_entry_index(t_log* a_log,log_entry* entry);
-int get_tag_id(t_log* log_p, char* name);
-char* get_name_from_id(t_log* log_p, int tag_id);
+int get_tag_id(t_log* log_p,strPart prt);
+char* get_str_from_id(t_log* log_p, int tag_id);
 void reconstruct_tags(t_log* log_p,log_entry* entry,char* str);
 
 #endif

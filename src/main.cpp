@@ -27,6 +27,7 @@
 struct app_state{
 	t_log logs;
 	char* stat_input;
+	statConfig stat_conf;
 };
 
 struct server_conf{
@@ -65,6 +66,7 @@ int load_log(app_state* app,const char* file_name){
 	app->logs.tg_count=1;
 
 	char line[400];
+	char stat_conf_bufr[MAX_SAT_CONF_SIZE];
 	int line_index=0;
 	while (fgets(line,400,fp)!=0){
 		int quotes[4]={0,0,0,0},index=0;
@@ -100,15 +102,16 @@ int load_log(app_state* app,const char* file_name){
 				fprintf(stderr, "database file error\n");
 				return 1;
 			}
-			memcpy(app->stat_input, line,strlen(line)-1);
-			app->stat_input[strlen(line)]=0;
+			memcpy(stat_conf_bufr, line, 500);
 		}
 		line_index++;
 	}
-	if(app->stat_input[0]==0)
-		app->logs.index=line_index;
-	else
-		app->logs.index=line_index-1;
+
+	app->stat_conf=generate_stat_colors(&app->logs,stat_conf_bufr);
+	//if(app->stat_input[0]==0)
+		//app->logs.index=line_index;
+	//else
+		//app->logs.index=line_index-1;
 
 	fclose(fp);
 	UNSAVED_CHANGES=false;
@@ -120,7 +123,17 @@ void save_log(app_state* app, const char* file_name){
 	t_log* log_p=&app->logs;
 	FILE* fp=fopen(file_name,"w");
 
-	fprintf(fp, "%s\n",app->stat_input);
+	char stat_conf_bufr[MAX_SAT_CONF_SIZE]="";
+
+	for(int i=0; i < app->stat_conf.count;i++){
+		char* tag_name=get_str_from_id(&app->logs, app->stat_conf.stat_colors[i].tag);
+		strncat(stat_conf_bufr,tag_name,MAX_NAME_SIZE);
+		reconstruct_color(app->stat_conf.stat_colors[i], stat_conf_bufr);
+		if(i != app->stat_conf.count-1)
+			strncat(stat_conf_bufr,",",MAX_NAME_SIZE);
+	}
+	fprintf(fp, "%s\n",stat_conf_bufr);
+
 	for(int i=0;i<log_p->index;i++){
 		log_entry* entry=&log_p->entries[i];
 		char temp_tag_str[MAX_NAME_SIZE]={0};
@@ -203,6 +216,22 @@ int main(int argc,char** argv){
 	int max_row=0,max_col=0;
 	window_state state=view;
 	
+	setlocale(LC_CTYPE, "");
+	initscr();
+	nocbreak();
+	keypad(stdscr, TRUE);
+	noecho();
+	raw();
+	set_escdelay(20);
+	halfdelay(20);
+
+	start_color();
+	use_default_colors();
+	init_pair(1, COLOR_GREEN, -1);
+	init_pair(2, -1, COLOR_BLACK);
+	init_pair(3, -1, COLOR_MAGENTA);
+	init_pair(4, -1, -1);
+
 	app_state app;
 	app.logs.allocated=0;
 	app.logs.index=0;
@@ -226,25 +255,8 @@ int main(int argc,char** argv){
 		//printf("%s %d\n",prt.start,prt.length);
 	//}
 
-	setlocale(LC_CTYPE, "");
-	initscr();
-	nocbreak();
-	keypad(stdscr, TRUE);
-	noecho();
-	raw();
-	set_escdelay(20);
-	halfdelay(20);
 
-	start_color();
-	use_default_colors();
-	init_pair(1, COLOR_GREEN, -1);
-	init_pair(2, -1, COLOR_BLACK);
-	init_pair(3, -1, COLOR_MAGENTA);
-	init_pair(4, -1, -1);
-
-	statConfig stat_conf;
 	remove_spaces(app.stat_input);
-	stat_conf=generate_stat_colors(&app.logs,app.stat_input);
 	
 	u_int32_t wchr=0;
 	int switch_chr=0;
@@ -264,6 +276,7 @@ int main(int argc,char** argv){
 	timespec start_time;
 	timespec end_time;
 	int stat_pos=1;
+	int stat_selection=0;
 
 
 	while(running){
@@ -301,11 +314,6 @@ int main(int argc,char** argv){
 				case 'a':{
 					buffr=init_log_edit(&app.logs, false,0,0);
 					state=append_log;
-				}break;
-				case 't':{
-					buffr=init_log_edit(&app.logs, true,0,app.stat_input);
-					stat_conf=generate_stat_colors(&app.logs,app.stat_input);
-					state=stat_editing;
 				}break;
 				case 'd':{
 					int entry_part=0;
@@ -347,7 +355,6 @@ int main(int argc,char** argv){
 				case 'u':{
 					free_app(&app);
 					load_log(&app,database_file);
-					stat_conf=generate_stat_colors(&app.logs,app.stat_input);
 				}break;
 				case 'q':{
 					running=false;
@@ -361,7 +368,6 @@ int main(int argc,char** argv){
 									"succsefully recieved dtbs from server");
 							free_app(&app);
 							load_log(&app, net_recieved_database);
-							stat_conf=generate_stat_colors(&app.logs,app.stat_input);
 							if(remove(net_recieved_database)==0){
 								mvprintw(max_row-4,max_col-sizeof("deleted net_recieved_database file"),
 										"deleted net_recieved_database file");
@@ -462,6 +468,7 @@ int main(int argc,char** argv){
 					week_view_hide_text=false;
 				}break;
 			}
+
 		} else if(state==stat_view){
 			switch(switch_chr){
 				case 'v':{
@@ -469,6 +476,29 @@ int main(int argc,char** argv){
 				}break;
 				case 'w':{
 					state=week_view;
+				}break;
+				case 's':{
+					if(last_save_time !=get_file_modified_time(database_file) && last_save_time!=0){
+						if (!draw_yn_prompt("file has changed are you sure you want to overwrite? (y/n)"))
+							break;
+					}
+
+					mvprintw(max_row-3,max_col-sizeof("saved log")+1,"saved log");
+					save_log(&app, database_file);
+					last_save_time=(unsigned long)time(0);
+					last_save_time=get_file_modified_time(database_file);
+				}break;
+				case 'c':{
+					char* selected_tag=get_str_from_id(&app.logs, app.stat_conf.stat_colors[app.stat_conf.stat_selection].tag);
+					strcpy(app.stat_input, selected_tag);
+					reconstruct_color(app.stat_conf.stat_colors[app.stat_conf.stat_selection], app.stat_input);
+					buffr=init_log_edit(&app.logs, true,0,app.stat_input);
+					state=stat_editing;
+				}break;
+				case 'a':{
+					memset(app.stat_input, 0, MAX_NAME_SIZE);
+					buffr=init_log_edit(&app.logs, true,0,app.stat_input);
+					state=stat_add;
 				}break;
 				case KEY_LEFT:{
 					if(stat_pos>1)
@@ -478,8 +508,12 @@ int main(int argc,char** argv){
 					stat_pos=stat_pos+2;
 				}break;
 				case KEY_UP:{
+					if(app.stat_conf.stat_selection>0)
+						app.stat_conf.stat_selection--;
 				}break;
 				case KEY_DOWN:{
+					if(app.stat_conf.stat_selection<app.stat_conf.count-1)
+						app.stat_conf.stat_selection++;
 				}break;
 				case 'q':{
 					running=false;
@@ -496,9 +530,16 @@ int main(int argc,char** argv){
 		} else if(state==stat_editing){
 			int res=log_edit(&buffr,&app.logs,   wchr);
 			strcpy(app.stat_input, buffr.sub_name);
-			stat_conf=generate_stat_colors(&app.logs,app.stat_input);
+			add_statcolor(&app.stat_conf, &app.logs, (strPart){buffr.sub_name,-1},app.stat_conf.stat_selection);
 			if(res==0){
-				state=view;
+				state=stat_view;
+			}
+		} else if(state==stat_add){
+			int res=log_edit(&buffr,&app.logs,   wchr);
+			strcpy(app.stat_input, buffr.sub_name);
+			if(res==0){
+				add_statcolor(&app.stat_conf, &app.logs, (strPart){buffr.sub_name,-1},-1);
+				state=stat_view;
 			}
 		} else if(state==append_log){
 			int res=log_edit(&buffr,&app.logs, wchr);
@@ -562,9 +603,9 @@ int main(int argc,char** argv){
 
 //drawing happens here --------------------
 		print_str_n_times(max_row-1, 0,"-", max_col);
-		if(state != week_view && state != stat_view){
-			print_logs(&app.logs,-5,0,cell_minutes,cursor_pos_tm,&stat_conf,state,entry_under_cursor);
-			draw_durations(23, 90, &app.logs, &stat_conf,stat_pos);
+		if(state != week_view && state != stat_view && state != stat_editing && state != stat_add){
+			print_logs(&app.logs,-5,0,cell_minutes,cursor_pos_tm,&app.stat_conf,state,entry_under_cursor);
+			draw_durations(23, 90, &app.logs, &app.stat_conf,stat_pos);
 		}
 
 		if(state==view){
@@ -572,13 +613,13 @@ int main(int argc,char** argv){
 			curs_set(0);
 			mvprintw(max_row-1, 0, "view mode, scale %d minutes",cell_minutes);
 		}else if(state==week_view){
-			print_weeks(&app.logs, cell_minutes, cursor_pos_tm,&stat_conf,week_view_width,week_view_hide_text,fude_toggle);
+			print_weeks(&app.logs, cell_minutes, cursor_pos_tm,&app.stat_conf,week_view_width,week_view_hide_text,fude_toggle);
 			curs_set(0);
 			mvprintw(max_row-1, 0, "week view mode, vert_scale %d minutes, horz target scale = %d char",cell_minutes,week_view_width);
 		}else if(state==stat_view){
-			mvprintw(max_row-1, 0, "stats mode");
-			draw_durations(2,0, &app.logs, &stat_conf,stat_pos);
-			grahp(40, 0, &app.logs, &stat_conf, stat_pos);
+			curs_set(0);
+			mvprintw(max_row-1, 0, "stats mode stat_selection %d",app.stat_conf.stat_selection);
+			draw_durations(2,0, &app.logs, &app.stat_conf,stat_pos);
 		}else if(state==pause_mode){
 			dr_text_box(0,0,0,0,"pause mode, press p to unpause");
 			if(are_you_sure_prompt){
@@ -591,7 +632,13 @@ int main(int argc,char** argv){
 		}else if(state==stat_editing){
 			curs_set(1);
 			mvprintw(max_row-1, 0, "stat editing");
-			draw_log_edit(&buffr, &app.logs,20, 90);
+			draw_durations(2,0, &app.logs, &app.stat_conf,stat_pos);
+			draw_log_edit(&buffr, &app.logs,20, 0);
+		}else if(state==stat_add){
+			curs_set(1);
+			mvprintw(max_row-1, 0, "stat add");
+			draw_durations(2,0, &app.logs, &app.stat_conf,stat_pos);
+			draw_log_edit(&buffr, &app.logs,20, 0);
 		}else if(state==log_editing){
 			curs_set(1);
 			mvprintw(max_row-1, 0, "log editing");
@@ -599,7 +646,7 @@ int main(int argc,char** argv){
 		}else if(state==append_log){
 			curs_set(1);
 			draw_log_edit(&buffr, &app.logs,max_row-3, 0);
-			mvprintw(max_row-1, 0, "append logging");
+			mvprintw(max_row-1, 0, "log append");
 		}else if(state==entry_start_resize){
 			mvprintw(max_row-1, 0, "entry start resize mode");
 		}else if(state==server_mode){

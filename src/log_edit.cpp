@@ -33,10 +33,16 @@ int log_edit(log_edit_buffer* buffer,t_log* log_p, int chr){
 	char* tag_str=buffer->sub_name;
 	t_log* a_log=buffer->a_log;
 	bool only_tag_str=buffer->only_tag_str;
-	int selected_id=buffer->sni[*autocomp_selection].tag_id;
 
-	char* requested_str=log_p->tg_enrtries[selected_id].tag;
-	int requested_str_size=strlen(log_p->tg_enrtries[selected_id].tag);
+	int selected_id=0;
+	int requested_str_size=0;
+	char* requested_str=0;
+
+	if(last_char(name)!=10){
+		requested_str=log_p->tg_enrtries[selected_id].tag;
+		requested_str_size=strlen(log_p->tg_enrtries[selected_id].tag);
+		selected_id=buffer->sni[*autocomp_selection].tag_id;
+	}
 
 
 	if(chr > 31 && chr <=126){
