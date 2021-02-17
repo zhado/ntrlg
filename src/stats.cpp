@@ -105,14 +105,6 @@ void add_statcolor(statConfig* stat_conf,t_log* log_p, strPart prt, int index){
 	}
 }
 
-void switch_stats(statConfig* conf, int a, int b){
-	//statColor=
-	//app.stat_conf.stat_colors[i].bg=app.stat_conf.stat_colors[i+1].bg;
-	//app.stat_conf.stat_colors[i].fg=app.stat_conf.stat_colors[i+1].fg;
-	//app.stat_conf.stat_colors[i].pair_id=app.stat_conf.stat_colors[i+1].pair_id;
-	//app.stat_conf.stat_colors[i].tag=app.stat_conf.stat_colors[i+1].tag;
-}
-
 statConfig generate_stat_colors(t_log* log_p,char* str){
 	statConfig conf;
 	conf.count=0;

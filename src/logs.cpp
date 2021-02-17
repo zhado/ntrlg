@@ -75,6 +75,22 @@ void end_last_entry(t_log* log_p){
 	}
 }
 
+void promote_tag(t_log* log_p,int tg_id){
+	// moves repeated tags to the top of the array
+	if(tg_id<log_p->tg_count-1){
+		int temp_id=0;
+		for(int i=0;i<log_p->tg_count;i++){
+			if(log_p->tg_recents[i]==tg_id)
+				temp_id=i;
+		}
+
+		for(int i=temp_id;i<log_p->tg_count-1;i++){
+			log_p->tg_recents[i]=log_p->tg_recents[i+1];
+		}
+		log_p->tg_recents[log_p->tg_count-1]=tg_id;
+	}
+}
+
 void generate_entry_tags(t_log* log_p,log_entry* entry,char* sub_name){
 	for(int i=0;;i++){
 		strPart prt=get_nth_strpart(sub_name, ',', i);
@@ -84,8 +100,13 @@ void generate_entry_tags(t_log* log_p,log_entry* entry,char* sub_name){
 		
 		int new_tag_id=get_tag_id(log_p, prt);
 
-		if(new_tag_id==-1)
+		// if its a new tag, add it
+		if(new_tag_id==-1){
 			new_tag_id=add_tag(log_p,prt);
+			log_p->tg_recents[new_tag_id]=new_tag_id;
+		}else{
+			promote_tag(log_p, new_tag_id);
+		}
 		entry->tags[i]=new_tag_id;
 	}
 }

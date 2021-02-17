@@ -61,8 +61,9 @@ int load_log(app_state* app,const char* file_name){
 	app->logs.entries=0;
 	app->stat_input=(char*)calloc(sizeof(char)*MAX_NAME_SIZE,1);
 
-	app->logs.tg_len=1000;
-	app->logs.tg_enrtries=(tgEntry*)calloc(sizeof(tgEntry)*app->logs.tg_len,1);
+	app->logs.tg_alloced=1000;
+	app->logs.tg_enrtries=(tgEntry*)calloc(sizeof(tgEntry)*app->logs.tg_alloced,1);
+	app->logs.tg_recents=(int*)calloc(sizeof(int)*app->logs.tg_alloced,1);
 	app->logs.tg_count=1;
 
 	char line[400];

@@ -48,14 +48,15 @@ bool entry_has_tag(log_entry* entry,int tag_id){
 int generate_scored_tags(t_log* log_p, char * search_string, scoredTag* scored_tags){
 	int j=0;
 	for(int i=log_p->tg_count-1;i>=0;i--,j++){
-			int score=match_score_prt(log_p->tg_enrtries[i].tag, search_string);
+			int newer=log_p->tg_recents[i];
+			int score=match_score_prt(log_p->tg_enrtries[newer].tag, search_string);
 			if(score!=0){
 				j--;
 				continue;
 			}
 
-			scored_tags[j].root_entry=&log_p->entries[i];
-			scored_tags[j].tag_id=i;
+			scored_tags[j].root_entry=&log_p->entries[newer];
+			scored_tags[j].tag_id=newer;
 	}
 	return j;
 }
