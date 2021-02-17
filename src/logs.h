@@ -22,7 +22,7 @@ struct t_log {
 	log_entry* entries;
 
 	tgEntry* tg_enrtries;
-	int tg_len;
+	int tg_alloced;
 	int tg_count;
 
 };

@@ -55,7 +55,7 @@ int add_tag(t_log* log_p,strPart prt){
 	}
 
 	int index=log_p->tg_count;
-	if(index>=log_p->tg_len)
+	if(index>=log_p->tg_alloced)
 		return -1;
 
 	//if(find_tag_id(log_p, name)!=-1)

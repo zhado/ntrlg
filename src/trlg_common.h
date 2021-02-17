@@ -17,6 +17,7 @@ enum window_state {
 	week_view,
 	stat_view,
 	stat_editing,
+	stat_dragging,
 	stat_add,
 	logging,
 	append_log, 

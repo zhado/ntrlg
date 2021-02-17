@@ -38,12 +38,11 @@ int log_edit(log_edit_buffer* buffer,t_log* log_p, int chr){
 	int requested_str_size=0;
 	char* requested_str=0;
 
-	if(last_char(name)!=10){
+	if(*autocomp_selection!=-1){
+		selected_id=buffer->sni[*autocomp_selection].tag_id;
 		requested_str=log_p->tg_enrtries[selected_id].tag;
 		requested_str_size=strlen(log_p->tg_enrtries[selected_id].tag);
-		selected_id=buffer->sni[*autocomp_selection].tag_id;
 	}
-
 
 	if(chr > 31 && chr <=126){
 		if( last_char(name)!=10 && strlen(name) < MAX_NAME_SIZE -2 && !only_tag_str){

@@ -103,6 +103,7 @@ int load_log(app_state* app,const char* file_name){
 				return 1;
 			}
 			memcpy(stat_conf_bufr, line, 500);
+			stat_conf_bufr[strlen(stat_conf_bufr)-1]=0;
 		}
 		line_index++;
 	}
@@ -500,6 +501,22 @@ int main(int argc,char** argv){
 					buffr=init_log_edit(&app.logs, true,0,app.stat_input);
 					state=stat_add;
 				}break;
+				case 'd':{
+					state=stat_dragging;
+				}break;
+				case 330:{
+					if(app.stat_conf.count>0)
+						if(draw_yn_prompt("are you sure you want to delete this tag? (y/n)")==true){
+							char* selected_tag=get_str_from_id(&app.logs, app.stat_conf.stat_colors[app.stat_conf.stat_selection].tag);
+							int tag_size=sizeof(statColor);
+							for(int i=app.stat_conf.stat_selection;i<app.stat_conf.count-1;i++){
+								app.stat_conf.stat_colors[i]=app.stat_conf.stat_colors[i+1];
+							}
+							app.stat_conf.count--;
+							if(app.stat_conf.stat_selection>0)
+								app.stat_conf.stat_selection--;
+						}
+				}break;
 				case KEY_LEFT:{
 					if(stat_pos>1)
 						stat_pos=stat_pos-2;
@@ -520,7 +537,30 @@ int main(int argc,char** argv){
 					continue;
 				}break;
 			}
-
+		} else if(state==stat_dragging){
+			int selection=app.stat_conf.stat_selection;
+			statColor temp_statcolor;
+			switch(switch_chr){
+				case KEY_UP:{
+					if(selection!=0){
+						temp_statcolor=app.stat_conf.stat_colors[selection];
+						app.stat_conf.stat_colors[selection]=app.stat_conf.stat_colors[selection-1];
+						app.stat_conf.stat_colors[selection-1]=temp_statcolor;
+						app.stat_conf.stat_selection--;
+					}
+				}break;
+				case KEY_DOWN:{
+					if(selection!=app.stat_conf.count-1){
+						temp_statcolor=app.stat_conf.stat_colors[selection];
+						app.stat_conf.stat_colors[selection]=app.stat_conf.stat_colors[selection+1];
+						app.stat_conf.stat_colors[selection+1]=temp_statcolor;
+						app.stat_conf.stat_selection++;
+					}
+				}break;
+				default:{
+					state=stat_view;
+				}break;
+			}
 		} else if(state==logging){
 			int res=log_edit(&buffr,&app.logs,  wchr);
 			if(res==0){
@@ -603,7 +643,7 @@ int main(int argc,char** argv){
 
 //drawing happens here --------------------
 		print_str_n_times(max_row-1, 0,"-", max_col);
-		if(state != week_view && state != stat_view && state != stat_editing && state != stat_add){
+		if(state != week_view && state != stat_view && state != stat_editing && state != stat_add && state != stat_dragging){
 			print_logs(&app.logs,-5,0,cell_minutes,cursor_pos_tm,&app.stat_conf,state,entry_under_cursor);
 			draw_durations(23, 90, &app.logs, &app.stat_conf,stat_pos);
 		}
@@ -619,6 +659,10 @@ int main(int argc,char** argv){
 		}else if(state==stat_view){
 			curs_set(0);
 			mvprintw(max_row-1, 0, "stats mode stat_selection %d",app.stat_conf.stat_selection);
+			draw_durations(2,0, &app.logs, &app.stat_conf,stat_pos);
+		}else if(state==stat_dragging){
+			curs_set(0);
+			mvprintw(max_row-1, 0, "stats dragging stat_selection %d",app.stat_conf.stat_selection);
 			draw_durations(2,0, &app.logs, &app.stat_conf,stat_pos);
 		}else if(state==pause_mode){
 			dr_text_box(0,0,0,0,"pause mode, press p to unpause");
