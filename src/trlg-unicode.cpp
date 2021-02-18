@@ -26,6 +26,9 @@ int convert_wide_char(u_int32_t wchr){
 		case 4308:{
 			return 'e';
 		}break;
+		case 4309:{
+			return 'v';
+		}break;
 		case 4318:{
 			return 'p';
 		}break;

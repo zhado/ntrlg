@@ -91,8 +91,12 @@ void add_statcolor(statConfig* stat_conf,t_log* log_p, strPart prt, int index){
 
 	if(first_p !=-1 && sec_p !=-1){
 		sscanf(str+first_p+1,"%d %d",&col.bg,&col.fg);
-		init_pair(count+10,col.fg ,col.bg);
-		col.pair_id=count+10;
+		if(index==-1){
+			col.pair_id=count+10;
+		}else{
+			col.pair_id=index+10;
+		}
+		init_pair(col.pair_id,col.fg ,col.bg);
 	}else{
 		col.pair_id=0;
 	}
