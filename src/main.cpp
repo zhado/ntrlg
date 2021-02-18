@@ -406,7 +406,7 @@ int main(int argc,char** argv){
 					week_view_width++;
 				}break;
 				case 'X':{
-					if(week_view_width>0){
+					if(week_view_width>1){
 						week_view_width--;
 					}
 				}break;
@@ -414,7 +414,7 @@ int main(int argc,char** argv){
 					week_view_width++;
 				}break;
 				case 524:{
-					if(week_view_width>0){
+					if(week_view_width>1){
 						week_view_width--;
 					}
 				}break;

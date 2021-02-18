@@ -3,6 +3,7 @@
 
 #include "trlg_string.h"
 #include "trlg_common.h"
+#include "logs.h"
 
 struct statColor{
 	int tag;
@@ -17,5 +18,6 @@ struct statConfig{
 	int count;
 };
 
-int get_tag_color_pair(int* tags, statConfig* stat_conf);
+int get_tag_color_pair(int* tags, statConfig* stat_conf, int index);
+int get_entry_tag_count(log_entry* entry);
 #endif

@@ -20,20 +20,33 @@ time_t tm_clamp(time_t in, time_t min, time_t max){
 	return 0;
 }
 
-int get_tag_color_pair(int* tags, statConfig* stat_conf){
-	if(tags[0]==0)
-		return 0;
-
+int get_tag_color_pair(int* tags, statConfig* stat_conf,int index){
+	int count=0;
 	for(int i=0;;i++){
 		if(tags[i]==0)
 			break;
 		int cur_tag=tags[i];
 		for(int j=0;j<stat_conf->count;j++){
-			if(stat_conf->stat_colors[j].tag==cur_tag)
-				return stat_conf->stat_colors[j].pair_id;
+			if(stat_conf->stat_colors[j].tag==cur_tag){
+				if(count==index){
+					return stat_conf->stat_colors[j].pair_id;
+				}
+				count++;
+			}
 		}
 	}
 	return 0;
+}
+
+int get_entry_tag_count(log_entry* entry){
+	int* tags=entry->tags;
+	
+	int i=0;
+	for(;;i++){
+		if(tags[i]==0)
+			break;
+	}
+	return i;
 }
 
 void reconstruct_color(statColor color, char* str){
@@ -43,8 +56,7 @@ void reconstruct_color(statColor color, char* str){
 		strncat(str,"(",MAX_NAME_SIZE);
 		sprintf(str+strlen(str),"%d",bg);
 		if(fg!=-1){
-			strncat(str,",",MAX_NAME_SIZE);
-			sprintf(str+strlen(str),"%d",fg);
+			sprintf(str+strlen(str)," %d",fg);
 		}
 		strncat(str,")",MAX_NAME_SIZE);
 	}
@@ -163,7 +175,7 @@ void draw_durations(int row, int col,t_log* a_log, statConfig* stat_conf, int st
 
 		int color=0;
 		if(stat_conf!=0)
-			color=get_tag_color_pair(&stat_conf->stat_colors[i].tag, stat_conf);
+			color=get_tag_color_pair(&stat_conf->stat_colors[i].tag, stat_conf,0);
 		attron(COLOR_PAIR(color));
 		
 
@@ -215,7 +227,7 @@ void grahp(int row, int col,t_log* a_log, statConfig* stat_conf, int stat_pos){
 
 	int color=0;
 	if(stat_conf!=0)
-		color=get_tag_color_pair(&stat_conf->stat_colors[0].tag, stat_conf);
+		color=get_tag_color_pair(&stat_conf->stat_colors[0].tag, stat_conf,0);
 	attron(COLOR_PAIR(color));
 
 	time_t last_midnight=local_time-((local_time+4*60*60)%(24*60*60));

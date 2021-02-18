@@ -22,6 +22,7 @@
 struct calcCellResult{
 	//entry_part = 0 empty, 1 start, 2 body, 3 ended entry end, 4 ongoing entry end, 5 day start, 6 day end
 	int entry_part;
+	int entry_h;
 	log_entry* entry;
 	time_t next_cell_tm;
 };

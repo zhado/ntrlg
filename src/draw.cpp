@@ -193,7 +193,7 @@ void draw_cell(int row, int col,calcCellResult result, int width, statConfig* st
 	if(entry_part==3){
 		int color=0;
 		if(stat_conf!=0)
-			color=get_tag_color_pair(entry_p->tags, stat_conf);
+			color=get_tag_color_pair(entry_p->tags, stat_conf,0);
 		attron(COLOR_PAIR(color));
 		print_str_n_times(row, col, " ", width);
 
@@ -216,7 +216,7 @@ void draw_cell(int row, int col,calcCellResult result, int width, statConfig* st
 		printw(" ");
 		int color=0;
 		if(stat_conf!=0)
-			color=get_tag_color_pair(entry_p->tags, stat_conf);
+			color=get_tag_color_pair(entry_p->tags, stat_conf,0);
 		attron(COLOR_PAIR(color));
 		print_str_n_times(row, col, " ", width);
 		if(!hide_text){
@@ -233,16 +233,25 @@ void draw_cell(int row, int col,calcCellResult result, int width, statConfig* st
 		}
 	}else if(entry_part==2){
 		int color=0;
-		if(stat_conf!=0)
-			color=get_tag_color_pair(entry_p->tags, stat_conf);
-		attron(COLOR_PAIR(color));
-		print_str_n_times(row, col, " ", width);
-		if(color==0)
-			mvprintw(row, col, "|");
-		else
-			mvprintw(row, col, " ");
+		int tag_count=get_entry_tag_count(entry_p);
+		int divided_w=width/(tag_count == 0 ? 1 : tag_count);
+		if(divided_w==0){
+			divided_w=1;
+		}
 
-		attroff(COLOR_PAIR(color));
+		for(int i=0;i<tag_count;i++){
+			//if(i==tag_count-1)
+				//divided_w+=width%divided_w;
+			if(stat_conf!=0)
+				color=get_tag_color_pair(entry_p->tags, stat_conf,i);
+			attron(COLOR_PAIR(color));
+			print_str_n_times(row, col+divided_w*i, " ", divided_w+width%divided_w);
+			if(color==0)
+				mvprintw(row, col+divided_w*i, "|");
+
+			attroff(COLOR_PAIR(color));
+		}
+
 		if(drag_status==2 && entry_under_cursor==result.entry){
 			mvprintw(row, col+width, "DD");
 			mvprintw(row, col-2, "DD");
@@ -307,7 +316,7 @@ void print_weeks(t_log* log_p,int cell_minutes,time_t cursor_pos_tm,statConfig* 
 	int offset=9;
 
 	//int width=25;
-	int space_between=2;
+	int space_between=1;
 	int days_to_fit=(int)(max_col-offset)/(width+space_between)-1;
 	int fudge_factor=0;
 
