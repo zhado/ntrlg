@@ -585,6 +585,8 @@ int main(int argc,char** argv){
 		} else if(state==append_log){
 			int res=log_edit(&buffr,&app.logs, wchr);
 			if(res==0){
+				if(app.logs.entries[app.logs.index-1].end_time==0)
+					end_last_entry(&app.logs);
 				add_entry(&app.logs, buffr.name, buffr.sub_name,app.logs.entries[app.logs.index-1].end_time , 0);
 				state=view;
 			}
