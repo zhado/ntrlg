@@ -152,7 +152,7 @@ calcCellResult calc_cell(t_log* logp,time_t cell_tm, int cell_minutes, time_t ma
 	for(int i=logp->index-1;i>=0;i--){
 		time_t start_tm=logp->entries[i].start_time;
 		time_t end_time=logp->entries[i].end_time;
-		if(end_time <= next_cell_tm && end_time >= cell_tm){
+		if(end_time < next_cell_tm && end_time >= cell_tm){
 			find_longest_entry=true;
 			log_entry* entry=&logp->entries[i];
 			if((entry->end_time-entry->start_time) > last_duration){
@@ -160,18 +160,22 @@ calcCellResult calc_cell(t_log* logp,time_t cell_tm, int cell_minutes, time_t ma
 				longest_entry=entry;
 				continue;
 			}
-		}else if(end_time==0 &&  next_cell_tm >= current_time && cell_tm <= current_time ){
+		}else if(end_time==0 &&  next_cell_tm > current_time && cell_tm <= current_time ){
+			// current entry ++
 			result.entry_part=4;
 			result.entry=&logp->entries[logp->index-1];
 			return result;
-		}else if(((next_cell_tm<=end_time || end_time==0 )&& cell_tm <= current_time) && cell_tm>=start_tm){
+		}else if(((next_cell_tm<=end_time || end_time==0 )&& cell_tm < current_time) && cell_tm>=start_tm){
+			// entry body |
 			result.entry_part=2;
 			result.entry=&logp->entries[i];
 			return result;
-		}else if(start_tm>=cell_tm && start_tm<=next_cell_tm){
+		}else if(start_tm>cell_tm && start_tm<=next_cell_tm){
+			// entry start -
 			result.entry_part=1;
 			result.entry=&logp->entries[i];
 		}else if(find_longest_entry){
+			// ended entry end 'name'
 			result.entry_part=3;
 			result.entry=longest_entry;
 			return result;

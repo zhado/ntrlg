@@ -613,7 +613,7 @@ int main(int argc,char** argv){
 				are_you_sure_result=-1;
 			}
 		} else if(state==entry_start_resize || state==entry_body_resize || state==entry_end_resize){
-			resize_logic(&cursor_pos_tm, cell_minutes,  entry_to_resize,&app.logs, wchr, &state);
+			resize_logic(&cursor_pos_tm, &cell_minutes,  entry_to_resize,&app.logs, wchr, &state);
 
 		} else if(state==server_mode){
 			if(wchr !=0){
@@ -718,7 +718,7 @@ int main(int argc,char** argv){
 		if(UNSAVED_CHANGES){
 			const char* msg="unsaved changes";
 			attron(COLOR_PAIR(3));
-			//mvprintw(max_row-1,max_col/2-strlen(msg)/2,"%s",msg);
+			mvprintw(max_row-1,max_col/2-strlen(msg)/2,"%s",msg);
 			attroff(COLOR_PAIR(3));
 		}
 
