@@ -175,8 +175,13 @@ uint32_t hash(app_state* app){
 			hash+=log_p->entries[i].tags[j];
 		}
 	}
-	for(int i=0;i<strlen(app->stat_input);i++)
-		hash+=app->stat_input[i];
+
+	for(int i=0;i<app->stat_conf.count;i++){
+		hash+=app->stat_conf.stat_colors[i].bg;
+		hash+=app->stat_conf.stat_colors[i].fg;
+		hash+=app->stat_conf.stat_colors[i].pair_id*i;
+		hash+=app->stat_conf.stat_colors[i].tag;
+	}
 	return hash;
 }
 
