@@ -92,7 +92,12 @@ void promote_tag(t_log* log_p,int tg_id){
 }
 
 void generate_entry_tags(t_log* log_p,log_entry* entry,char* sub_name){
+	for(int i=0;i<20;i++){
+		entry->tags[i]=0;
+	}
+
 	for(int i=0;;i++){
+		//parse tags
 		strPart prt=get_nth_strpart(sub_name, ',', i);
 		if(prt.length==0){
 			break;
