@@ -4,16 +4,16 @@
 #include "logs.h"
 #include "trlg_common.h"
 
-struct scoredTag{
+typedef struct {
 	int tag_id;
 	log_entry* root_entry;
-};
+}scoredTag;
 
-struct match_result{
+typedef struct {
 	int match_count;
 	char* requested_str;
 	int size;
-};
+}match_result;
 
 char* get_after_last_comma (char* str);
 char* remove_spaces(char* str);

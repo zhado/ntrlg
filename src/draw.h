@@ -19,21 +19,21 @@
 #define DRAW_h 2
 #define DRAW_hm 1
 
-struct calcCellResult{
+typedef struct {
 	//entry_part = 0 empty, 1 start, 2 body, 3 ended entry end, 4 ongoing entry end, 5 day start, 6 day end
 	int entry_part;
 	int entry_h;
 	log_entry* entry;
 	time_t next_cell_tm;
-};
+}calcCellResult;
 
 void print_str_n_times(int row,int col, char* ch,int n);
-void print_duration(int duration);
 void print_normal_time(time_t tim);
 void print_normal_date_time(time_t tim);
 void mvftime_print(int row, int col, char* format, time_t Time);
 void ftime_print(char* format, time_t Time);
-tm get_tm(time_t time_stamp);
-void* draw_status(void * args, int packet_counter);
+void print_duration(time_t duration);
+struct tm get_tm(time_t time_stamp);
+void draw_status(int* counter, int packet_counter);
 void draw_error(char *msg);
 #endif

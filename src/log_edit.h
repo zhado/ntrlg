@@ -5,7 +5,7 @@
 #include "logs.h"
 #include "trlg_common.h"
 
-struct log_edit_buffer{
+typedef struct {
 	char name[MAX_NAME_SIZE];
 	char sub_name[MAX_NAME_SIZE];
 	t_log* a_log;
@@ -17,5 +17,5 @@ struct log_edit_buffer{
 	int cursor_row;
 	int cursor_col;
 	int local_curs_pos;
-};
+}log_edit_buffer;
 #endif

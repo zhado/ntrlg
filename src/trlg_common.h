@@ -12,7 +12,7 @@
 #define net_recieved_database "./cod_net"
 #define serv_conf_file "./serv_conf"
 
-enum window_state {
+typedef enum {
 	view,
 	week_view,
 	stat_view,
@@ -28,7 +28,7 @@ enum window_state {
 	server_mode,
 	delete_mode,
 	pause_mode
-};
+}window_state ;
 
 long get_nano_time();
 

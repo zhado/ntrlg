@@ -1,11 +1,11 @@
 #ifndef TRLG_STRING_H 
 #define TRLG_STRING_H
 
-struct strPart{
+typedef struct {
 	char* start;
 	int length;
 	// not including null pointer if avialable
-};
+}strPart;
 
 strPart get_nth_strpart(char* str, char chr, int n);
 char* get_after_last_comma (char* str);

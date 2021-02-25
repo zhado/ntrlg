@@ -1,22 +1,23 @@
 #ifndef LOGS_H 
 #define LOGS_H
 
+#include <stdbool.h>
 #include <time.h>
 #include "trlg_common.h"
 #include "trlg_string.h"
 
-struct tgEntry{
-	char tag[MAX_NAME_SIZE] = {0};
-};
+typedef struct{
+	char tag[MAX_NAME_SIZE];
+}tgEntry;
 
-struct log_entry {
+typedef struct{
 	char* name;
-	int tags[20]={0};
+	int tags[20];
 	time_t start_time;
 	time_t end_time;
-};
+}log_entry;
 
-struct t_log {
+typedef struct {
 	int index;
 	int allocated;
 	log_entry* entries;
@@ -26,7 +27,7 @@ struct t_log {
 	int tg_alloced;
 	int tg_count;
 
-};
+}t_log ;
 
 bool crash_with_other_entry(t_log* a_log,log_entry* entry);
 int get_log_entry_index(t_log* a_log,log_entry* entry);
