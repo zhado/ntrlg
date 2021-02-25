@@ -49,75 +49,6 @@ long get_nano_time(){
 	return Time.tv_nsec;
 }
 
-int load_log(app_state* app,const char* file_name){
-	FILE* fp=fopen(file_name,"r");
-	if(fp==0){
-		fprintf(stderr, "fopen error\n");
-		return 1;
-	}
-
-	app->logs.allocated=0;
-	app->logs.index=0;
-	app->logs.entries=0;
-	app->stat_input=(char*)calloc(sizeof(char)*MAX_NAME_SIZE,1);
-
-	app->logs.tg_alloced=1000;
-	app->logs.tg_enrtries=(tgEntry*)calloc(sizeof(tgEntry)*app->logs.tg_alloced,1);
-	app->logs.tg_recents=(int*)calloc(sizeof(int)*app->logs.tg_alloced,1);
-	app->logs.tg_count=1;
-
-	char line[MAX_SAT_CONF_SIZE];
-	char stat_conf_bufr[MAX_SAT_CONF_SIZE];
-	int line_count=0;
-	while (fgets(line,400,fp)!=0){
-		int quotes[4]={0,0,0,0},index=0;
-		char temp_name[MAX_NAME_SIZE];
-		char temp_subname[MAX_NAME_SIZE];
-		memset(temp_name, 0, MAX_NAME_SIZE);
-		memset(temp_subname, 0, MAX_NAME_SIZE);
-		time_t temp_start_time=0;
-		time_t temp_end_time=0;
-
-		if(sscanf(line,"%lu %lu",&temp_start_time,&temp_end_time)==2){
-			for(int i=0;i<strlen(line);i++){
-				if(line[i]=='"'){
-					quotes[index++]=i;
-				}
-			}
-
-			// TODO: sahinelebaa es
-			if(quotes[1]!=0){
-				memcpy(temp_name, line+quotes[0]+1,quotes[1]-quotes[0]-1);
-			}
-			if(quotes[3]!=0){
-				memcpy(temp_subname, line+quotes[2]+1,quotes[3]-quotes[2]-1);
-			}
-
-			remove_spaces(temp_subname);
-
-			add_entry(&app->logs, temp_name, temp_subname, temp_start_time, temp_end_time);
-			memset(temp_name,0,MAX_NAME_SIZE);
-			memset(temp_subname,0,MAX_NAME_SIZE);
-		}else{
-			if(line_count!=0){
-				fprintf(stderr, "database file error\n");
-				return 1;
-			}
-			memcpy(stat_conf_bufr, line, 500);
-			stat_conf_bufr[strlen(stat_conf_bufr)-1]=0;
-		}
-		line_count++;
-	}
-
-	app->stat_conf=generate_stat_colors(&app->logs,stat_conf_bufr);
-
-	fclose(fp);
-	UNSAVED_CHANGES=false;
-	return 0;
-}
-
-
-
 int parse_line(char* line,time_t* temp_start_time,time_t* temp_end_time,char* temp_name,char* temp_subname){
 	int quotes[4]={0,0,0,0},index=0;
 	memset(temp_name, 0, MAX_NAME_SIZE);
@@ -145,12 +76,24 @@ int parse_line(char* line,time_t* temp_start_time,time_t* temp_end_time,char* te
 }
 
 int load_log_2(app_state* app,const char* file_name,const char* file_name2){
+	bool second_file=false;
 	FILE* fp=fopen(file_name,"r");
-	FILE* fp2=fopen(file_name2,"r");
-	if(fp==0 || fp2==0){
+	FILE* fp2;
+	if(fp==0 ){
 		fprintf(stderr, "fopen error\n");
 		return 1;
 	}
+
+	if(file_name2!=0){
+		fp2=fopen(file_name2,"r");
+		if(fp2==0){
+			fprintf(stderr, "fopen error\n");
+			return 1;
+		}
+	}else{
+		second_file=false;
+	}
+
 
 	app->logs.allocated=0;
 	app->logs.index=0;
@@ -174,57 +117,67 @@ int load_log_2(app_state* app,const char* file_name,const char* file_name2){
 	char temp_name[MAX_NAME_SIZE];
 	char temp_subname[MAX_NAME_SIZE];
 	time_t temp_start_time=0;
+	time_t temp_end_time=0;
 	time_t st_time=0;
 	time_t st_time2=0;
-	bool advance=true,advance2=true;
+	int isconf2;
 
-	time_t temp_end_time=0;
+	// read first lines
+	fgets_res=fgets(line,400,fp);
+	int isconf=sscanf(line,"%lu",&st_time);
+
+	if(isconf!=1 && fgets_res!=0){
+		memcpy(stat_conf_bufr, line, 500);
+		stat_conf_bufr[strlen(stat_conf_bufr)-1]=0;
+
+		fgets_res=fgets(line,400,fp);
+		isconf=sscanf(line,"%lu",&st_time);
+	}
+
+	if(second_file){
+		fgets_res2=fgets(line2,400,fp2);
+		isconf2=sscanf(line2,"%lu",&st_time2);
+
+		// we ignore second file's statConf
+		if(isconf2!=1 && fgets_res2!=0){
+			fgets_res2=fgets(line2,400,fp2);
+			isconf2=sscanf(line2,"%lu",&st_time2);
+		}
+	}else{
+		fgets_res2=0;
+	}
+	// axla orive pirveli __start_time__ wakiTxuli gvaqvs
 
 	while (1){
-		if(fgets_res!=0 && advance){
-			fgets_res=fgets(line,400,fp);
-			sscanf(line,"%lu",&st_time);
-			advance=false;
-		}
-
-		if(fgets_res2!=0 && advance2){
-			fgets_res2=fgets(line2,400,fp2);
-			sscanf(line2,"%lu",&st_time2);
-			advance2=false;
-		}
-
 		if(fgets_res==0 && fgets_res2==0)
 			break;
-
-		if(st_time>st_time2){
-			int pars_res=parse_line(line,&temp_start_time,&temp_end_time,temp_name,temp_subname);
-
-			if(pars_res==1){
-				memcpy(stat_conf_bufr, line, 500);
-				stat_conf_bufr[strlen(stat_conf_bufr)-1]=0;
-				app->stat_conf=generate_stat_colors(&app->logs,stat_conf_bufr);
-			}
-			advance=true;
-			add_entry(&app->logs, temp_name, temp_subname, temp_start_time, temp_end_time);
-		}else if(st_time<st_time2){
+		if(st_time<st_time2 || fgets_res2==0){
+			parse_line(line,&temp_start_time,&temp_end_time,temp_name,temp_subname);
+			fgets_res=fgets(line,400,fp);
+			isconf=sscanf(line,"%lu",&st_time);
+		}else if(st_time>st_time2 || fgets_res==0){
 			parse_line(line2,&temp_start_time,&temp_end_time,temp_name,temp_subname);
-			advance2=true;
-			add_entry(&app->logs, temp_name, temp_subname, temp_start_time, temp_end_time);
+			fgets_res2=fgets(line2,400,fp2);
+			isconf2=sscanf(line2,"%lu",&st_time2);
 		}else if(st_time==st_time2){
-			int pars_res=parse_line(line,&temp_start_time,&temp_end_time,temp_name,temp_subname);
-
-			if(pars_res==1){
-				memcpy(stat_conf_bufr, line, 500);
-				stat_conf_bufr[strlen(stat_conf_bufr)-1]=0;
-				app->stat_conf=generate_stat_colors(&app->logs,stat_conf_bufr);
-			}else{
-				add_entry(&app->logs, temp_name, temp_subname, temp_start_time, temp_end_time);
-			}
-			advance2=true;
-			advance=true;
+			parse_line(line,&temp_start_time,&temp_end_time,temp_name,temp_subname);
+			fgets_res=fgets(line,400,fp);
+			fgets_res2=fgets(line2,400,fp2);
+			isconf=sscanf(line,"%lu",&st_time);
+			isconf2=sscanf(line2,"%lu",&st_time2);
 		}
+		add_entry(&app->logs, temp_name, temp_subname, temp_start_time, temp_end_time);
 
+		if(app->logs.index>1){
+			log_entry* prev_entry=&app->logs.entries[app->logs.index-2];
+			log_entry* cur_entry=&app->logs.entries[app->logs.index-1];
+			if(prev_entry->end_time > cur_entry->start_time){
+				prev_entry->end_time=cur_entry->start_time;
+			}
+		}
 	}
+
+	app->stat_conf=generate_stat_colors(&app->logs,stat_conf_bufr);
 
 	fclose(fp);
 	UNSAVED_CHANGES=false;
@@ -355,8 +308,8 @@ int main(int argc,char** argv){
 	app.logs.index=0;
 	app.logs.entries=0;
 	app.stat_input=0;
-	load_log(&app, "./cod");
-	//load_log_2(&app, database_file,net_recieved_database);
+	load_log_2(&app, database_file,0);
+	//load_log_2(&app, database_file,NULL);
 	//exit(1);
 
 	int server_fd=0;
@@ -368,12 +321,6 @@ int main(int argc,char** argv){
 			handle_connections(server_fd,&connection_counter);
 		exit (1);
 	}
-
-	//for(int i=0;;i++){
-		//strPart prt=get_nth_strpart("sandro, data, nata", ',', i);
-		//if(prt.start==0)break;
-		//printf("%s %d\n",prt.start,prt.length);
-	//}
 
 
 	remove_spaces(app.stat_input);
@@ -474,7 +421,7 @@ int main(int argc,char** argv){
 				}break;
 				case 'u':{
 					free_app(&app);
-					load_log(&app,database_file);
+					load_log_2(&app,database_file,0);
 				}break;
 				case 'q':{
 					running=false;
@@ -487,7 +434,7 @@ int main(int argc,char** argv){
 							mvprintw(max_row-3,max_col-sizeof("succsefully recieved dtbs from server"),
 									"succsefully recieved dtbs from server");
 							free_app(&app);
-							load_log(&app, net_recieved_database);
+							load_log_2(&app, database_file,net_recieved_database);
 							if(remove(net_recieved_database)==0){
 								mvprintw(max_row-4,max_col-sizeof("deleted net_recieved_database file"),
 										"deleted net_recieved_database file");
