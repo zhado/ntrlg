@@ -174,7 +174,10 @@ log_entry* entry_under_cursor_fun(t_log* log_p,int cell_minutes,time_t cursor_po
 	int match_type=0;
 	for(int i=log_p->index-1;i>=0;i--){
 		log_entry* entry=&log_p->entries[i];
-		if(entry->end_time>=curs_start && entry->end_time <=curs_end){
+		if(entry->start_time >= curs_start && entry->start_time <=curs_end && last_duration==0){
+			match_type=1;
+			longest_entry=entry;
+		}else if(entry->end_time>=curs_start && entry->end_time <=curs_end){
 			if((entry->end_time-entry->start_time) > last_duration){
 				last_duration=entry->end_time-entry->start_time;
 				longest_entry=entry;
@@ -185,9 +188,6 @@ log_entry* entry_under_cursor_fun(t_log* log_p,int cell_minutes,time_t cursor_po
 			longest_entry=entry;
 		}else if(entry->end_time==0 && current_time >= curs_end && entry->start_time <=curs_start){
 			match_type=2;
-			longest_entry=entry;
-		}else if(entry->start_time >= curs_start && entry->start_time <=curs_end && last_duration==0){
-			match_type=1;
 			longest_entry=entry;
 		}else if(entry->start_time<=curs_start && entry->end_time >= curs_end){
 			match_type=2;

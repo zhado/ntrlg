@@ -66,9 +66,9 @@ int load_log(app_state* app,const char* file_name){
 	app->logs.tg_recents=(int*)calloc(sizeof(int)*app->logs.tg_alloced,1);
 	app->logs.tg_count=1;
 
-	char line[400];
+	char line[MAX_SAT_CONF_SIZE];
 	char stat_conf_bufr[MAX_SAT_CONF_SIZE];
-	int line_index=0;
+	int line_count=0;
 	while (fgets(line,400,fp)!=0){
 		int quotes[4]={0,0,0,0},index=0;
 		char temp_name[MAX_NAME_SIZE];
