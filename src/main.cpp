@@ -99,21 +99,132 @@ int load_log(app_state* app,const char* file_name){
 			memset(temp_name,0,MAX_NAME_SIZE);
 			memset(temp_subname,0,MAX_NAME_SIZE);
 		}else{
-			if(line_index!=0){
+			if(line_count!=0){
 				fprintf(stderr, "database file error\n");
 				return 1;
 			}
 			memcpy(stat_conf_bufr, line, 500);
 			stat_conf_bufr[strlen(stat_conf_bufr)-1]=0;
 		}
-		line_index++;
+		line_count++;
 	}
 
 	app->stat_conf=generate_stat_colors(&app->logs,stat_conf_bufr);
-	//if(app->stat_input[0]==0)
-		//app->logs.index=line_index;
-	//else
-		//app->logs.index=line_index-1;
+
+	fclose(fp);
+	UNSAVED_CHANGES=false;
+	return 0;
+}
+
+
+
+int parse_line(char* line,time_t* temp_start_time,time_t* temp_end_time,char* temp_name,char* temp_subname){
+	int quotes[4]={0,0,0,0},index=0;
+	memset(temp_name, 0, MAX_NAME_SIZE);
+	memset(temp_subname, 0, MAX_NAME_SIZE);
+	if(sscanf(line,"%lu %lu",temp_start_time,temp_end_time)==2){
+		for(int i=0;i<strlen(line);i++){
+			if(line[i]=='"'){
+				quotes[index++]=i;
+			}
+		}
+
+		// TODO: sahinelebaa es
+		if(quotes[1]!=0){
+			memcpy(temp_name, line+quotes[0]+1,quotes[1]-quotes[0]-1);
+		}
+		if(quotes[3]!=0){
+			memcpy(temp_subname, line+quotes[2]+1,quotes[3]-quotes[2]-1);
+		}
+
+		remove_spaces(temp_subname);
+	}else{
+		return 1;
+	}
+	return 0;
+}
+
+int load_log_2(app_state* app,const char* file_name,const char* file_name2){
+	FILE* fp=fopen(file_name,"r");
+	FILE* fp2=fopen(file_name2,"r");
+	if(fp==0 || fp2==0){
+		fprintf(stderr, "fopen error\n");
+		return 1;
+	}
+
+	app->logs.allocated=0;
+	app->logs.index=0;
+	app->logs.entries=0;
+	app->stat_input=(char*)calloc(sizeof(char)*MAX_NAME_SIZE,1);
+
+	app->logs.tg_alloced=1000;
+	app->logs.tg_enrtries=(tgEntry*)calloc(sizeof(tgEntry)*app->logs.tg_alloced,1);
+	app->logs.tg_recents=(int*)calloc(sizeof(int)*app->logs.tg_alloced,1);
+	app->logs.tg_count=1;
+
+	char line[MAX_SAT_CONF_SIZE];
+	char line2[MAX_SAT_CONF_SIZE];
+
+	char stat_conf_bufr[MAX_SAT_CONF_SIZE];
+	memset(stat_conf_bufr, 0, MAX_SAT_CONF_SIZE);
+
+	char* fgets_res=(char*)1;
+	char* fgets_res2=(char*)1;
+
+	char temp_name[MAX_NAME_SIZE];
+	char temp_subname[MAX_NAME_SIZE];
+	time_t temp_start_time=0;
+	time_t st_time=0;
+	time_t st_time2=0;
+	bool advance=true,advance2=true;
+
+	time_t temp_end_time=0;
+
+	while (1){
+		if(fgets_res!=0 && advance){
+			fgets_res=fgets(line,400,fp);
+			sscanf(line,"%lu",&st_time);
+			advance=false;
+		}
+
+		if(fgets_res2!=0 && advance2){
+			fgets_res2=fgets(line2,400,fp2);
+			sscanf(line2,"%lu",&st_time2);
+			advance2=false;
+		}
+
+		if(fgets_res==0 && fgets_res2==0)
+			break;
+
+		if(st_time>st_time2){
+			int pars_res=parse_line(line,&temp_start_time,&temp_end_time,temp_name,temp_subname);
+
+			if(pars_res==1){
+				memcpy(stat_conf_bufr, line, 500);
+				stat_conf_bufr[strlen(stat_conf_bufr)-1]=0;
+				app->stat_conf=generate_stat_colors(&app->logs,stat_conf_bufr);
+			}
+			advance=true;
+			add_entry(&app->logs, temp_name, temp_subname, temp_start_time, temp_end_time);
+		}else if(st_time<st_time2){
+			parse_line(line2,&temp_start_time,&temp_end_time,temp_name,temp_subname);
+			advance2=true;
+			add_entry(&app->logs, temp_name, temp_subname, temp_start_time, temp_end_time);
+		}else if(st_time==st_time2){
+			int pars_res=parse_line(line,&temp_start_time,&temp_end_time,temp_name,temp_subname);
+
+			if(pars_res==1){
+				memcpy(stat_conf_bufr, line, 500);
+				stat_conf_bufr[strlen(stat_conf_bufr)-1]=0;
+				app->stat_conf=generate_stat_colors(&app->logs,stat_conf_bufr);
+			}else{
+				add_entry(&app->logs, temp_name, temp_subname, temp_start_time, temp_end_time);
+			}
+			advance2=true;
+			advance=true;
+		}
+
+	}
 
 	fclose(fp);
 	UNSAVED_CHANGES=false;
@@ -244,7 +355,9 @@ int main(int argc,char** argv){
 	app.logs.index=0;
 	app.logs.entries=0;
 	app.stat_input=0;
-	load_log(&app, database_file);
+	load_log(&app, "./cod");
+	//load_log_2(&app, database_file,net_recieved_database);
+	//exit(1);
 
 	int server_fd=0;
 	int connection_counter=0;
