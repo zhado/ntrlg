@@ -25,6 +25,8 @@
 #include "gui_logic.c"
 #include "logs.c"
 
+extern NCURSES_EXPORT(int) get_wch (u_int32_t *);
+
 typedef struct {
 	t_log logs;
 	char* stat_input;
@@ -787,11 +789,11 @@ int main(int argc,char** argv){
 
 		move(buffr.cursor_row,buffr.cursor_col);
 
-/*#ifdef ANDROID	*/
+#ifdef ANDROID	
 		wchr=getch();
-/*#else*/
-		/*get_wch(&wchr);*/
-/*#endif*/
+#else
+		get_wch(&wchr);
+#endif
 
 		if(are_you_sure_prompt){
 			while(wchr != 'y' && wchr != 'n' && wchr != 'Y' && wchr != 'N' ){
