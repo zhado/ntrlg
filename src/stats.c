@@ -121,7 +121,7 @@ void add_statcolor(statConfig* stat_conf,t_log* log_p, strPart prt, int index){
 	}
 }
 
-statConfig generate_stat_colors(t_log* log_p,char* str){
+statConfig generate_stat_colors(t_log* log_p,wchar_t* str){
 	statConfig conf;
 	conf.count=0;
 	conf.stat_selection=0;

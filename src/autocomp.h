@@ -3,6 +3,7 @@
 
 #include "logs.h"
 #include "trlg_common.h"
+#include "trlg_string.h"
 
 typedef struct {
 	int tag_id;
@@ -15,9 +16,7 @@ typedef struct {
 	int size;
 }match_result;
 
-char* get_after_last_comma (char* str);
-char* remove_spaces(char* str);
-void match_names(t_log* log_p, char* search_string_p, scoredTag* output, int* matched_count);
+void match_names(t_log* log_p, wchar_t* search_string_p, scoredTag* output, int* matched_count);
 void draw_autocomp(int row, int col,t_log* log_p,scoredTag sni[AUTOCOM_WIN_MAX_SIZE], int choice,int matched_count);
 bool entry_has_tag(log_entry* entry,int tag_id);
 

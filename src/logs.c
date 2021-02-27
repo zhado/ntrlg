@@ -116,14 +116,14 @@ void generate_entry_tags(t_log* log_p,log_entry* entry,char* sub_name){
 	}
 }
 
-void add_entry(t_log* log_p, char* name, char* sub_name,time_t start_time,time_t end_time){
+void add_entry(t_log* log_p, wchar_t* name, wchar_t* sub_name,time_t start_time,time_t end_time){
 	if(log_p->index!=0)
 		end_last_entry(log_p);
 	if(log_p->allocated < (log_p->index+1) ){
 		log_p->allocated=log_p->allocated+REALLOC_INCREMENT;
 		log_p->entries=(log_entry*)realloc(log_p->entries, sizeof(log_entry)*(log_p->allocated));
 		for(int i=log_p->allocated-REALLOC_INCREMENT;i<log_p->allocated;i++){
-			log_p->entries[i].name=(char*)calloc(sizeof(char)*MAX_NAME_SIZE,1);
+			log_p->entries[i].name=(wchar_t*)calloc(sizeof(wchar_t)*MAX_NAME_SIZE,1);
 		}
 	}
 	log_entry* entry=&log_p->entries[log_p->index];
@@ -131,7 +131,7 @@ void add_entry(t_log* log_p, char* name, char* sub_name,time_t start_time,time_t
 	entry->end_time=end_time;
 
 	entry->start_time=start_time;
-	strcpy(entry->name, name);
+	wcscpy(entry->name, name);
 	remove_spaces(sub_name);
 	remove_commas_from_end(sub_name);
 	for(int i=0;i<ENTRY_TAG_SIZE;i++){

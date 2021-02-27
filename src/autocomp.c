@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <curses.h>
 #include <string.h>
+#include <wchar.h>
 
 #include "logs.h"
 #include "trlg_common.h"
@@ -9,10 +10,10 @@
 #include "draw.h"
 #include "autocomp.h"
 
-int match_score_prt(char* str1, char* str2){
+int match_score_prt(wchar_t* str1, wchar_t* str2){
 	int res=0,
-	    l1=strlen(str1),
-	    l2=strlen(str2),
+	    l1=wcslen(str1),
+	    l2=wcslen(str2),
 	    min=INT32_MAX;
 
 	if(l2>l1) {
@@ -45,7 +46,7 @@ bool entry_has_tag(log_entry* entry,int tag_id){
 	return false;
 }
 
-int generate_scored_tags(t_log* log_p, char * search_string, scoredTag* scored_tags){
+int generate_scored_tags(t_log* log_p, wchar_t* search_string, scoredTag* scored_tags){
 	int j=0;
 	for(int i=log_p->tg_count-1;i>=0;i--,j++){
 			int newer=log_p->tg_recents[i];
@@ -61,12 +62,12 @@ int generate_scored_tags(t_log* log_p, char * search_string, scoredTag* scored_t
 	return j;
 }
 
-void match_names(t_log* log_p, char* search_string, scoredTag* output, int* matched_count){
+void match_names(t_log* log_p, wchar_t* search_string, scoredTag* output, int* matched_count){
 	//extract last mdzime
-	char search_string_no_space[MAX_NAME_SIZE];
+	wchar_t search_string_no_space[MAX_NAME_SIZE];
 
 	search_string=get_after_last_comma(search_string);
-	strcpy(search_string_no_space, search_string);
+	wcscpy(search_string_no_space, search_string);
 	remove_spaces(search_string_no_space);
 
 	int tag_count=log_p->tg_count;

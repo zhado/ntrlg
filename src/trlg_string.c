@@ -4,9 +4,9 @@
 #include "trlg_common.h"
 #include "trlg_string.h"
 
-char* get_after_last_comma (char* str){
+wchar_t* get_after_last_comma (wchar_t* str){
 	int last_comma_pos=0;
-	for(int i=0;i<strlen(str);i++){
+	for(int i=0;i<wcslen(str);i++){
 		if(str[i]==','){
 			last_comma_pos=i+1;
 		}
@@ -14,8 +14,25 @@ char* get_after_last_comma (char* str){
 	return str+last_comma_pos;
 }
 
-char* remove_spaces(char* str){
-	int len=strlen(str);
+int remove_wchar(wchar_t* str,int index){
+	if(str==0){
+		return 1;
+	}
+
+	int len=wcslen(str);
+
+	if(len==0){
+		return 1;
+	}
+
+	for(int i=index;i<len;i++){
+		str[i]=str[i+1];
+	}
+	return 0;
+}
+
+wchar_t* remove_spaces(wchar_t* str){
+	int len=wcslen(str);
 	for(int i=0;i<len;i++){
 		if(str[i]==' '){
 			memcpy(str+i, str+i+1,len-i);
@@ -25,9 +42,9 @@ char* remove_spaces(char* str){
 	return str;
 }
 
-void remove_commas_from_end(char* str){
-	while(str[strlen(str)-1]==','){
-		str[strlen(str)-1]=0;
+void remove_commas_from_end(wchar_t* str){
+	while(str[wcslen(str)-1]==','){
+		str[wcslen(str)-1]=0;
 	}
 }
 
@@ -83,18 +100,18 @@ void print_warp_str(int row, int col,char* str, int len){
 	}
 }
 
-void print_chopoff(int row, int col,char* str, int len){
+void print_chopoff(int row, int col,wchar_t* str, int len){
 	if (len<0) return;
-	int str_len=strlen(str);
+	int str_len=wcslen(str);
 	if(str_len>=len){
 		char tmp_str[len];
 		memcpy(tmp_str,str,len);
 		tmp_str[len]=0;
-		mvprintw(row,col,"%s",tmp_str);
+		mvprintw(row,col,"%ls",tmp_str);
 		printw("-");
 		return;
 	}else{
-		mvprintw(row,col,"%s",str);
+		mvprintw(row,col,"%ls",str);
 	}
 }
 
@@ -155,7 +172,7 @@ int add_chr_in_str(char chr, char* str,int index,int max_size){
 	return 0;
 }
 
-strPart get_nth_strpart(char* str, char chr, int n){
+strPart get_nth_strpart(wchar_t* str, wchar_t chr, int n){
 	strPart part;
 
 	int str_len=strlen(str);

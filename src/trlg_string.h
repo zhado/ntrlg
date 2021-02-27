@@ -1,6 +1,8 @@
 #ifndef TRLG_STRING_H 
 #define TRLG_STRING_H
 
+#include <wchar.h>
+
 typedef struct {
 	char* start;
 	int length;
@@ -8,13 +10,14 @@ typedef struct {
 }strPart;
 
 strPart get_nth_strpart(char* str, char chr, int n);
-char* get_after_last_comma (char* str);
-char* remove_spaces(char* str);
-void remove_commas_from_end(char* str);
+wchar_t* get_after_last_comma (wchar_t* str);
+wchar_t* remove_spaces(wchar_t* str);
+void remove_commas_from_end(wchar_t* str);
+int remove_wchar(wchar_t* str,int index);
 char last_char(char* str);
 char last_wchar(wchar_t* str);
 char* next_comma(char* str);
-void print_chopoff(int row, int col,char* str, int len);
+void print_chopoff(int row, int col,wchar_t* str, int len);
 char char_at(int row,int col);
 int add_chr_in_str(char chr, char* str,int index,int max_size);
 int add_chr_in_wstr(wchar_t chr, wchar_t* str,int index,int max_size);

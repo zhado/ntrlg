@@ -60,19 +60,11 @@ int log_edit(log_edit_buffer* buffer,t_log* log_p, wchar_t chr){
 		*autocomp_selection=-1;
 	}else if (chr == 263 || chr==127){
 		if(!editing_tags && !only_tag_str){
-			int name_len=wcslen(name);
-			if(name_len>0 && buffer->local_curs_pos>0){
-				for(int i=buffer->local_curs_pos-1;i<name_len;i++){
-					buffer->name[i]=buffer->name[i+1];
-				}
+			if(remove_wchar(buffer->name, buffer->local_curs_pos-1)==0){
 				buffer->local_curs_pos--;
 			}
 		}else{
-			int tag_len=wcslen(tag_str);
-			if(tag_len>0 && buffer->local_curs_pos>0){
-				for(int i=buffer->local_curs_pos-1;i<tag_len;i++){
-					buffer->sub_name[i]=buffer->sub_name[i+1];
-				}
+			if(remove_wchar(buffer->sub_name, buffer->local_curs_pos-1)==0){
 				buffer->local_curs_pos--;
 			}
 		}
@@ -102,14 +94,14 @@ int log_edit(log_edit_buffer* buffer,t_log* log_p, wchar_t chr){
 				return 0;
 			}else{
 				if(get_after_last_comma(tag_str)!=tag_str || only_tag_str)
-					memcpy(tag_str+tag_str_len-strlen(get_after_last_comma(tag_str))+1*(tag_str[strlen(tag_str)-1]==32),
+					memcpy(tag_str+tag_str_len-wcslen(get_after_last_comma(tag_str))+1*(tag_str[wcslen(tag_str)-1]==32),
 							requested_str,requested_str_size);
 				else
-					memcpy(tag_str+strlen(tag_str)-strlen(get_after_last_comma(tag_str)),
+					memcpy(tag_str+wcslen(tag_str)-wcslen(get_after_last_comma(tag_str)),
 							requested_str,requested_str_size);
-				tag_str[strlen(tag_str)]=',';
-				tag_str[strlen(tag_str)]=' ';
-				buffer->local_curs_pos=strlen(tag_str);
+				tag_str[wcslen(tag_str)]=',';
+				tag_str[wcslen(tag_str)]=' ';
+				buffer->local_curs_pos=wcslen(tag_str);
 				*autocomp_selection=-1;
 			
 			}

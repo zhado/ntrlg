@@ -8,11 +8,11 @@
 #include "trlg_string.h"
 
 typedef struct{
-	char tag[MAX_NAME_SIZE];
+	wchar_t tag[MAX_NAME_SIZE];
 }tgEntry;
 
 typedef struct{
-	char* name;
+	wchar_t* name;
 	int tags[20];
 	time_t start_time;
 	time_t end_time;

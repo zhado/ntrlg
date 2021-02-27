@@ -29,7 +29,7 @@ extern NCURSES_EXPORT(int) get_wch (u_int32_t *);
 
 typedef struct {
 	t_log logs;
-	char* stat_input;
+	wchar_t* stat_input;
 	statConfig stat_conf;
 }app_state;
 
@@ -46,12 +46,12 @@ long get_nano_time(){
 	return Time.tv_nsec;
 }
 
-int parse_line(char* line,time_t* temp_start_time,time_t* temp_end_time,char* temp_name,char* temp_subname){
+int parse_line(wchar_t* line,time_t* temp_start_time,time_t* temp_end_time,wchar_t* temp_name,wchar_t* temp_subname){
 	int quotes[4]={0,0,0,0},index=0;
-	memset(temp_name, 0, MAX_NAME_SIZE);
-	memset(temp_subname, 0, MAX_NAME_SIZE);
-	if(sscanf(line,"%lu %lu",temp_start_time,temp_end_time)==2){
-		for(int i=0;i<strlen(line);i++){
+	wmemset(temp_name, 0, MAX_NAME_SIZE);
+	wmemset(temp_subname, 0, MAX_NAME_SIZE);
+	if(swscanf(line,L"%lu %lu",temp_start_time,temp_end_time)==2){
+		for(int i=0;i<wcslen(line);i++){
 			if(line[i]=='"'){
 				quotes[index++]=i;
 			}
@@ -59,10 +59,10 @@ int parse_line(char* line,time_t* temp_start_time,time_t* temp_end_time,char* te
 
 		// TODO: sahinelebaa es
 		if(quotes[1]!=0){
-			memcpy(temp_name, line+quotes[0]+1,quotes[1]-quotes[0]-1);
+			wmemcpy(temp_name, line+quotes[0]+1,quotes[1]-quotes[0]-1);
 		}
 		if(quotes[3]!=0){
-			memcpy(temp_subname, line+quotes[2]+1,quotes[3]-quotes[2]-1);
+			wmemcpy(temp_subname, line+quotes[2]+1,quotes[3]-quotes[2]-1);
 		}
 
 		remove_spaces(temp_subname);
@@ -95,24 +95,24 @@ int load_log_2(app_state* app,const char* file_name,const char* file_name2){
 	app->logs.allocated=0;
 	app->logs.index=0;
 	app->logs.entries=0;
-	app->stat_input=(char*)calloc(sizeof(char)*MAX_NAME_SIZE,1);
+	app->stat_input=(wchar_t*)calloc(sizeof(wchar_t)*MAX_NAME_SIZE,1);
 
 	app->logs.tg_alloced=1000;
 	app->logs.tg_enrtries=(tgEntry*)calloc(sizeof(tgEntry)*app->logs.tg_alloced,1);
 	app->logs.tg_recents=(int*)calloc(sizeof(int)*app->logs.tg_alloced,1);
 	app->logs.tg_count=1;
 
-	char line[MAX_SAT_CONF_SIZE];
-	char line2[MAX_SAT_CONF_SIZE];
+	wchar_t line[MAX_SAT_CONF_SIZE];
+	wchar_t line2[MAX_SAT_CONF_SIZE];
 
-	char stat_conf_bufr[MAX_SAT_CONF_SIZE];
-	memset(stat_conf_bufr, 0, MAX_SAT_CONF_SIZE);
+	wchar_t stat_conf_bufr[MAX_SAT_CONF_SIZE];
+	wmemset(stat_conf_bufr, 0, MAX_SAT_CONF_SIZE);
 
-	char* fgets_res=(char*)1;
-	char* fgets_res2=(char*)1;
+	wchar_t* fgets_res=(wchar_t*)1;
+	wchar_t* fgets_res2=(wchar_t*)1;
 
-	char temp_name[MAX_NAME_SIZE];
-	char temp_subname[MAX_NAME_SIZE];
+	wchar_t temp_name[MAX_NAME_SIZE];
+	wchar_t temp_subname[MAX_NAME_SIZE];
 	time_t temp_start_time=0;
 	time_t temp_end_time=0;
 	time_t st_time=0;
@@ -120,25 +120,25 @@ int load_log_2(app_state* app,const char* file_name,const char* file_name2){
 	int isconf2;
 
 	// read first lines
-	fgets_res=fgets(line,400,fp);
-	int isconf=sscanf(line,"%lu",&st_time);
+	fgets_res=fgetws(line,400,fp);
+	int isconf=swscanf(line,L"%lu",&st_time);
 
 	if(isconf!=1 && fgets_res!=0){
-		memcpy(stat_conf_bufr, line, 500);
-		stat_conf_bufr[strlen(stat_conf_bufr)-1]=0;
+		wmemcpy(stat_conf_bufr, line, 500);
+		stat_conf_bufr[wcslen(stat_conf_bufr)-1]=0;
 
-		fgets_res=fgets(line,400,fp);
-		isconf=sscanf(line,"%lu",&st_time);
+		fgets_res=fgetws(line,400,fp);
+		isconf=swscanf(line,L"%lu",&st_time);
 	}
 
 	if(second_file){
-		fgets_res2=fgets(line2,400,fp2);
-		isconf2=sscanf(line2,"%lu",&st_time2);
+		fgets_res2=fgetws(line2,400,fp2);
+		isconf2=swscanf(line2,L"%lu",&st_time2);
 
 		// we ignore second file's statConf
 		if(isconf2!=1 && fgets_res2!=0){
-			fgets_res2=fgets(line2,400,fp2);
-			isconf2=sscanf(line2,"%lu",&st_time2);
+			fgets_res2=fgetws(line2,400,fp2);
+			isconf2=swscanf(line2,L"%lu",&st_time2);
 		}
 	}else{
 		fgets_res2=0;
@@ -150,18 +150,18 @@ int load_log_2(app_state* app,const char* file_name,const char* file_name2){
 			break;
 		if((st_time<st_time2 || fgets_res2==0) && fgets_res!=0){
 			parse_line(line,&temp_start_time,&temp_end_time,temp_name,temp_subname);
-			fgets_res=fgets(line,400,fp);
-			isconf=sscanf(line,"%lu",&st_time);
+			fgets_res=fgetws(line,400,fp);
+			isconf=swscanf(line,L"%lu",&st_time);
 		}else if((st_time>st_time2 || fgets_res==0) && fgets_res2!=0){
 			parse_line(line2,&temp_start_time,&temp_end_time,temp_name,temp_subname);
-			fgets_res2=fgets(line2,400,fp2);
-			isconf2=sscanf(line2,"%lu",&st_time2);
+			fgets_res2=fgetws(line2,400,fp2);
+			isconf2=swscanf(line2,L"%lu",&st_time2);
 		}else if(st_time==st_time2){
 			parse_line(line,&temp_start_time,&temp_end_time,temp_name,temp_subname);
-			fgets_res=fgets(line,400,fp);
-			fgets_res2=fgets(line2,400,fp2);
-			isconf=sscanf(line,"%lu",&st_time);
-			isconf2=sscanf(line2,"%lu",&st_time2);
+			fgets_res=fgetws(line,400,fp);
+			fgets_res2=fgetws(line2,400,fp2);
+			isconf=swscanf(line,L"%lu",&st_time);
+			isconf2=swscanf(line2,L"%lu",&st_time2);
 		}
 		add_entry(&app->logs, temp_name, temp_subname, temp_start_time, temp_end_time);
 
@@ -201,7 +201,7 @@ void save_log(app_state* app, const char* file_name){
 		log_entry* entry=&log_p->entries[i];
 		char temp_tag_str[MAX_NAME_SIZE]={0};
 		reconstruct_tags(&app->logs, &app->logs.entries[i],temp_tag_str);
-		fprintf(fp, "%lu %lu \"%s\" \"%s\"\n",entry->start_time,entry->end_time,entry->name,temp_tag_str);
+		fprintf(fp, "%lu %lu \"%ls\" \"%s\"\n",entry->start_time,entry->end_time,entry->name,temp_tag_str);
 	}
 
 	fclose(fp);
@@ -228,7 +228,7 @@ uint32_t hash(app_state* app){
 		hash+=log_p->allocated;
 		hash+=log_p->entries[i].end_time;
 		hash+=log_p->entries[i].start_time;
-		for(int j=0;j<strlen(log_p->entries[i].name);j++)
+		for(int j=0;j<wcslen(log_p->entries[i].name);j++)
 			hash+=log_p->entries[i].name[j];
 		for(int j=0;;j++){
 			if(log_p->entries[i].tags[j]==0)
@@ -496,7 +496,7 @@ int main(int argc,char** argv){
 				case 'c':{
 					entry_under_cursor=entry_under_cursor_fun(&app.logs, cell_minutes, cursor_pos_tm,0);
 					if(entry_under_cursor!=0){
-						char temp_tag_str[MAX_NAME_SIZE]={0};
+						wchar_t temp_tag_str[MAX_NAME_SIZE]={0};
 						reconstruct_tags(&app.logs, entry_under_cursor,temp_tag_str);
 						buffr=init_log_edit(&app.logs, false,entry_under_cursor->name,temp_tag_str);
 						state=log_editing;
@@ -551,8 +551,8 @@ int main(int argc,char** argv){
 					last_save_time=get_file_modified_time(database_file);
 				}break;
 				case 'c':{
-					char* selected_tag=get_str_from_id(&app.logs, app.stat_conf.stat_colors[app.stat_conf.stat_selection].tag);
-					strcpy(app.stat_input, selected_tag);
+					wchar_t* selected_tag=get_str_from_id(&app.logs, app.stat_conf.stat_colors[app.stat_conf.stat_selection].tag);
+					wcscpy(app.stat_input, selected_tag);
 					reconstruct_color(app.stat_conf.stat_colors[app.stat_conf.stat_selection], app.stat_input);
 					buffr=init_log_edit(&app.logs, true,0,app.stat_input);
 					state=stat_editing;
@@ -628,14 +628,14 @@ int main(int argc,char** argv){
 			}
 		} else if(state==stat_editing){
 			int res=log_edit(&buffr,&app.logs,   wchr);
-			strcpy(app.stat_input, buffr.sub_name);
+			wcscpy(app.stat_input, buffr.sub_name);
 			add_statcolor(&app.stat_conf, &app.logs, (strPart){buffr.sub_name,-1},app.stat_conf.stat_selection);
 			if(res==0){
 				state=stat_view;
 			}
 		} else if(state==stat_add){
 			int res=log_edit(&buffr,&app.logs,   wchr);
-			strcpy(app.stat_input, buffr.sub_name);
+			wcscpy(app.stat_input, buffr.sub_name);
 			if(res==0){
 				add_statcolor(&app.stat_conf, &app.logs, (strPart){buffr.sub_name,-1},-1);
 				state=stat_view;
@@ -695,7 +695,7 @@ int main(int argc,char** argv){
 
 			int res=log_edit(&buffr,&app.logs, wchr);
 			if(res==0){
-				memcpy(entry_under_cursor->name, buffr.name, MAX_NAME_SIZE);
+				wmemcpy(entry_under_cursor->name, buffr.name, MAX_NAME_SIZE);
 				generate_entry_tags(&app.logs, entry_under_cursor, buffr.sub_name);
 				state=view;
 				entry_under_cursor=0;
