@@ -3,6 +3,7 @@
 
 #include <stdbool.h>
 #include <time.h>
+#include <wchar.h>
 #include "trlg_common.h"
 #include "trlg_string.h"
 

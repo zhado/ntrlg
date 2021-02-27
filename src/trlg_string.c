@@ -1,5 +1,6 @@
 #include <string.h>
 #include <ncurses.h>
+#include <wchar.h>
 #include "trlg_common.h"
 #include "trlg_string.h"
 
@@ -35,6 +36,13 @@ char last_char(char* str){
 	if(len==0) 
 		return 0;
 	return str[strlen(str)-1];
+}
+
+char last_wchar(wchar_t* str){
+	int len=wcslen(str);
+	if(len==0) 
+		return 0;
+	return str[wcslen(str)-1];
 }
 
 char* next_comma(char* str){
@@ -89,18 +97,22 @@ void print_chopoff(int row, int col,char* str, int len){
 		mvprintw(row,col,"%s",str);
 	}
 }
-int add_chr_in_str(char chr, char* str,int index,int max_size){
-	int strln=strlen(str);
+
+int add_chr_in_wstr(wchar_t chr, wchar_t* str,int index,int max_size){
+	int strln=wcslen(str);
+
+	if(index>=max_size){
+		return -1;
+	}else if (index<0){
+		return -1;
+	}
 
 	if(strln+2<max_size){
-		if(index>=max_size){
-			return -1;
-		}else if (index<0){
-			return -1;
-		}
+
 		for(int i=max_size-2;i>=index;i--){
 			str[i+1]=str[i];
 		}
+
 		str[index]=chr;
 
 		if(index>=strln){
@@ -115,31 +127,32 @@ int add_chr_in_str(char chr, char* str,int index,int max_size){
 	return 0;
 }
 
-bool exact_match_comma(char* str,char* str2){
-	char my_str[MAX_NAME_SIZE];
-	memset(&my_str,0,MAX_NAME_SIZE);
-	strcpy(my_str, str);
-	remove_spaces(my_str);
+int add_chr_in_str(char chr, char* str,int index,int max_size){
+	int strln=strlen(str);
 
-	char temp_str[MAX_NAME_SIZE];
-	char* ch_start_p=my_str;
-
-	for(;;){
-		memset(&temp_str,0,MAX_NAME_SIZE);
-
-		char* n_comma=next_comma(ch_start_p);
-		if(n_comma==0){
-			memcpy(temp_str,ch_start_p,strlen(my_str));
-		}else{
-			memcpy(temp_str,ch_start_p,n_comma-ch_start_p);
-		}
-		if(temp_str[0]!=0 && strcmp(temp_str, str2)==0 )
-			return true;
-
-		if(!n_comma || n_comma==ch_start_p+strlen(ch_start_p))break;
-		ch_start_p=n_comma+1;
+	if(index>=max_size){
+		return -1;
+	}else if (index<0){
+		return -1;
 	}
-	return false;
+
+	if(strln+2<max_size){
+		for(int i=max_size-2;i>=index;i--){
+			str[i+1]=str[i];
+		}
+
+		str[index]=chr;
+
+		if(index>=strln){
+			str[index+1]=0;
+			for(int i=index;i>=0;i--){
+				if(str[i]==0)str[i]=32;
+			}
+		}
+	}else{
+		return -1;
+	}
+	return 0;
 }
 
 strPart get_nth_strpart(char* str, char chr, int n){

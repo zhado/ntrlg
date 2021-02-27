@@ -6,8 +6,8 @@
 #include "trlg_common.h"
 
 typedef struct {
-	char name[MAX_NAME_SIZE];
-	char sub_name[MAX_NAME_SIZE];
+	wchar_t name[MAX_NAME_SIZE];
+	wchar_t sub_name[MAX_NAME_SIZE];
 	t_log* a_log;
 	int tag_autocomp_selection;
 	match_result result;
