@@ -75,7 +75,7 @@ int log_edit(log_edit_buffer* buffer,t_log* log_p, wchar_t chr){
 		if(*autocomp_selection>-1)
 			*autocomp_selection=*autocomp_selection-1;
 	}else if (chr == KEY_RIGHT ){
-		if( (!editing_tags || only_tag_str) && (wcslen(buffer->tags) >buffer->local_curs_pos)){
+		if( (!editing_tags || only_tag_str) && (wcslen(buffer->tags) > buffer->local_curs_pos)){
 			buffer->local_curs_pos++;
 		}else if(last_wchar(name)!=10 && wcslen(buffer->name)>buffer->local_curs_pos){
 			buffer->local_curs_pos++;
@@ -84,7 +84,7 @@ int log_edit(log_edit_buffer* buffer,t_log* log_p, wchar_t chr){
 		buffer->local_curs_pos--;
 	}else if (chr == 10){
 		int tag_str_len=wcslen(tag_str);
-		if(last_wchar(name)!=10 && !only_tag_str){
+		if(!editing_tags && !only_tag_str){
 			name[wcslen(name)]=10;
 			buffer->local_curs_pos=wcslen(buffer->tags);
 		}else{
