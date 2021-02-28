@@ -6,12 +6,12 @@
 #include "log_edit.h"
 #include "trlg_string.h"
 
-log_edit_buffer init_log_edit(t_log* a_log, bool only_tag_str, wchar_t* name, wchar_t* sub_name){
+log_edit_buffer init_log_edit(t_log* a_log, bool only_tag_str, wchar_t* name, wchar_t* tags){
 	log_edit_buffer buffer;
 	wmemset(buffer.name, 0, MAX_NAME_SIZE);
-	wmemset(buffer.sub_name, 0, MAX_NAME_SIZE);
+	wmemset(buffer.tags, 0, MAX_NAME_SIZE);
 	if(name!=0 && !only_tag_str) wcscpy(buffer.name, name);
-	if(sub_name!=0)wcscpy(buffer.sub_name, sub_name);
+	if(tags!=0)wcscpy(buffer.tags, tags);
 	buffer.a_log=a_log;
 	buffer.tag_autocomp_selection=-1;
 	buffer.only_tag_str=only_tag_str;
@@ -21,7 +21,7 @@ log_edit_buffer init_log_edit(t_log* a_log, bool only_tag_str, wchar_t* name, wc
 	if(!only_tag_str){
 		buffer.local_curs_pos=wcslen(buffer.name);
 	}else{
-		buffer.local_curs_pos=wcslen(buffer.sub_name);
+		buffer.local_curs_pos=wcslen(buffer.tags);
 	}
 
 	return buffer;
@@ -30,21 +30,21 @@ log_edit_buffer init_log_edit(t_log* a_log, bool only_tag_str, wchar_t* name, wc
 int log_edit(log_edit_buffer* buffer,t_log* log_p, wchar_t chr){
 	int* autocomp_selection=&buffer->tag_autocomp_selection;
 	wchar_t* name=buffer->name;
-	wchar_t* tag_str=buffer->sub_name;
+	wchar_t* tag_str=buffer->tags;
 	t_log* a_log=buffer->a_log;
 	bool only_tag_str=buffer->only_tag_str;
+	bool editing_tags=false;
 
 	int selected_id=0;
 	int requested_str_size=0;
 	wchar_t* requested_str=0;
-
 
 	if(*autocomp_selection!=-1){
 		selected_id=buffer->sni[*autocomp_selection].tag_id;
 		requested_str=log_p->tg_enrtries[selected_id].tag;
 		requested_str_size=wcslen(log_p->tg_enrtries[selected_id].tag);
 	}
-	bool editing_tags=false;
+
 	if(buffer->name[wcslen(buffer->name)-1]==10){
 		editing_tags=true;
 	}
@@ -64,7 +64,7 @@ int log_edit(log_edit_buffer* buffer,t_log* log_p, wchar_t chr){
 				buffer->local_curs_pos--;
 			}
 		}else{
-			if(remove_wchar(buffer->sub_name, buffer->local_curs_pos-1)==0){
+			if(remove_wchar(buffer->tags, buffer->local_curs_pos-1)==0){
 				buffer->local_curs_pos--;
 			}
 		}
@@ -75,18 +75,18 @@ int log_edit(log_edit_buffer* buffer,t_log* log_p, wchar_t chr){
 		if(*autocomp_selection>-1)
 			*autocomp_selection=*autocomp_selection-1;
 	}else if (chr == KEY_RIGHT ){
-		if( (!editing_tags || only_tag_str) &&( wcslen(buffer->sub_name) >buffer->local_curs_pos)){
+		if( (!editing_tags || only_tag_str) && (wcslen(buffer->tags) >buffer->local_curs_pos)){
 			buffer->local_curs_pos++;
 		}else if(last_wchar(name)!=10 && wcslen(buffer->name)>buffer->local_curs_pos){
 			buffer->local_curs_pos++;
 		}
 	}else if (chr == KEY_LEFT && buffer->local_curs_pos>0){
-			buffer->local_curs_pos--;
+		buffer->local_curs_pos--;
 	}else if (chr == 10){
 		int tag_str_len=wcslen(tag_str);
 		if(last_wchar(name)!=10 && !only_tag_str){
 			name[wcslen(name)]=10;
-			buffer->local_curs_pos=wcslen(buffer->sub_name);
+			buffer->local_curs_pos=wcslen(buffer->tags);
 		}else{
 			if(*autocomp_selection==-1){
 				if(!only_tag_str)
@@ -117,7 +117,7 @@ int log_edit(log_edit_buffer* buffer,t_log* log_p, wchar_t chr){
 
 void draw_log_edit(log_edit_buffer* buffer,t_log* log_p,int row,int col){
 	int* autocomp_selection=&buffer->tag_autocomp_selection;
-	wchar_t* tag_str=buffer->sub_name;
+	wchar_t* tag_str=buffer->tags;
 	t_log* a_log=buffer->a_log;
 	bool only_tag_str=buffer->only_tag_str;
 	
@@ -133,9 +133,9 @@ void draw_log_edit(log_edit_buffer* buffer,t_log* log_p,int row,int col){
 	
 	if(!only_tag_str){
 		mvprintw(row, col, "name: %ls",buffer->name);
-		mvprintw(row+1, col, "tags: %ls",buffer->sub_name);
+		mvprintw(row+1, col, "tags: %ls",buffer->tags);
 	}else{
-		mvprintw(row, col, "tags: %ls",buffer->sub_name);
+		mvprintw(row, col, "tags: %ls",buffer->tags);
 	}
 
 	if(!editing_tags && !only_tag_str ){

@@ -7,7 +7,7 @@
 
 typedef struct {
 	wchar_t name[MAX_NAME_SIZE];
-	wchar_t sub_name[MAX_NAME_SIZE];
+	wchar_t tags[MAX_NAME_SIZE];
 	t_log* a_log;
 	int tag_autocomp_selection;
 	match_result result;
