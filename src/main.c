@@ -618,21 +618,21 @@ int main(int argc,char** argv){
 		} else if(state==logging){
 			int res=log_edit(&buffr,&app.logs,  wchr);
 			if(res==0){
-				add_entry(&app.logs, buffr.name, buffr.sub_name,(unsigned long)time(0) , 0);
+				add_entry(&app.logs, buffr.name, buffr.tags,(unsigned long)time(0) , 0);
 				state=view;
 			}
 		} else if(state==stat_editing){
 			int res=log_edit(&buffr,&app.logs,   wchr);
-			wcscpy(app.stat_input, buffr.sub_name);
-			add_statcolor(&app.stat_conf, &app.logs, (strPart){buffr.sub_name,-1},app.stat_conf.stat_selection);
+			wcscpy(app.stat_input, buffr.tags);
+			add_statcolor(&app.stat_conf, &app.logs, (strPart){buffr.tags,-1},app.stat_conf.stat_selection);
 			if(res==0){
 				state=stat_view;
 			}
 		} else if(state==stat_add){
 			int res=log_edit(&buffr,&app.logs,   wchr);
-			wcscpy(app.stat_input, buffr.sub_name);
+			wcscpy(app.stat_input, buffr.tags);
 			if(res==0){
-				add_statcolor(&app.stat_conf, &app.logs, (strPart){buffr.sub_name,-1},-1);
+				add_statcolor(&app.stat_conf, &app.logs, (strPart){buffr.tags,-1},-1);
 				state=stat_view;
 			}
 		} else if(state==append_log){
@@ -640,7 +640,7 @@ int main(int argc,char** argv){
 			if(res==0){
 				if(app.logs.entries[app.logs.index-1].end_time==0)
 					end_last_entry(&app.logs);
-				add_entry(&app.logs, buffr.name, buffr.sub_name,app.logs.entries[app.logs.index-1].end_time , 0);
+				add_entry(&app.logs, buffr.name, buffr.tags,app.logs.entries[app.logs.index-1].end_time , 0);
 				state=view;
 			}
 
@@ -691,7 +691,7 @@ int main(int argc,char** argv){
 			int res=log_edit(&buffr,&app.logs, wchr);
 			if(res==0){
 				wmemcpy(entry_under_cursor->name, buffr.name, MAX_NAME_SIZE);
-				generate_entry_tags(&app.logs, entry_under_cursor, buffr.sub_name);
+				generate_entry_tags(&app.logs, entry_under_cursor, buffr.tags);
 				state=view;
 				entry_under_cursor=0;
 			}
