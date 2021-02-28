@@ -104,8 +104,8 @@ void print_chopoff(int row, int col,wchar_t* str, int len){
 	if (len<0) return;
 	int str_len=wcslen(str);
 	if(str_len>=len){
-		char tmp_str[len];
-		memcpy(tmp_str,str,len);
+		wchar_t tmp_str[len];
+		wmemcpy(tmp_str,str,len);
 		tmp_str[len]=0;
 		mvprintw(row,col,"%ls",tmp_str);
 		printw("-");
@@ -175,10 +175,10 @@ int add_chr_in_str(char chr, char* str,int index,int max_size){
 strPart get_nth_strpart(wchar_t* str, wchar_t chr, int n){
 	strPart part;
 
-	int str_len=strlen(str);
+	int str_len=wcslen(str);
 
 	int matched=-1;
-	char* last_start=str;
+	wchar_t* last_start=str;
 
 	for(int i=0;i<str_len;i++){
 		if(str[i]==chr || i == str_len-1){

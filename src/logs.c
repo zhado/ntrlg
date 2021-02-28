@@ -7,49 +7,49 @@
 #include "trlg_string.h"
 
 int get_tag_id(t_log* log_p, strPart prt){
-	char* name;
-	char temp_tag_str[MAX_NAME_SIZE];
+	wchar_t* name;
+	wchar_t temp_tag_str[MAX_NAME_SIZE];
 	if(prt.length==-1){
 		name=prt.start;
 	}else{
-		memcpy(temp_tag_str, prt.start, prt.length);
+		wmemcpy(temp_tag_str, prt.start, prt.length);
 		temp_tag_str[prt.length]=0;
 		name=temp_tag_str;
 		remove_commas_from_end(temp_tag_str);
 	}
 
 	for(int i=0;i<log_p->tg_count;i++){
-		char* tag_str=log_p->tg_enrtries[i].tag;
-		if(strcmp(tag_str, name)==0){
+		wchar_t* tag_str=log_p->tg_enrtries[i].tag;
+		if(wcscmp(tag_str, name)==0){
 			return i;
 		}
 	}
 	return -1;
 }
 
-char* get_str_from_id(t_log* log_p, int tag_id){
+wchar_t* get_str_from_id(t_log* log_p, int tag_id){
 	return log_p->tg_enrtries[tag_id].tag;
 }
 
-void reconstruct_tags(t_log* log_p,log_entry* entry,char* str){
+void reconstruct_tags(t_log* log_p,log_entry* entry,wchar_t* str){
 	for(int i=0;;i++){
 		int cur_id=entry->tags[i];
 		if(cur_id==0)
 			break;
 		if(i!=0)
-			strncat(str,",",MAX_NAME_SIZE);
-		char* name=get_str_from_id(log_p,cur_id);
-		strncat(str,name,MAX_NAME_SIZE-1);
+			wcsncat(str,L",",MAX_NAME_SIZE);
+		wchar_t* name=get_str_from_id(log_p,cur_id);
+		wcsncat(str,name,MAX_NAME_SIZE-1);
 	}
 }
 
 int add_tag(t_log* log_p,strPart prt){
-	char* name;
-	char temp_tag_str[MAX_NAME_SIZE];
+	wchar_t* name;
+	wchar_t temp_tag_str[MAX_NAME_SIZE];
 	if(prt.length==-1){
 		name=prt.start;
 	}else{
-		memcpy(temp_tag_str, prt.start, prt.length);
+		wmemcpy(temp_tag_str, prt.start, prt.length);
 		temp_tag_str[prt.length]=0;
 		name=temp_tag_str;
 	}
@@ -61,7 +61,7 @@ int add_tag(t_log* log_p,strPart prt){
 	//if(find_tag_id(log_p, name)!=-1)
 		//return 0;
 
-	strncpy(log_p->tg_enrtries[index].tag, name, MAX_NAME_SIZE);
+	wcsncpy(log_p->tg_enrtries[index].tag, name, MAX_NAME_SIZE);
 	log_p->tg_count++;
 	return index;
 }
@@ -91,7 +91,7 @@ void promote_tag(t_log* log_p,int tg_id){
 	}
 }
 
-void generate_entry_tags(t_log* log_p,log_entry* entry,char* sub_name){
+void generate_entry_tags(t_log* log_p,log_entry* entry,wchar_t* sub_name){
 	for(int i=0;i<20;i++){
 		entry->tags[i]=0;
 	}
@@ -153,7 +153,7 @@ void remove_entry(t_log* log_p,log_entry* entry){
 		log_p->entries[i].end_time=log_p->entries[i+1].end_time;
 		log_p->entries[i].start_time=log_p->entries[i+1].start_time;
 		
-		strcpy(log_p->entries[i].name,log_p->entries[i+1].name);
+		wcscpy(log_p->entries[i].name,log_p->entries[i+1].name);
 		//strcpy(log_p->entries[i].sub_name,log_p->entries[i+1].sub_name);
 	}
 	log_p->index=log_p->index-1;

@@ -4,12 +4,12 @@
 #include <wchar.h>
 
 typedef struct {
-	char* start;
+	wchar_t* start;
 	int length;
 	// not including null pointer if avialable
 }strPart;
 
-strPart get_nth_strpart(char* str, char chr, int n);
+strPart get_nth_strpart(wchar_t* str, wchar_t chr, int n);
 wchar_t* get_after_last_comma (wchar_t* str);
 wchar_t* remove_spaces(wchar_t* str);
 void remove_commas_from_end(wchar_t* str);

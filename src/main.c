@@ -1,15 +1,10 @@
 #include <stdio.h>
 #include <time.h>
 #include <linux/types.h>
-#include <sys/types.h>
 #include <ncurses.h>
 #include <locale.h>
-#include <stdlib.h>
-#include <math.h>
-#include <string.h>
 
 #include <sys/stat.h>
-#include <unistd.h>
 #include <fcntl.h> 
 
 #include "trlg_common.h"
@@ -186,22 +181,22 @@ void save_log(app_state* app, const char* file_name){
 	t_log* log_p=&app->logs;
 	FILE* fp=fopen(file_name,"w");
 
-	char stat_conf_bufr[MAX_SAT_CONF_SIZE]="";
+	wchar_t stat_conf_bufr[MAX_SAT_CONF_SIZE]=L"";
 
 	for(int i=0; i < app->stat_conf.count;i++){
-		char* tag_name=get_str_from_id(&app->logs, app->stat_conf.stat_colors[i].tag);
-		strncat(stat_conf_bufr,tag_name,MAX_NAME_SIZE);
+		wchar_t* tag_name=get_str_from_id(&app->logs, app->stat_conf.stat_colors[i].tag);
+		wcsncat(stat_conf_bufr,tag_name,MAX_NAME_SIZE);
 		reconstruct_color(app->stat_conf.stat_colors[i], stat_conf_bufr);
 		if(i != app->stat_conf.count-1)
-			strncat(stat_conf_bufr,",",MAX_NAME_SIZE);
+			wcsncat(stat_conf_bufr,L",",MAX_NAME_SIZE);
 	}
-	fprintf(fp, "%s\n",stat_conf_bufr);
+	fwprintf(fp, L"%ls\n",stat_conf_bufr);
 
 	for(int i=0;i<log_p->index;i++){
 		log_entry* entry=&log_p->entries[i];
-		char temp_tag_str[MAX_NAME_SIZE]={0};
+		wchar_t temp_tag_str[MAX_NAME_SIZE]={0};
 		reconstruct_tags(&app->logs, &app->logs.entries[i],temp_tag_str);
-		fprintf(fp, "%lu %lu \"%ls\" \"%s\"\n",entry->start_time,entry->end_time,entry->name,temp_tag_str);
+		fwprintf(fp, L"%lu %lu \"%ls\" \"%ls\"\n",entry->start_time,entry->end_time,entry->name,temp_tag_str);
 	}
 
 	fclose(fp);
@@ -430,12 +425,12 @@ int main(int argc,char** argv){
 									"succsefully recieved dtbs from server");
 							free_app(&app);
 							load_log_2(&app, database_file,net_recieved_database);
-							if(remove(net_recieved_database)==0){
-								mvprintw(max_row-4,max_col-sizeof("deleted net_recieved_database file"),
-										"deleted net_recieved_database file");
-							}else{
-								draw_error("error deleting file");
-							}
+							/*if(remove(net_recieved_database)==0){*/
+								/*mvprintw(max_row-4,max_col-sizeof("deleted net_recieved_database file"),*/
+										/*"deleted net_recieved_database file");*/
+							/*}else{*/
+								/*draw_error("error deleting file");*/
+							/*}*/
 						}
 					}
 				}break;
@@ -652,8 +647,8 @@ int main(int argc,char** argv){
 		} else if(state==pause_mode){
 			switch(switch_chr){
 				case 'p':{
-					char* last_entry_name= app.logs.entries[app.logs.index-1].name;
-					char temp_tag_str[MAX_NAME_SIZE]={0};
+					wchar_t* last_entry_name= app.logs.entries[app.logs.index-1].name;
+					wchar_t temp_tag_str[MAX_NAME_SIZE]={0};
 					reconstruct_tags(&app.logs, &app.logs.entries[app.logs.index-1],temp_tag_str);
 					add_entry(&app.logs,last_entry_name,temp_tag_str, (unsigned long)time(0), 0);
 					state=view;

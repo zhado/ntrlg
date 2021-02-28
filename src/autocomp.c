@@ -95,7 +95,7 @@ void draw_autocomp(int row, int col,t_log* log_p,scoredTag sTs[AUTOCOM_WIN_MAX_S
 			print_str_n_times(row-i, col-10, "- ", 55);
 		}
 		//mvprintw(row-i,col,"| %s %d",tempchar,cur_sT.score);
-		mvprintw(row-i,col,"| %s",log_p->tg_enrtries[cur_sT.tag_id].tag);
+		mvprintw(row-i,col,"| %ls",log_p->tg_enrtries[cur_sT.tag_id].tag);
 		//mvprintw(row-i,col,"| %s",tempchar);
 		attroff(COLOR_PAIR(2));
 	}

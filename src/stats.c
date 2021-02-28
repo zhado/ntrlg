@@ -49,29 +49,29 @@ int get_entry_tag_count(log_entry* entry){
 	return i;
 }
 
-void reconstruct_color(statColor color, char* str){
+void reconstruct_color(statColor color, wchar_t* str){
 	short bg=color.bg;
 	short fg=color.fg;
 	if(bg!=-1){
-		strncat(str,"(",MAX_NAME_SIZE);
-		sprintf(str+strlen(str),"%d",bg);
+		wcsncat(str,L"(",MAX_NAME_SIZE);
+		swprintf(str+wcslen(str),MAX_NAME_SIZE,L"%d",bg);
 		if(fg!=-1){
-			sprintf(str+strlen(str)," %d",fg);
+			swprintf(str+wcslen(str),MAX_NAME_SIZE,L" %d",fg);
 		}
-		strncat(str,")",MAX_NAME_SIZE);
+		wcsncat(str,L")",MAX_NAME_SIZE);
 	}
 }
 
 void add_statcolor(statConfig* stat_conf,t_log* log_p, strPart prt, int index){
 
 	if(prt.length==-1){
-		prt.length=strlen(prt.start);
+		prt.length=wcslen(prt.start);
 	}
 
 	statColor col={0,-1,-1,-1};
 	int first_p=-1;
 	int sec_p=-1;
-	char* str=prt.start;
+	wchar_t* str=prt.start;
 
 	int count=stat_conf->count;
 
@@ -102,7 +102,7 @@ void add_statcolor(statConfig* stat_conf,t_log* log_p, strPart prt, int index){
 		}
 
 	if(first_p !=-1 && sec_p !=-1){
-		sscanf(str+first_p+1,"%d %d",&col.bg,&col.fg);
+		swscanf(str+first_p+1,L"%d %d",&col.bg,&col.fg);
 		if(index==-1){
 			col.pair_id=count+10;
 		}else{
@@ -170,7 +170,7 @@ void draw_durations(int row, int col,t_log* a_log, statConfig* stat_conf, int st
 	int start_row=row;
 	for(int i=0;i<stat_conf->count;i++){
 		int tag_id=stat_conf->stat_colors[i].tag;
-		char* tag_str=get_str_from_id(a_log, tag_id);
+		wchar_t* tag_str=get_str_from_id(a_log, tag_id);
 
 		int color=0;
 		if(stat_conf!=0)
@@ -198,7 +198,7 @@ void draw_durations(int row, int col,t_log* a_log, statConfig* stat_conf, int st
 		move(row-1,col);
 		if(tag_str[0]!=0){
 			hline(' ',tag_w);
-			printw("%s: ",tag_str);
+			printw("%ls: ",tag_str);
 		}
 		attroff(COLOR_PAIR(color));
 		if(i==stat_conf->stat_selection){

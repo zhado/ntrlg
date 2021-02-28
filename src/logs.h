@@ -33,7 +33,7 @@ typedef struct {
 bool crash_with_other_entry(t_log* a_log,log_entry* entry);
 int get_log_entry_index(t_log* a_log,log_entry* entry);
 int get_tag_id(t_log* log_p,strPart prt);
-char* get_str_from_id(t_log* log_p, int tag_id);
-void reconstruct_tags(t_log* log_p,log_entry* entry,char* str);
+wchar_t* get_str_from_id(t_log* log_p, int tag_id);
+void reconstruct_tags(t_log* log_p,log_entry* entry,wchar_t* str);
 
 #endif

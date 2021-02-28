@@ -8,8 +8,8 @@
 
 log_edit_buffer init_log_edit(t_log* a_log, bool only_tag_str, wchar_t* name, wchar_t* sub_name){
 	log_edit_buffer buffer;
-	memset(buffer.name, 0, MAX_NAME_SIZE);
-	memset(buffer.sub_name, 0, MAX_NAME_SIZE);
+	wmemset(buffer.name, 0, MAX_NAME_SIZE);
+	wmemset(buffer.sub_name, 0, MAX_NAME_SIZE);
 	if(name!=0 && !only_tag_str) wcscpy(buffer.name, name);
 	if(sub_name!=0)wcscpy(buffer.sub_name, sub_name);
 	buffer.a_log=a_log;
@@ -36,20 +36,20 @@ int log_edit(log_edit_buffer* buffer,t_log* log_p, wchar_t chr){
 
 	int selected_id=0;
 	int requested_str_size=0;
-	char* requested_str=0;
+	wchar_t* requested_str=0;
 
 
 	if(*autocomp_selection!=-1){
 		selected_id=buffer->sni[*autocomp_selection].tag_id;
 		requested_str=log_p->tg_enrtries[selected_id].tag;
-		requested_str_size=strlen(log_p->tg_enrtries[selected_id].tag);
+		requested_str_size=wcslen(log_p->tg_enrtries[selected_id].tag);
 	}
 	bool editing_tags=false;
 	if(buffer->name[wcslen(buffer->name)-1]==10){
 		editing_tags=true;
 	}
 
-	if(chr > 31 && chr !=260 && chr !=261 && chr !=258 && chr != 259 &&chr != 127){
+	if((chr > 31  && chr != 127 ) && !(chr > 257 && chr < 262)){
 		if( !editing_tags && wcslen(name) < MAX_NAME_SIZE -2 && !only_tag_str){
 			add_chr_in_wstr(chr, name, buffer->local_curs_pos, MAX_NAME_SIZE);
 			buffer->local_curs_pos++;
@@ -68,10 +68,10 @@ int log_edit(log_edit_buffer* buffer,t_log* log_p, wchar_t chr){
 				buffer->local_curs_pos--;
 			}
 		}
-	}else if (chr == KEY_UP && (!editing_tags || only_tag_str) ){
+	}else if (chr == KEY_UP && (editing_tags || only_tag_str) ){
 		if(*autocomp_selection< buffer->matched_count-1)
 			*autocomp_selection=*autocomp_selection+1;
-	}else if (chr == KEY_DOWN && ( !editing_tags || only_tag_str)){
+	}else if (chr == KEY_DOWN && (editing_tags || only_tag_str)){
 		if(*autocomp_selection>-1)
 			*autocomp_selection=*autocomp_selection-1;
 	}else if (chr == KEY_RIGHT ){
@@ -94,10 +94,10 @@ int log_edit(log_edit_buffer* buffer,t_log* log_p, wchar_t chr){
 				return 0;
 			}else{
 				if(get_after_last_comma(tag_str)!=tag_str || only_tag_str)
-					memcpy(tag_str+tag_str_len-wcslen(get_after_last_comma(tag_str))+1*(tag_str[wcslen(tag_str)-1]==32),
+					wmemcpy(tag_str+tag_str_len-wcslen(get_after_last_comma(tag_str))+1*(tag_str[wcslen(tag_str)-1]==32),
 							requested_str,requested_str_size);
 				else
-					memcpy(tag_str+wcslen(tag_str)-wcslen(get_after_last_comma(tag_str)),
+					wmemcpy(tag_str+wcslen(tag_str)-wcslen(get_after_last_comma(tag_str)),
 							requested_str,requested_str_size);
 				tag_str[wcslen(tag_str)]=',';
 				tag_str[wcslen(tag_str)]=' ';
@@ -117,7 +117,6 @@ int log_edit(log_edit_buffer* buffer,t_log* log_p, wchar_t chr){
 
 void draw_log_edit(log_edit_buffer* buffer,t_log* log_p,int row,int col){
 	int* autocomp_selection=&buffer->tag_autocomp_selection;
-	wchar_t* name=buffer->name;
 	wchar_t* tag_str=buffer->sub_name;
 	t_log* a_log=buffer->a_log;
 	bool only_tag_str=buffer->only_tag_str;

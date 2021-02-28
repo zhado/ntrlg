@@ -21,22 +21,6 @@ int int_char_size(int a){
 	return count;
 }
 
-int match_end(char* start, char* match){
-	int match_len=strlen(match);
-	int start_len=strlen(start);
-	char temp_ch[match_len];
-
-	memset(temp_ch, 0, match_len-1);
-	//memcpy(temp_ch, start-match_len+start_len,match_len-1);
-	memcpy(temp_ch, start+start_len-match_len,match_len);
-	int comp_res=strcmp(temp_ch, match);
-
-	if(comp_res==0)
-		return 1;
-	else 	
-		return false;
-}
-
 void handle_accept(int connfd){
 	char rec_buff[MAX_NAME_SIZE];
 	memset (rec_buff,0,MAX_NAME_SIZE);
@@ -63,16 +47,7 @@ void handle_accept(int connfd){
 
 	if(send_dtbs){
 		char file_contents[MAX_NAME_SIZE];
-		//char temp_chr[100];
-		//memset(temp_chr, 0, 100);
-		//fseek(fp, 0L, SEEK_END);
-		//int f_size=ftell(fp);
-		//rewind(fp);
-		//sprintf(temp_chr, "%d",f_size);
-		//write(connfd,temp_chr,7);
-
 		FILE* fp=fopen(database_file,"r");
-		//printf("sending dtbs\n");
 		while((n = fread(file_contents,1,MAX_NAME_SIZE,fp ))>0){
 			write(connfd,file_contents,n);
 		}
