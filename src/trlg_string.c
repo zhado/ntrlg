@@ -35,7 +35,7 @@ wchar_t* remove_spaces(wchar_t* str){
 	int len=wcslen(str);
 	for(int i=0;i<len;i++){
 		if(str[i]==' '){
-			memcpy(str+i, str+i+1,len-i);
+			wmemcpy(str+i, str+i+1,len-i);
 			i--;
 		}
 	}

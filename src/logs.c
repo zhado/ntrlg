@@ -96,6 +96,8 @@ void generate_entry_tags(t_log* log_p,log_entry* entry,wchar_t* sub_name){
 		entry->tags[i]=0;
 	}
 
+	remove_spaces(sub_name);
+	remove_commas_from_end(sub_name);
 	for(int i=0;;i++){
 		//parse tags
 		strPart prt=get_nth_strpart(sub_name, ',', i);
@@ -132,12 +134,16 @@ void add_entry(t_log* log_p, wchar_t* name, wchar_t* sub_name,time_t start_time,
 
 	entry->start_time=start_time;
 	wcscpy(entry->name, name);
-	remove_spaces(sub_name);
-	remove_commas_from_end(sub_name);
 	for(int i=0;i<ENTRY_TAG_SIZE;i++){
 		entry->tags[i]=0;
 	}
 	generate_entry_tags(log_p, entry, sub_name);
+	
+	// if name empty add first tag for name
+	if(name[0]==0){
+		wchar_t* tag=get_str_from_id(log_p, entry->tags[0]);
+		wcscpy(name, tag);
+	}
 
 	log_p->index++;
 }
