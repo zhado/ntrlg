@@ -92,7 +92,7 @@ void promote_tag(t_log* log_p,int tg_id){
 }
 
 void generate_entry_tags(t_log* log_p,log_entry* entry,wchar_t* sub_name){
-	for(int i=0;i<20;i++){
+	for(int i=0;i<MAX_TAG_COUNT;i++){
 		entry->tags[i]=0;
 	}
 
@@ -160,7 +160,12 @@ void remove_entry(t_log* log_p,log_entry* entry){
 		log_p->entries[i].start_time=log_p->entries[i+1].start_time;
 		
 		wcscpy(log_p->entries[i].name,log_p->entries[i+1].name);
-		//strcpy(log_p->entries[i].sub_name,log_p->entries[i+1].sub_name);
+		for(int j=0;j<MAX_TAG_COUNT;j++){
+			log_p->entries[i].tags[j]=log_p->entries[i+1].tags[j];
+			if(log_p->entries[i].tags[j]==0){
+				break;
+			}
+		}
 	}
 	log_p->index=log_p->index-1;
 }

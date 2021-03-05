@@ -13,7 +13,7 @@ typedef struct{
 
 typedef struct{
 	wchar_t* name;
-	int tags[20];
+	int tags[MAX_TAG_COUNT];
 	time_t start_time;
 	time_t end_time;
 }log_entry;
