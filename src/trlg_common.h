@@ -22,6 +22,7 @@ typedef enum {
 	logging,
 	append_log, 
 	log_editing,
+	log_insert,
 	entry_start_resize,
 	entry_end_resize,
 	entry_body_resize,

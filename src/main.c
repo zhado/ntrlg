@@ -372,6 +372,13 @@ int main(int argc,char** argv){
 					buffr=init_log_edit(&app.logs, false,0,0);
 					state=append_log;
 				}break;
+				case 'i':{
+					memset(app.stat_input, 0, MAX_NAME_SIZE);
+					if(entry_under_cursor_fun(&app.logs, cell_minutes, cursor_pos_tm, 0)==0){
+						buffr=init_log_edit(&app.logs, false,0,app.stat_input);
+						state=log_insert;
+					}
+				}break;
 				case 'd':{
 					int entry_part=0;
 					entry_under_cursor=entry_under_cursor_fun(&app.logs, cell_minutes, cursor_pos_tm,&entry_part);
@@ -695,6 +702,12 @@ int main(int argc,char** argv){
 				state=view;
 				entry_under_cursor=0;
 			}
+		} else if(state==log_insert){
+			int res=log_edit(&buffr,&app.logs, wchr);
+			if(res==0){
+				add_entry(&app.logs, buffr.name, buffr.tags,cursor_pos_tm, cursor_pos_tm+cell_minutes*60);
+				state=view;
+			}
 		}
 
 //drawing happens here --------------------
@@ -742,6 +755,10 @@ int main(int argc,char** argv){
 		}else if(state==log_editing){
 			curs_set(1);
 			mvprintw(max_row-1, 0, "log editing");
+			draw_log_edit(&buffr, &app.logs,max_row-3, 0);
+		}else if(state==log_insert){
+			curs_set(1);
+			mvprintw(max_row-1, 0, "log insert");
 			draw_log_edit(&buffr, &app.logs,max_row-3, 0);
 		}else if(state==append_log){
 			curs_set(1);

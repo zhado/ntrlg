@@ -139,7 +139,7 @@ void add_entry(t_log* log_p, wchar_t* name, wchar_t* sub_name,time_t start_time,
 	}
 	generate_entry_tags(log_p, entry, sub_name);
 	
-	// if name empty add first tag for name
+	// if name is empty, use first tag for name
 	if(name[0]==0){
 		wchar_t* tag=get_str_from_id(log_p, entry->tags[0]);
 		wcscpy(entry->name, tag);
