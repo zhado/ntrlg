@@ -119,7 +119,10 @@ void generate_entry_tags(t_log* log_p,log_entry* entry,wchar_t* sub_name){
 }
 
 void add_entry(t_log* log_p, wchar_t* name, wchar_t* sub_name,time_t start_time,time_t end_time){
-	if(log_p->index!=0)
+	if(sub_name[0]==0 && name[0]==0){
+		return;
+	}
+	if(log_p->index!=0) 
 		end_last_entry(log_p);
 	if(log_p->allocated < (log_p->index+1) ){
 		log_p->allocated=log_p->allocated+REALLOC_INCREMENT;
