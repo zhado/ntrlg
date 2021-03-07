@@ -1,5 +1,6 @@
 #include <string.h>
 #include <ncurses.h>
+#include <math.h>
 
 #include "logs.h"
 #include "autocomp.h"
@@ -8,6 +9,7 @@
 #include "trlg_string.h"
 #include "logs.h"
 #include "stats.h"
+#include "trlg.h"
 
 time_t tm_clamp(time_t in, time_t min, time_t max){
 	if(in > min && in < max){
@@ -208,8 +210,45 @@ void draw_durations(int row, int col,t_log* a_log, statConfig* stat_conf, int st
 	}
 }
 
+void raster_line(int y1,int x1,int y2,int x2){
+		int dx=x2-x1;
+		int dy=y2-y1;
+		float dist=sqrt(dx*dx+dy*dy);
+		float tx=dx/dist;
+		float ty=dy/dist;
+		float my_x=x1;
+		float my_y=y1;
+		int prev_my_x=x1;
+		int prev_my_y=y1;
+		char chr=' ';
+		for(int i=0;i<ceil(dist);i++){
+			my_x+=tx;
+			my_y+=ty;
+			int delta_x=(int)my_x-prev_my_x;
+			int delta_y=(int)my_y-prev_my_y;
 
-void grahp(int row, int col,t_log* a_log, statConfig* stat_conf, int stat_pos){
+			if(delta_x>=1 && delta_y<=-1)
+				chr='/';
+			else if(delta_x>=1 && delta_y>=1) 
+				chr='\\';
+			else if(delta_x>=1) 
+				chr='_';
+			else if(delta_y<=1 && delta_y!=0)
+				chr='|';
+				
+			if(dy>=1)
+				mvprintw(my_y, my_x, "%c",chr);
+			else
+				mvprintw(prev_my_y, prev_my_x, "%c",chr);
+
+			prev_my_x=(int)my_x;
+			prev_my_y=(int)my_y;
+		}
+}
+
+void grahp(int row, int col,app_state* app, candlestickOpts* opts){
+	t_log* a_log=&app->logs;
+	statConfig* stat_conf=&app->stat_conf;
 	int max_col=getmaxx(stdscr);
 
 	time_t local_time=(unsigned long)time(NULL);
@@ -220,7 +259,6 @@ void grahp(int row, int col,t_log* a_log, statConfig* stat_conf, int stat_pos){
 		return;
 
 	int start_row=row;
-	//for(int i=0;i<stat_conf->count;i++){
 
 	int color=0;
 	if(stat_conf!=0)
@@ -230,7 +268,7 @@ void grahp(int row, int col,t_log* a_log, statConfig* stat_conf, int stat_pos){
 	time_t last_midnight=local_time-((local_time+4*60*60)%(24*60*60));
 	int day_count=16;
 	for(int j=0;j<=day_count;j++){
-		int stat_pos_div=stat_pos/cell_w;
+		int stat_pos_div=opts->x_offset/cell_w;
 		time_t start_time=last_midnight - secs_in_day*j-stat_pos_div*secs_in_day;
 		time_t end_time=last_midnight - secs_in_day*(j-1)-stat_pos_div*secs_in_day;
 		time_t dur=get_duration_in_range(a_log, stat_conf->stat_colors[0].tag,start_time,end_time);
@@ -243,12 +281,10 @@ void grahp(int row, int col,t_log* a_log, statConfig* stat_conf, int stat_pos){
 			if(k==4)
 				col+=k;
 		}
-		//mvprintw(start_row-(int)(dur/incr))+1,col+j,"%d",dur/60);
-		if((col+j )>max_col)
+		if((col+j)>max_col)
 			break;
 	}
 	attroff(COLOR_PAIR(color));
 	row++;
-	//}
 }
 

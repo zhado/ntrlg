@@ -18,6 +18,13 @@ typedef struct {
 	int count;
 }statConfig;
 
+typedef struct {
+	int x_scale;
+	int y_scale;
+	int x_offset;
+	int y_offset;
+} candlestickOpts;
+
 int get_tag_color_pair(int* tags, statConfig* stat_conf, int index);
 int get_entry_tag_count(log_entry* entry);
 #endif

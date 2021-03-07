@@ -7,6 +7,7 @@
 #include <sys/stat.h>
 #include <fcntl.h> 
 
+#include "trlg.h"
 #include "trlg_common.h"
 #include "trlg_string.c"
 #include "trlg-unicode.c"
@@ -21,18 +22,6 @@
 #include "logs.c"
 
 extern NCURSES_EXPORT(int) get_wch (u_int32_t *);
-
-typedef struct {
-	t_log logs;
-	wchar_t* stat_input;
-	statConfig stat_conf;
-}app_state;
-
-typedef struct {
-	int port;
-	int my_port;
-	char* ip;
-}server_conf;
 
 bool UNSAVED_CHANGES=false;
 long get_nano_time(){
@@ -432,12 +421,12 @@ int main(int argc,char** argv){
 									"succsefully recieved dtbs from server");
 							free_app(&app);
 							load_log_2(&app, database_file,net_recieved_database);
-							/*if(remove(net_recieved_database)==0){*/
-								/*mvprintw(max_row-4,max_col-sizeof("deleted net_recieved_database file"),*/
-										/*"deleted net_recieved_database file");*/
-							/*}else{*/
-								/*draw_error("error deleting file");*/
-							/*}*/
+							if(remove(net_recieved_database)==0){
+								mvprintw(max_row-4,max_col-sizeof("deleted net_recieved_database file"),
+										"deleted net_recieved_database file");
+							}else{
+								draw_error("error deleting file");
+							}
 						}
 					}
 				}break;
@@ -715,6 +704,7 @@ int main(int argc,char** argv){
 		if(state != week_view && state != stat_view && state != stat_editing && state != stat_add && state != stat_dragging){
 			print_logs(&app.logs,-5,0,cell_minutes,cursor_pos_tm,&app.stat_conf,state,entry_under_cursor);
 			draw_durations(23, 90, &app.logs, &app.stat_conf,stat_pos);
+			grahp(max_row-2, 90, &app, 0);
 		}
 
 		if(state==view){

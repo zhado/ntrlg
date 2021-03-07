@@ -377,6 +377,7 @@ void print_weeks(t_log* log_p,int cell_minutes,time_t cursor_pos_tm,statConfig* 
 	}
 }
 
+
 void draw_status(int* counter, int packet_counter){
 
 	int max_row,max_col;
