@@ -147,7 +147,7 @@ int load_log_2(app_state* app,const char* file_name,const char* file_name2){
 			isconf=swscanf(line,L"%lu",&st_time);
 			isconf2=swscanf(line2,L"%lu",&st_time2);
 		}
-		add_entry(&app->logs, temp_name, temp_subname, temp_start_time, temp_end_time);
+		add_entry(&app->logs, temp_name, temp_subname, temp_start_time, temp_end_time,false);
 
 		if(app->logs.index>1){
 			log_entry* prev_entry=&app->logs.entries[app->logs.index-2];
@@ -618,7 +618,7 @@ int main(int argc,char** argv){
 		} else if(state==logging){
 			int res=log_edit(&buffr,&app.logs,  wchr);
 			if(res==0){
-				add_entry(&app.logs, buffr.name, buffr.tags,(unsigned long)time(0) , 0);
+				add_entry(&app.logs, buffr.name, buffr.tags,(unsigned long)time(0) , 0,false);
 				state=view;
 			}
 		} else if(state==stat_editing){
@@ -640,7 +640,7 @@ int main(int argc,char** argv){
 			if(res==0){
 				if(app.logs.entries[app.logs.index-1].end_time==0)
 					end_last_entry(&app.logs);
-				add_entry(&app.logs, buffr.name, buffr.tags,app.logs.entries[app.logs.index-1].end_time , 0);
+				add_entry(&app.logs, buffr.name, buffr.tags,app.logs.entries[app.logs.index-1].end_time , 0,false);
 				state=view;
 			}
 
@@ -650,7 +650,7 @@ int main(int argc,char** argv){
 					wchar_t* last_entry_name= app.logs.entries[app.logs.index-1].name;
 					wchar_t temp_tag_str[MAX_NAME_SIZE]={0};
 					reconstruct_tags(&app.logs, &app.logs.entries[app.logs.index-1],temp_tag_str);
-					add_entry(&app.logs,last_entry_name,temp_tag_str, (unsigned long)time(0), 0);
+					add_entry(&app.logs,last_entry_name,temp_tag_str, (unsigned long)time(0), 0,false);
 					state=view;
 				}break;
 				default:{
@@ -698,7 +698,7 @@ int main(int argc,char** argv){
 		} else if(state==log_insert){
 			int res=log_edit(&buffr,&app.logs, wchr);
 			if(res==0){
-				add_entry(&app.logs, buffr.name, buffr.tags,cursor_pos_tm, cursor_pos_tm+cell_minutes*60);
+				add_entry(&app.logs, buffr.name, buffr.tags,cursor_pos_tm, cursor_pos_tm+cell_minutes*60,true);
 				state=view;
 			}
 		}

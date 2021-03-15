@@ -118,11 +118,22 @@ void generate_entry_tags(t_log* log_p,log_entry* entry,wchar_t* sub_name){
 	}
 }
 
-void add_entry(t_log* log_p, wchar_t* name, wchar_t* sub_name,time_t start_time,time_t end_time){
+void copy_entry(log_entry* entr1,log_entry* entr2){
+	entr1->start_time=entr2->start_time;
+	entr1->end_time=entr2->end_time;
+	int i=0;
+	for(;entr2->tags[i]!=0;i++){
+		entr1->tags[i]=entr2->tags[i];
+	}
+	entr1->tags[i]=0;
+	wcscpy(entr1->name, entr2->name);
+}
+
+void add_entry(t_log* log_p, wchar_t* name, wchar_t* sub_name,time_t start_time,time_t end_time, bool is_insert){
 	if(sub_name[0]==0 && name[0]==0){
 		return;
 	}
-	if(log_p->index!=0) 
+	if(log_p->index!=0 && !is_insert) 
 		end_last_entry(log_p);
 	if(log_p->allocated < (log_p->index+1) ){
 		log_p->allocated=log_p->allocated+REALLOC_INCREMENT;
@@ -132,6 +143,17 @@ void add_entry(t_log* log_p, wchar_t* name, wchar_t* sub_name,time_t start_time,
 		}
 	}
 	log_entry* entry=&log_p->entries[log_p->index];
+
+	// if we are inserting we need to shift entries forward
+	if(is_insert){
+		for(int i=log_p->index;i>0;i--){
+			if(log_p->entries[i-1].end_time<start_time&& log_p->entries[i-1].end_time!=0 ){
+				entry=&log_p->entries[i];
+				break;
+			}
+			copy_entry(&log_p->entries[i], &log_p->entries[i-1]);
+		}
+	}
 
 	entry->end_time=end_time;
 
@@ -158,7 +180,7 @@ int get_log_entry_index(t_log* a_log,log_entry* entry){
 
 void remove_entry(t_log* log_p,log_entry* entry){
 	int entry_index=get_log_entry_index(log_p, entry);
-	for(int i=entry_index;i<log_p->index-1;i++){
+	for(int i=entry_index;i<log_p->index;i++){
 		log_p->entries[i].end_time=log_p->entries[i+1].end_time;
 		log_p->entries[i].start_time=log_p->entries[i+1].start_time;
 		
