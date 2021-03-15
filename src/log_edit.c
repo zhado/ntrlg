@@ -26,6 +26,22 @@ log_edit_buffer init_log_edit(t_log* a_log, bool only_tag_str, wchar_t* name, wc
 
 	return buffer;
 }
+void append_autocomp_selection(wchar_t* tag_str,wchar_t* requested_str){
+	int tag_str_len=wcslen(tag_str);
+	int requested_str_size=wcslen(requested_str);
+	if(tag_str[tag_str_len-1]==32 ||tag_str[tag_str_len-1]==0){
+		wmemcpy(tag_str+tag_str_len,requested_str,requested_str_size);
+	}else{
+		wchar_t* last_comma=get_after_last_comma(tag_str);
+		if((wchar_t)*last_comma==' '){
+			wmemcpy(last_comma+sizeof(wchar_t),requested_str,requested_str_size);
+		}else{
+			wmemcpy(last_comma,requested_str,requested_str_size);
+		}
+	}
+	tag_str[wcslen(tag_str)]=',';
+	tag_str[wcslen(tag_str)]=' ';
+}
 
 int log_edit(log_edit_buffer* buffer,t_log* log_p, wchar_t chr){
 	int* autocomp_selection=&buffer->tag_autocomp_selection;
@@ -93,14 +109,7 @@ int log_edit(log_edit_buffer* buffer,t_log* log_p, wchar_t chr){
 					name[wcslen(name)-1]=0;
 				return 0;
 			}else{
-				if(get_after_last_comma(tag_str)!=tag_str || only_tag_str)
-					wmemcpy(tag_str+tag_str_len-wcslen(get_after_last_comma(tag_str))+1*(tag_str[wcslen(tag_str)-1]==32),
-							requested_str,requested_str_size);
-				else
-					wmemcpy(tag_str+wcslen(tag_str)-wcslen(get_after_last_comma(tag_str)),
-							requested_str,requested_str_size);
-				tag_str[wcslen(tag_str)]=',';
-				tag_str[wcslen(tag_str)]=' ';
+				append_autocomp_selection(tag_str, requested_str);
 				buffer->local_curs_pos=wcslen(tag_str);
 				*autocomp_selection=-1;
 			
