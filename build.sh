@@ -1,6 +1,6 @@
 #!/bin/sh
 cd $(dirname $0)
-links='-lncurses -lstdc++ -pthread'
+links='-lncurses -lstdc++ -pthread -lm'
 flags="-Wall"
 COMPILTER="clang"
 

@@ -436,6 +436,10 @@ int main(int argc,char** argv){
 						cell_minutes=cell_minutes-5;
 					}
 				}break;
+				case 'A':{
+					log_entry* entr=&app.logs.entries[app.logs.index-1];
+					entr->end_time=0;
+				}break;
 				case 'x':{
 					cell_minutes=cell_minutes+5;
 				}break;
@@ -704,7 +708,7 @@ int main(int argc,char** argv){
 		if(state != week_view && state != stat_view && state != stat_editing && state != stat_add && state != stat_dragging){
 			print_logs(&app.logs,-5,0,cell_minutes,cursor_pos_tm,&app.stat_conf,state,entry_under_cursor);
 			draw_durations(23, 90, &app.logs, &app.stat_conf,stat_pos);
-			grahp(max_row-2, 90, &app, 0);
+			/*grahp(max_row-2, 90, &app, 0);*/
 		}
 
 		if(state==view){
