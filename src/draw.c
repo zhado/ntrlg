@@ -66,7 +66,6 @@ int draw_time_decorations(int cur_row,int col_p,time_t cell_tm, int cell_minutes
 	int col=0;
 	if(quantized_cursor_pos_tm-cursor_offset < next_cell_tm && quantized_cursor_pos_tm-cursor_offset >= cell_tm && draw_mask & DRAW_cursor){
 		print_str_n_times(cur_row,col_p, "_", 70);
-		//move(cur_row,max_col-6);
 	}
 
 	struct tm broken_down_cell_tm=get_tm(cell_tm);
@@ -339,7 +338,7 @@ void print_weeks(t_log* log_p,int cell_minutes,time_t cursor_pos_tm,statConfig* 
 
 		time_t last_midnight=cursor_pos_tm-((cursor_pos_tm+time_zone_offset)%(24*60*60));
 		int count=0;
-		//mvprintw(0,j*(width+space_between)+offset,"%d %d",j,day);
+		/*mvprintw(0,j*(width+space_between)+offset,"%d %d",j,day);*/
 		for(int i=max_row-2;i>=0;i--){
 			time_t cell_tm=quantized_cursor_pos_tm-cell_minutes*60*count;
 			calcCellResult C_res=calc_cell(log_p, cell_tm, cell_minutes,

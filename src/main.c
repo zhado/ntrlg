@@ -3,6 +3,7 @@
 #include <linux/types.h>
 #include <ncurses.h>
 #include <locale.h>
+#include <signal.h>
 
 #include <sys/stat.h>
 #include <fcntl.h> 
@@ -258,7 +259,15 @@ time_t get_file_modified_time(char* name){
 	return buffer.st_mtim.tv_sec;
 }
 
+void sig_hup_handle(int signum){
+	set_escdelay(0);
+	halfdelay(0);
+	endwin();
+	exit(0);
+}
+
 int main(int argc,char** argv){
+	signal(SIGHUP,sig_hup_handle); 
 	int cell_minutes=20;
 	time_t cursor_pos_tm=(unsigned long)time(0);
 	int week_view_width=25;

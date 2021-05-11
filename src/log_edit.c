@@ -26,6 +26,7 @@ log_edit_buffer init_log_edit(t_log* a_log, bool only_tag_str, wchar_t* name, wc
 
 	return buffer;
 }
+
 void append_autocomp_selection(wchar_t* tag_str,wchar_t* requested_str){
 	int tag_str_len=wcslen(tag_str);
 	int requested_str_size=wcslen(requested_str);
@@ -34,7 +35,7 @@ void append_autocomp_selection(wchar_t* tag_str,wchar_t* requested_str){
 	}else{
 		wchar_t* last_comma=get_after_last_comma(tag_str);
 		if((wchar_t)*last_comma==' '){
-			wmemcpy(last_comma+sizeof(wchar_t),requested_str,requested_str_size);
+			wmemcpy(last_comma+1,requested_str,requested_str_size);
 		}else{
 			wmemcpy(last_comma,requested_str,requested_str_size);
 		}
@@ -99,7 +100,6 @@ int log_edit(log_edit_buffer* buffer,t_log* log_p, wchar_t chr){
 	}else if (chr == KEY_LEFT && buffer->local_curs_pos>0){
 		buffer->local_curs_pos--;
 	}else if (chr == 10){
-		int tag_str_len=wcslen(tag_str);
 		if(!editing_tags && !only_tag_str){
 			name[wcslen(name)]=10;
 			buffer->local_curs_pos=wcslen(buffer->tags);
