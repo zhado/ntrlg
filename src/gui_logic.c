@@ -4,7 +4,7 @@
 #include "trlg_common.h"
 #include "logs.h"
 
-bool crash_with_other_entry(t_log* a_log,log_entry* entry){
+bool crash_with_other_entry(t_log* a_log,log_entry* entry,log_entry** crashed_entry_next, log_entry** crashed_entry_prev ){
 	log_entry* next_entry=0;
 	log_entry* prev_entry=0;
 	time_t local_time=(unsigned long)time(NULL);
@@ -22,12 +22,14 @@ bool crash_with_other_entry(t_log* a_log,log_entry* entry){
 		}
 	}else if(prev_entry ==0){
 		if(entry->end_time >next_entry->start_time && next_entry!=0){
+			*crashed_entry_next=next_entry;
 			return true;
 		}else if(entry->start_time >= entry->end_time){
 			return true;
 		}
 	}else if(next_entry==0){
 		if(entry->start_time < prev_entry->end_time){
+			*crashed_entry_prev=prev_entry;
 			return true;
 		}else if(entry->end_time!=0){
 			if(entry->start_time >= entry->end_time){
@@ -41,8 +43,10 @@ bool crash_with_other_entry(t_log* a_log,log_entry* entry){
 
 	}else{
 		if(entry->start_time<prev_entry->end_time){
+			*crashed_entry_prev=prev_entry;
 			return true;
 		}else if(entry->end_time >next_entry->start_time && next_entry!=0){
+			*crashed_entry_next=next_entry;
 			return true;
 		}else if(entry->start_time >= entry->end_time){
 			return true;
@@ -60,6 +64,8 @@ void resize_logic(time_t* cursor_pos_tm, int* cell_minutes,  log_entry* entry_to
 	time_t local_time=(unsigned long)time(0);
 	time_t initial_start_time=entry_to_resize->start_time;
 	time_t initial_end_time=entry_to_resize->end_time;
+	log_entry* next_crash_entry=0;
+	log_entry* prev_crash_entry=0;
 
 	switch(chr){
 		case 259:{
@@ -104,10 +110,19 @@ void resize_logic(time_t* cursor_pos_tm, int* cell_minutes,  log_entry* entry_to
 		entry_to_resize->end_time+=*cursor_pos_tm-initial_cursor_pos_tm;
 	}
 
-	if(crash_with_other_entry(log_p, entry_to_resize)){
-		entry_to_resize->start_time=initial_start_time;
-		entry_to_resize->end_time=initial_end_time;
-		*cursor_pos_tm=initial_cursor_pos_tm;
+	if(crash_with_other_entry(log_p, entry_to_resize,&next_crash_entry,&prev_crash_entry)){
+		if(prev_crash_entry!=0 && *win_state!=entry_body_resize)
+			entry_to_resize->start_time=prev_crash_entry->end_time+1;
+		else{
+			entry_to_resize->start_time=initial_start_time;
+			*cursor_pos_tm=initial_cursor_pos_tm;
+		}
+		if(next_crash_entry!=0 && *win_state!=entry_body_resize)
+			entry_to_resize->end_time=next_crash_entry->start_time-1;
+		else{
+			entry_to_resize->end_time=initial_end_time;
+			*cursor_pos_tm=initial_cursor_pos_tm;
+		}
 	}
 
 }

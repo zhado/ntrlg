@@ -30,7 +30,7 @@ typedef struct {
 
 }t_log ;
 
-bool crash_with_other_entry(t_log* a_log,log_entry* entry);
+bool crash_with_other_entry(t_log* a_log,log_entry* entry,log_entry** crashed_entry_next, log_entry** crashed_entry_prev);
 int get_log_entry_index(t_log* a_log,log_entry* entry);
 int get_tag_id(t_log* log_p,strPart prt);
 wchar_t* get_str_from_id(t_log* log_p, int tag_id);
