@@ -81,7 +81,7 @@ void resize_logic(time_t* cursor_pos_tm, int* cell_minutes,  log_entry* entry_to
 		case 258:{
 			//downarrow
 			*cursor_pos_tm+=*cell_minutes*60;
-		}break;  
+		}break; 
 		case 339:{
 			//pgup
 			*cursor_pos_tm-=*cell_minutes*60*4;
@@ -96,6 +96,23 @@ void resize_logic(time_t* cursor_pos_tm, int* cell_minutes,  log_entry* entry_to
 		}break;
 		case 'x':{
 			*cell_minutes=*cell_minutes+5;
+		}break;
+		case 'f':{
+			int entry_index=get_log_entry_index(log_p, entry_to_resize);
+			if(entry_index==log_p->index-1 && log_p->index>1){
+				// tu bolo
+				entry_to_resize->end_time=local_time;
+				entry_to_resize->start_time=log_p->entries[entry_index-1].end_time-1;
+				return;
+			}else if (log_p->index>3){
+				// tu shuashi
+				entry_to_resize->end_time=log_p->entries[entry_index+1].start_time+1;
+				entry_to_resize->start_time=log_p->entries[entry_index-1].end_time-1;
+				return;
+			}else if(log_p->index>3){
+				// tu pirveli
+				// todo
+			}
 		}break;
 	}
 
