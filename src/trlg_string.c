@@ -32,6 +32,9 @@ int remove_wchar(wchar_t* str,int index){
 }
 
 wchar_t* remove_spaces(wchar_t* str){
+	if(!str){
+		return 0;
+	}
 	int len=wcslen(str);
 	for(int i=0;i<len;i++){
 		if(str[i]==' '){

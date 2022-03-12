@@ -293,12 +293,20 @@ int main(int argc,char** argv){
 	init_pair(3, -1, COLOR_MAGENTA);
 	init_pair(4, -1, -1);
 
-	app_state app;
+	bool are_you_sure_prompt=false;
+
+	app_state app={0};
 	app.logs.allocated=0;
 	app.logs.index=0;
 	app.logs.entries=0;
 	app.stat_input=0;
-	load_log_2(&app, database_file,0);
+	if(access(database_file, F_OK)==0){
+		load_log_2(&app, database_file,0);
+		remove_spaces(app.stat_input);
+	}else{
+		state=create_log_file_mode;
+		are_you_sure_prompt=true;
+	}
 	/*load_log_2(&app, database_file,net_recieved_database);*/
 	//exit(1);
 
@@ -313,7 +321,6 @@ int main(int argc,char** argv){
 	}
 
 
-	remove_spaces(app.stat_input);
 	
 	u_int32_t wchr=0;
 	int switch_chr=0;
@@ -322,10 +329,11 @@ int main(int argc,char** argv){
 	log_entry* entry_to_resize=0;
 	log_edit_buffer buffr;
 
-	uint32_t last_hash=hash(&app);
+	uint32_t last_hash=0;
+	if(app.logs.entries!=0)
+		last_hash=hash(&app);
 	time_t last_save_time=0;
 	bool week_view_hide_text=false;
-	bool are_you_sure_prompt=false;
 	bool fude_toggle=true;
 	int are_you_sure_result=-1;
 	bool running=true;
@@ -669,6 +677,7 @@ int main(int argc,char** argv){
 				
 			}
 			if(are_you_sure_result==1){
+				
 				state=view;
 				are_you_sure_prompt=false;
 				are_you_sure_result=-1;
@@ -676,9 +685,34 @@ int main(int argc,char** argv){
 				are_you_sure_prompt=false;
 				are_you_sure_result=-1;
 			}
+
+		} else if(state==create_log_file_mode){
+
+			switch(switch_chr){
+				default:{
+					if(are_you_sure_prompt==false && wchr != 0)
+						are_you_sure_prompt=true;
+				}break;
+				
+			}
+			if(are_you_sure_result==1){
+				state=view;
+				are_you_sure_prompt=false;
+				are_you_sure_result=-1;
+
+				FILE* temp_db=fopen(database_file, "w");
+				fclose(temp_db);
+				free_app(&app);
+				load_log_2(&app, database_file,0);
+				remove_spaces(app.stat_input);
+
+			}else if(are_you_sure_result==0){
+				are_you_sure_prompt=false;
+				are_you_sure_result=-1;
+				exit(1);
+			}
 		} else if(state==entry_start_resize || state==entry_body_resize || state==entry_end_resize){
 			resize_logic(&cursor_pos_tm, &cell_minutes,  entry_to_resize,&app.logs, wchr, &state);
-
 		} else if(state==server_mode){
 			if(wchr !=0){
 				state=view;
@@ -741,6 +775,11 @@ int main(int argc,char** argv){
 			if(are_you_sure_prompt){
 				dr_text_box(0,0,0,0,"are you sure you want to cancel pause mode? (y/n)");
 			}
+		}else if(state==create_log_file_mode){
+			/*dr_text_box(0,0,0,0,"creating log i guess");*/
+			if(are_you_sure_prompt){
+				dr_text_box(0,0,0,0,"log file doesn't exist, do you want to create it? (y/n)");
+			}
 		}else if(state==logging){
 			curs_set(1);
 			draw_log_edit(&buffr,&app.logs, max_row-3, 0);
@@ -782,7 +821,7 @@ int main(int argc,char** argv){
 			dr_text_box(0,0,0,0,"are you sure you want to delete (y/n)");
 		}
 		mvprintw(max_row-2,max_col-6,"%d=%d",max_row,max_col);
-		mvprintw(max_row-1,max_col-6,"%ld=%lc",wchr,wchr);
+		mvprintw(max_row-1,max_col-6,"%u=%lc",wchr,wchr);
 
 		uint32_t new_hash=hash(&app);
 

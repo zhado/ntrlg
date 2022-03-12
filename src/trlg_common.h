@@ -29,7 +29,8 @@ typedef enum {
 	entry_body_resize,
 	server_mode,
 	delete_mode,
-	pause_mode
+	pause_mode,
+	create_log_file_mode
 }window_state ;
 
 long get_nano_time();
