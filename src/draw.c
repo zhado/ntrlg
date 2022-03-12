@@ -127,7 +127,7 @@ calcCellResult calc_cell(t_log* logp,time_t cell_tm, int cell_minutes, time_t ma
 	bool find_longest_entry=false;
 
 	calcCellResult result={0,0,0};
-	log_entry* longest_entry;
+	log_entry* longest_entry=0;
 
 	bool draw_this_cell= (mask_end_tm==0) || (cell_tm > mask_start_tm && cell_tm < mask_end_tm);
 
@@ -170,12 +170,14 @@ calcCellResult calc_cell(t_log* logp,time_t cell_tm, int cell_minutes, time_t ma
 			// entry start -
 			result.entry_part=1;
 			result.entry=&logp->entries[i];
-		}else if(find_longest_entry){
-			// ended entry end 'name'
-			result.entry_part=3;
-			result.entry=longest_entry;
-			return result;
 		}
+	}
+
+	if(find_longest_entry){
+		// ended entry end 'name'
+		result.entry_part=3;
+		result.entry=longest_entry;
+		return result;
 	}
 
 	return result;
