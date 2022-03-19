@@ -1,0 +1,2 @@
+# ntrlg
+Terminal time tracker
