@@ -104,14 +104,15 @@ void resize_logic(time_t* cursor_pos_tm, int* cell_minutes,  log_entry* entry_to
 				entry_to_resize->end_time=local_time;
 				entry_to_resize->start_time=log_p->entries[entry_index-1].end_time-1;
 				return;
-			}else if (log_p->index>3){
+			}else if (log_p->index>=2 && entry_index!=0){
 				// tu shuashi
 				entry_to_resize->end_time=log_p->entries[entry_index+1].start_time+1;
 				entry_to_resize->start_time=log_p->entries[entry_index-1].end_time-1;
 				return;
-			}else if(log_p->index>3){
+			}else if(log_p->index>=2){
 				// tu pirveli
-				// todo
+				entry_to_resize->end_time=log_p->entries[entry_index+1].start_time+1;
+				return;
 			}
 		}break;
 	}
