@@ -146,7 +146,7 @@ void add_entry(t_log* log_p, wchar_t* name, wchar_t* sub_name,time_t start_time,
 
 	// if we are inserting we need to shift entries forward
 	if(is_insert){
-		for(int i=log_p->index;i>0;i--){
+		for(int i=log_p->index;i>=0;i--){
 			if(log_p->entries[i-1].end_time<start_time&& log_p->entries[i-1].end_time!=0 ){
 				entry=&log_p->entries[i];
 				break;
