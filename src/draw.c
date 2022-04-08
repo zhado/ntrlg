@@ -40,17 +40,17 @@ void align_right_duration(int row, int col,time_t duration){
 
 	if(minutes>0){
 		if(minutes>9){
-			mvprintw(row,col-3,"%lum",minutes);
+			mvprintw(row,col-3,"%dm",minutes);
 		}else{
-			mvprintw(row,col-2,"%lum",minutes);
+			mvprintw(row,col-2,"%dm",minutes);
 			//col++;
 		}
 	}
 	if(hours>0){
 		if(hours>9)
-			mvprintw(row,col-7,"%luh ",hours);
+			mvprintw(row,col-7,"%dh ",hours);
 		else
-			mvprintw(row,col-6,"%luh ",hours);
+			mvprintw(row,col-6,"%dh ",hours);
 	}
 }
 
