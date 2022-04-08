@@ -10,6 +10,8 @@
 #include "draw.h"
 #include "autocomp.h"
 
+# define INT32_MAX	(2147483647)
+
 int match_score_prt(wchar_t* str1, wchar_t* str2){
 	int res=0,
 	    l1=wcslen(str1),

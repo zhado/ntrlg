@@ -1,17 +1,22 @@
-#!/bin/sh
+#!/bin/bash
 cd $(dirname $0)
 links='-lncurses -lstdc++ -pthread -lm'
 flags="-Wall"
 COMPILTER="clang"
 
 if [ "$1" = "buildrun" ]; then
-	if [ "$(echo $ANDROID_DATA)" != "" ]; then
+	if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+		$COMPILTER ./src/main.c $links $flags -o out && ./out $2
+	elif [[ "$OSTYPE" == "darwin"* ]]; then
+		$COMPILTER ./src/main.c $links $flags -D MAC_OS -o out && ./out $2
+	elif [[ "$OSTYPE" == "linux-android" ]]; then
 		echo "on android"
 		sed -i '/my_port 1901/a ip 192.168.50.103' serv_conf 
 		$COMPILTER ./src/main.c $links $flags -D ANDROID -o out && ./out $2
 	else
-		$COMPILTER ./src/main.c $links $flags -o out && ./out $2
+		echo "OS not supported"
 	fi
+
 elif [ "$1" = "buildrunpipe" ]; then
 	$COMPILTER ./src/main.c $links $flags -o out && ./out $2 2> ./errpipe
 elif [ "$1" = "debrun" ]; then

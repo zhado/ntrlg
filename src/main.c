@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <time.h>
-#include <linux/types.h>
 #include <ncurses.h>
 #include <locale.h>
 #include <signal.h>
@@ -256,7 +255,12 @@ time_t get_file_modified_time(char* name){
 	struct stat buffer;
 	int fd=open(name,O_RDWR);
 	fstat(fd, &buffer);
+#ifdef MAC_OS	
+	return buffer.st_mtimespec.tv_sec;
+#else
 	return buffer.st_mtim.tv_sec;
+#endif
+
 }
 
 void sig_hup_handle(int signum){
