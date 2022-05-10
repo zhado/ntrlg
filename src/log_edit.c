@@ -66,7 +66,7 @@ int log_edit(log_edit_buffer* buffer,t_log* log_p, wchar_t chr){
 		editing_tags=true;
 	}
 
-	if((chr > 31  && chr != 127 ) && !(chr > 257 && chr < 262)){
+	if((chr > 31  && chr != 127 ) && !(chr > 257 && chr <= 263)){
 		if( !editing_tags && wcslen(name) < MAX_NAME_SIZE -2 && !only_tag_str){
 			add_chr_in_wstr(chr, name, buffer->local_curs_pos, MAX_NAME_SIZE);
 			buffer->local_curs_pos++;
