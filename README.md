@@ -1,6 +1,14 @@
 # ntrlg
 Terminal time tracker
 
+# Dependencies
+
+* gcc/clang 
+
+* ncurses
+
+Should run on any OS that supports ncurses and libc. tested on linux, android(termux), macOS.
+
 # Building
 Run:
 ```console
@@ -31,14 +39,14 @@ use arrow keys to move forwards and backwards in time. `Up`/`Down` move 'cursor'
 
 `w` switch to week mode.
 
+`g` switch to tag editing mode.
+
 # log editing mode
 
 While in log mode, enter name and tags for current activity/log. Separate tags with commas. Spaces are not allowed. If available, use arrow keys
 to select autocomplete result and press Enter.
 
 # tag mode
-
-press `g` in view mode to enter tag mode.
 
 you will see a list of tags which are being tracked.
 
@@ -50,6 +58,15 @@ Numbers for colors can be seen [here](https://www.ditig.com/256-colors-cheat-she
 
 `Delete` to delete.
 
-use `v` to switch to view mode
+# storage
 
+all data is stored in a local file in extremely simple format and can be easily edited. This data file named "data"
+needs to be placed in the same folder as the executable. This probably will be changed in future versions.
+
+# todo
+* clean up messy code.
+* optimize week view.
+* switch to meson
+* add better graphs and visualization 
+* add compression support for data file..
 
