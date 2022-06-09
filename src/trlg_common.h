@@ -9,8 +9,8 @@
 #define AUTOCOM_WIN_MAX_SIZE 20
 #define REALLOC_INCREMENT 100
 #define ENTRY_TAG_SIZE 20
-#define database_file "./cod"
-#define net_recieved_database "./cod_net"
+#define database_file "./data"
+#define net_recieved_database "./data_net"
 #define serv_conf_file "./serv_conf"
 
 typedef enum {

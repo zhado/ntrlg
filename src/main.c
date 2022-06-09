@@ -422,7 +422,7 @@ int main(int argc,char** argv){
 					state=pause_mode;
 				}break;
 				case 'H':{
-					if(server_fd==0)
+					if(srv_conf!=0)
 						server_fd=setup_server(srv_conf->my_port);
 					state=server_mode;
 				}break;
@@ -864,8 +864,10 @@ int main(int argc,char** argv){
 		}
 	}
 
-	free(srv_conf->ip);
-	free(srv_conf);
+	if(srv_conf!=0){
+		free(srv_conf->ip);
+		free(srv_conf);
+	}
 	free_app(&app);
 	endwin();
 	return 0;
