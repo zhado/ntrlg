@@ -1,5 +1,6 @@
 # ntrlg
 Terminal time tracker
+![demo](https://github.com/zhado/ntrlg/blob/master/common/demo.gif?raw=true)
 
 # Dependencies
 
